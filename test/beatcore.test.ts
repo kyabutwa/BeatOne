@@ -69,7 +69,7 @@ test("expired authorization cannot create an action", () => {
   );
 });
 
-test("authorized action is distinct from event", () => {
+test("action actor must match the authorization actor", () => {\n  assert.throws(\n    () => createAction({\n      id: id("action-actor-mismatch"),\n      actorId: id("different-identity"),\n      operation: "access.place",\n      authorization,\n      now: new Date("2026-10-01T00:00:00.000Z")\n    }),\n    /UNAUTHORIZED/\n  );\n});\n\ntest("authorized action is distinct from event", () => {
   const action = createAction({
     id: id("action-1"),
     actorId: actor,

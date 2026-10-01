@@ -1,6 +1,6 @@
 # BeatCore Action Contract
 
-**Status:** VERIFIED - IMPLEMENTATION CONTRACT
+**Status:** 🟢 VERIFIED — IMPLEMENTATION CONTRACT
 **Date:** 2026-10-01
 
 ## Action
@@ -12,7 +12,10 @@ An Action is the canonical record of an authorized operation. It is not proof th
 ## Invariants
 
 - id, actorId, authorizationId, and operation are non-empty;
-- authorization must exist;
+- actorId references an existing Identity;
+- authorizationId references an existing Authorization;
+- the persisted canonical Authorization is the authority source for the Action;
+- that Authorization must be ALLOW and valid at the operation time;
 - Action actor must equal Authorization actor;
 - optional Proposal must exist and its actor must equal Action actor;
 - optional Context must exist;
@@ -22,21 +25,30 @@ An Action is the canonical record of an authorized operation. It is not proof th
 - duplicate Action IDs conflict;
 - Action is distinct from Event and Evidence.
 
-## Authority
+## Authority source of truth
 
-Authorization is the authority boundary for Action creation.
+A caller may identify an Authorization, but a caller-supplied Authorization object must not be able to manufacture authority by reusing an existing Authorization ID with different decision, validity, actor, capability, or scope data.
+
+The authorized Action operation therefore validates against the canonical persisted Authorization record.
+
+## Proposal boundary
+
+Authorization remains the authority boundary.
 A Proposal does not become an Action automatically.
+If an Action references a Proposal, that Proposal must already exist and belong to the same actor.
 
 ## State semantics
 
-AUTHORIZED means the canonical operation passed the authorization gate. It does not mean the external or physical world completed the operation.
+AUTHORIZED means the canonical operation passed the authorization gate. It does not mean the external, physical, or real-world operation completed.
 
 ## Atomic operation
 
-The existing authorized-action operation performs validation, authorization, Action creation, local Event creation, persistence of both, and commit in one local transaction.
+The authorized-action operation performs validation, authorization, Action creation, local Event creation, persistence of both, and commit in one local transaction.
+
+`AUTHORIZED Action → ACTION_AUTHORIZED Event` is a local canonical occurrence, not a real-world completion claim.
 
 External operations remain outside this local atomic boundary.
 
 ## Non-goals
 
-No external provider, real-world completion claim, Evidence implementation, GENESIS automation, migration, production database, infrastructure, or higher-domain implementation.
+No Event redesign, Evidence implementation, GENESIS automation, external provider, authentication provider, migration, production database, infrastructure, OneApp, Website, or higher-domain implementation.

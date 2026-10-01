@@ -25,6 +25,7 @@ export const persistenceTables: readonly PersistenceTableDefinition[] = [
   { table: "credentials", owner: "Credential", primaryKey: "id" },
   { table: "sessions", owner: "Session", primaryKey: "id" },
   { table: "participants", owner: "Participant", primaryKey: "id" },
+  { table: "accesses", owner: "Access", primaryKey: "id" },
   { table: "places", owner: "Place", primaryKey: "id" },
   { table: "contexts", owner: "Context", primaryKey: "id" },
   { table: "relationships", owner: "Relationship", primaryKey: "id" },

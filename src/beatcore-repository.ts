@@ -460,10 +460,22 @@ function createTransaction(
     },
 
     replace(table, record) {
-      if (!store.get(table)?.has(record.id)) {
+      const existing = store.get(table)?.get(record.id);
+      if (!existing) {
         failure("NOT_FOUND");
       }
       validateRecord(table, record as StoredRecord, this, true);
+
+      if (table === "payments") {
+        const existingPayment = existing as StoredPayment;
+        const replacementPayment = record as StoredPayment;
+        const existingUpdatedAt = new Date(existingPayment.updatedAt);
+        const replacementUpdatedAt = new Date(replacementPayment.updatedAt);
+        if (replacementUpdatedAt <= existingUpdatedAt) {
+          failure("CONFLICT");
+        }
+      }
+
       store.get(table)?.set(record.id, record as StoredRecord);
     }
   };

@@ -139,7 +139,7 @@ export function createAction(input: {
   return {
     id: input.id,
     actorId: input.actorId,
-    proposalId: input.proposalId,
+    ...(input.proposalId ? { proposalId: input.proposalId } : {}),
     authorizationId: input.authorization.id,
     state: "AUTHORIZED",
     operation: input.operation

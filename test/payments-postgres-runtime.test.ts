@@ -11,6 +11,9 @@ const psql = (sql: string) =>
   }).trim();
 
 test("PostgreSQL Payment runtime: chain, idempotency, CAS, status, atomic reference, rollback", () => {
+  execFileSync("psql", [url, "-v", "ON_ERROR_STOP=1", "-X", "-f", "test/fixtures/payments-postgres-runtime.sql"], { encoding: "utf8" });
+  execFileSync("psql", [url, "-v", "ON_ERROR_STOP=1", "-X", "-f", "migrations/action-physical-canonicalization-2026-10-02.sql"], { encoding: "utf8" });
+  execFileSync("psql", [url, "-v", "ON_ERROR_STOP=1", "-X", "-f", "migrations/payments-physical-canonicalization-2026-10-02.sql"], { encoding: "utf8" });
   const setup = `
     INSERT INTO identities(id) VALUES ('identity:test');
     INSERT INTO participants(id) VALUES ('participant:test');

@@ -79,6 +79,28 @@ export interface Participant {
   readonly contextId?: Id;
 }
 
+export interface Access {
+  readonly id: Id;
+  readonly participantId: Id;
+  readonly targetType:
+    | "place"
+    | "building"
+    | "floor"
+    | "unit"
+    | "resource"
+    | "service"
+    | "digital";
+  readonly targetId: Id;
+  readonly mode:
+    | "physical"
+    | "digital"
+    | "service"
+    | "resource"
+    | "contextual"
+    | "temporary"
+    | "delegated";
+}
+
 export interface Place {
   readonly id: Id;
   readonly kind: "PLACE" | "BUILDING" | "FLOOR" | "UNIT" | "RESOURCE";

@@ -179,7 +179,6 @@ function validateRecord(
         requireReference("places", value.parentId);
         const parent = tx.get("places", value.parentId);
         if (!parent) failure("NOT_FOUND");
-        if (!parent) return;
 
         const allowedParent: Record<StoredPlace["kind"], StoredPlace["kind"] | undefined> = {
           PLACE: undefined,
@@ -190,7 +189,7 @@ function validateRecord(
         };
 
         const expected = allowedParent[value.kind];
-        if (expected === undefined || parent.kind !== expected) {
+        if (expected === undefined || parent!.kind !== expected) {
           failure("VALIDATION_FAILURE");
         }
       } else if (value.kind === "FLOOR" || value.kind === "UNIT" || value.kind === "RESOURCE") {

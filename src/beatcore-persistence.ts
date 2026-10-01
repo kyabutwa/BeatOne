@@ -188,6 +188,7 @@ export interface StoredPayment {
   readonly requestId?: Id;
   readonly correlationId?: Id;
   readonly causationId?: Id;
+  readonly actionId?: Id;
   readonly externalProvider?: string;
   readonly externalReference?: string;
   readonly createdAt: string;

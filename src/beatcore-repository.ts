@@ -13,6 +13,7 @@ import type {
   StoredCredential,
   StoredSession,
   StoredParticipant,
+  StoredAccess,
   StoredPlace,
   StoredContext,
   StoredRelationship,
@@ -33,6 +34,7 @@ export interface PersistenceRecordMap {
   credentials: StoredCredential;
   sessions: StoredSession;
   participants: StoredParticipant;
+  accesses: StoredAccess;
   places: StoredPlace;
   contexts: StoredContext;
   relationships: StoredRelationship;
@@ -160,6 +162,13 @@ function validateRecord(
       requireReference("identities", value.identityId);
       if (value.communityId) requireReference("communities", value.communityId);
       if (value.contextId) requireReference("contexts", value.contextId);
+      break;
+    }
+
+    case "accesses": {
+      const value = record as StoredAccess;
+      requireReference("participants", value.participantId);
+      requireText(value.targetId);
       break;
     }
 
@@ -318,6 +327,7 @@ export class InMemoryPersistenceRepository implements PersistenceRepository {
     ["credentials", new Map()],
     ["sessions", new Map()],
     ["participants", new Map()],
+    ["accesses", new Map()],
     ["places", new Map()],
     ["contexts", new Map()],
     ["relationships", new Map()],

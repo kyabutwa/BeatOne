@@ -203,6 +203,7 @@ function validateRecord(
       requireReference("participants", value.participantId);
       if (value.placeId) requireReference("places", value.placeId);
       if (value.communityId) requireReference("communities", value.communityId);
+      if (value.purpose !== undefined) requireText(value.purpose);
       break;
     }
 
@@ -212,6 +213,14 @@ function validateRecord(
       requireText(value.targetId);
       requireText(value.kind);
       requireText(value.validFrom);
+      if (value.subjectId === value.targetId) failure("VALIDATION_FAILURE");
+      const from = new Date(value.validFrom);
+      if (Number.isNaN(from.getTime())) failure("INVALID_INPUT");
+      if (value.validUntil) {
+        const until = new Date(value.validUntil);
+        if (Number.isNaN(until.getTime())) failure("INVALID_INPUT");
+        if (until <= from) failure("VALIDATION_FAILURE");
+      }
       break;
     }
 

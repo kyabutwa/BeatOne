@@ -239,6 +239,14 @@ function validateRecord(
       if (value.relationshipId) requireReference("relationships", value.relationshipId);
       if (value.delegatedBy) requireReference("identities", value.delegatedBy);
       requireText(value.validFrom);
+      const from = new Date(value.validFrom);
+      if (Number.isNaN(from.getTime())) failure("INVALID_INPUT");
+      if (value.validUntil) {
+        const until = new Date(value.validUntil);
+        if (Number.isNaN(until.getTime())) failure("INVALID_INPUT");
+        if (until <= from) failure("VALIDATION_FAILURE");
+      }
+      if (value.scope !== undefined) requireText(value.scope);
       break;
     }
 

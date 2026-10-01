@@ -16,7 +16,7 @@ test("BeatCore persistence represents every canonical entity exactly once", () =
   ]);
 });
 test("persistence ownership is explicit and unique", () => {
-  assert.equal(new Set(persistenceTables.map((table) => table.owner)).size, 17);
+  assert.equal(new Set(persistenceTables.map((table) => table.owner)).size, 18);
   assert.ok(persistenceTables.every((table) => table.primaryKey === "id"));
 });
 test("canonical separation remains explicit", () => {

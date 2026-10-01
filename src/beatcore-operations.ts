@@ -40,36 +40,38 @@ export async function executeAuthorizedAction(
   repository: PersistenceRepository,
   command: AuthorizedActionCommand
 ): Promise<AuthorizedActionResult> {
-  const action = createAction({
-    id: command.actionId,
-    actorId: command.actorId,
-    operation: command.operation,
-    authorization: command.authorization,
-    ...(command.proposalId ? { proposalId: command.proposalId } : {}),
-    ...(command.contextId ? { contextId: command.contextId } : {}),
-    ...(command.correlationId ? { correlationId: command.correlationId } : {}),
-    ...(command.idempotencyKey ? { idempotencyKey: command.idempotencyKey } : {}),
-    ...(command.now ? { now: command.now } : {})
-  });
+  return repository.transaction((tx) => {
+    const canonicalAuthorization = tx.get("authorizations", command.authorization.id);
+    if (!canonicalAuthorization) throw new Error("NOT_FOUND");
 
-  const event = createEvent({
-    id: command.eventId,
-    action,
-    type: command.eventType,
-    occurredAt: command.occurredAt,
-    state: "AUTHORIZED",
-    source: command.eventSource,
-    actorId: command.actorId,
-    ...(command.contextId ? { contextId: command.contextId } : {}),
-    ...(command.correlationId ? { correlationId: command.correlationId } : {}),
-    causationId: action.id,
-    ...(command.eventVersion !== undefined ? { version: command.eventVersion } : {})
-  });
+    const action = createAction({
+      id: command.actionId,
+      actorId: command.actorId,
+      operation: command.operation,
+      authorization: canonicalAuthorization,
+      ...(command.proposalId ? { proposalId: command.proposalId } : {}),
+      ...(command.contextId ? { contextId: command.contextId } : {}),
+      ...(command.correlationId ? { correlationId: command.correlationId } : {}),
+      ...(command.idempotencyKey ? { idempotencyKey: command.idempotencyKey } : {}),
+      ...(command.now ? { now: command.now } : {})
+    });
 
-  await repository.transaction((tx) => {
+    const event = createEvent({
+      id: command.eventId,
+      action,
+      type: command.eventType,
+      occurredAt: command.occurredAt,
+      state: "AUTHORIZED",
+      source: command.eventSource,
+      actorId: command.actorId,
+      ...(command.contextId ? { contextId: command.contextId } : {}),
+      ...(command.correlationId ? { correlationId: command.correlationId } : {}),
+      causationId: action.id,
+      ...(command.eventVersion !== undefined ? { version: command.eventVersion } : {})
+    });
+
     tx.insert("actions", action);
     tx.insert("events", event);
+    return { action, event };
   });
-
-  return { action, event };
 }

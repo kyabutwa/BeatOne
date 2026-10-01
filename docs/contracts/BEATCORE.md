@@ -493,6 +493,18 @@ Where relevant, BeatCore operations use distinct identifiers for:
 
 These identifiers must not be treated as interchangeable.
 
+
+
+## Actor-Authorization Binding Invariant
+
+A consequential Action actor must be the same canonical actor identified by the Authorization used as its authority basis.
+
+Therefore:
+
+`Action.actorId === Authorization.actorId`
+
+A mismatch is unauthorized and must prevent Action creation. Application/API layers must not compensate for a violation of this foundational invariant; the BeatCore domain boundary owns it.
+
 ## 22. Persistence Contract
 
 Persistence is the durable implementation of canonical domain truth.

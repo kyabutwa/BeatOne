@@ -239,6 +239,33 @@ test("invalid payment writes roll back the complete local transaction", async ()
   assert.equal(repository.read("payments", payment.id), undefined);
 });
 
+test("payment replacement rejects stale writes against committed payment state", async () => {
+  const repository = new InMemoryPersistenceRepository();
+  await seed(repository);
+
+  await repository.transaction((tx) => {
+    tx.insert("payments", payment);
+    tx.replace("payments", {
+      ...payment,
+      status: "PROCESSING",
+      updatedAt: "2026-10-01T12:01:00.000Z"
+    });
+  });
+
+  await assert.rejects(
+    repository.transaction((tx) => {
+      tx.replace("payments", {
+        ...payment,
+        status: "COMPLETED",
+        updatedAt: "2026-10-01T12:01:00.000Z"
+      });
+    }),
+    /CONFLICT/
+  );
+
+  assert.equal(repository.read("payments", payment.id)?.status, "PROCESSING");
+});
+
 test("payment replacement preserves identity and rejects stale temporal state", async () => {
   const repository = new InMemoryPersistenceRepository();
   await seed(repository);

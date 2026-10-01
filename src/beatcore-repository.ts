@@ -174,7 +174,27 @@ function validateRecord(
 
     case "places": {
       const value = record as StoredPlace;
-      if (value.parentId) requireReference("places", value.parentId);
+      if (value.parentId) {
+        if (value.parentId === value.id) failure("VALIDATION_FAILURE");
+        requireReference("places", value.parentId);
+        const parent = tx.get("places", value.parentId);
+        if (!parent) failure("NOT_FOUND");
+
+        const allowedParent: Record<StoredPlace["kind"], StoredPlace["kind"] | undefined> = {
+          PLACE: undefined,
+          BUILDING: "PLACE",
+          FLOOR: "BUILDING",
+          UNIT: "FLOOR",
+          RESOURCE: "UNIT"
+        };
+
+        const expected = allowedParent[value.kind];
+        if (expected === undefined || parent.kind !== expected) {
+          failure("VALIDATION_FAILURE");
+        }
+      } else if (value.kind === "FLOOR" || value.kind === "UNIT" || value.kind === "RESOURCE") {
+        failure("VALIDATION_FAILURE");
+      }
       break;
     }
 

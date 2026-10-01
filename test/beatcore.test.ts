@@ -251,9 +251,9 @@ test("event is distinct from evidence and evidence defaults to unverified", () =
   const event = createEvent({
     id: id("event-4"),
     action,
-    type: "resource.read.completed",
+    type: "resource.read.authorized",
     occurredAt: "2026-10-01T10:00:00.000Z",
-    state: "COMPLETED",
+    state: "AUTHORIZED",
     source: "beatcore"
   });
   const evidence = createEvidence({

@@ -278,7 +278,15 @@ function validateRecord(
       const value = record as StoredAction;
       requireReference("identities", value.actorId);
       requireReference("authorizations", value.authorizationId);
-      if (value.proposalId) requireReference("proposals", value.proposalId);
+      const authorization = tx.get("authorizations", value.authorizationId);
+      if (!authorization) failure("NOT_FOUND");
+      if (authorization.actorId !== value.actorId) failure("UNAUTHORIZED");
+      if (value.proposalId) {
+        requireReference("proposals", value.proposalId);
+        const proposal = tx.get("proposals", value.proposalId);
+        if (!proposal) failure("NOT_FOUND");
+        if (proposal.actorId !== value.actorId) failure("UNAUTHORIZED");
+      }
       if (value.contextId) requireReference("contexts", value.contextId);
       requireText(value.operation);
 

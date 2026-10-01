@@ -285,26 +285,39 @@ export function createEvent(input: {
   causationId?: Id;
   version?: number;
 }): Event {
-  if (input.action.state === "FAILED" || input.action.state === "DENIED") {
-    throw new Error("VALIDATION_FAILURE");
-  }
   requiredText(input.type);
   requiredText(input.source);
-  if (input.state === "FAILED" || input.state === "DENIED") {
+
+  if (input.state !== input.action.state) {
     throw new Error("VALIDATION_FAILURE");
   }
+
+  if (input.actorId && input.actorId !== input.action.actorId) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (input.contextId && input.contextId !== input.action.contextId) {
+    throw new Error("VALIDATION_FAILURE");
+  }
+
+  const occurredAt = parseTime(input.occurredAt);
+  const version = input.version ?? 1;
+  if (!Number.isInteger(version) || version < 1) {
+    throw new Error("VALIDATION_FAILURE");
+  }
+
   return {
     id: input.id,
     actionId: input.action.id,
     type: input.type,
-    occurredAt: parseTime(input.occurredAt).toISOString(),
+    occurredAt: occurredAt.toISOString(),
     state: input.state,
     source: input.source,
     ...(input.actorId ? { actorId: input.actorId } : {}),
     ...(input.contextId ? { contextId: input.contextId } : {}),
     ...(input.correlationId ? { correlationId: input.correlationId } : {}),
     ...(input.causationId ? { causationId: input.causationId } : {}),
-    version: input.version ?? 1
+    version
   };
 }
 

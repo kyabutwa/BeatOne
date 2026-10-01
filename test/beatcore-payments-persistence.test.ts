@@ -114,28 +114,28 @@ test("payment money and currency are persisted as exact canonical values", async
 
   await assert.rejects(
     repository.transaction((tx) => {
-      tx.insert("payments", { ...payment, id: id("payment-leading-zero"), amount: "012.5" });
+      tx.insert("payments", { ...payment, id: id("payment-leading-zero"), idempotencyKey: "payment-invalid-leading-zero", amount: "012.5" });
     }),
     /VALIDATION_FAILURE/
   );
 
   await assert.rejects(
     repository.transaction((tx) => {
-      tx.insert("payments", { ...payment, id: id("payment-trailing-zero"), amount: "12.50" });
+      tx.insert("payments", { ...payment, id: id("payment-trailing-zero"), idempotencyKey: "payment-invalid-trailing-zero", amount: "12.50" });
     }),
     /VALIDATION_FAILURE/
   );
 
   await assert.rejects(
     repository.transaction((tx) => {
-      tx.insert("payments", { ...payment, id: id("payment-zero"), amount: "0" });
+      tx.insert("payments", { ...payment, id: id("payment-zero"), idempotencyKey: "payment-invalid-zero", amount: "0" });
     }),
     /VALIDATION_FAILURE/
   );
 
   await assert.rejects(
     repository.transaction((tx) => {
-      tx.insert("payments", { ...payment, id: id("payment-bad-currency"), currency: "ke" });
+      tx.insert("payments", { ...payment, id: id("payment-bad-currency"), idempotencyKey: "payment-invalid-currency", currency: "ke" });
     }),
     /VALIDATION_FAILURE/
   );

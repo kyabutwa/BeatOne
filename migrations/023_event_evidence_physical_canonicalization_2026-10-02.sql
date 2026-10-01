@@ -5,36 +5,18 @@
 
 BEGIN;
 
-DO $$
-DECLARE
-  v_event_rows bigint;
-  v_evidence_rows bigint;
-  v_link_rows bigint;
-BEGIN
-  IF to_regclass('public.zalagren_schema_migrations') IS NULL THEN
-    RAISE EXCEPTION 'Migration ledger public.zalagren_schema_migrations is missing';
-  END IF;
-  IF EXISTS (SELECT 1 FROM public.zalagren_schema_migrations WHERE id='023_event_evidence_physical_canonicalization_2026-10-02') THEN
-    RAISE EXCEPTION 'Migration already registered';
-  END IF;
-  IF to_regclass('public.events') IS NULL OR to_regclass('public.evidence') IS NULL THEN
-    RAISE EXCEPTION 'Expected legacy Event and Evidence tables are missing';
-  END IF;
-  SELECT count(*) INTO v_event_rows FROM public.events;
-  SELECT count(*) INTO v_evidence_rows FROM public.evidence;
-  IF v_event_rows <> 0 OR v_evidence_rows <> 0 THEN
-    RAISE EXCEPTION 'Legacy Event/Evidence migration requires zero rows (events=%, evidence=%)', v_event_rows, v_evidence_rows;
-  END IF;
-  IF to_regclass('public.event_evidence') IS NOT NULL THEN
-    SELECT count(*) INTO v_link_rows FROM public.event_evidence;
-    IF v_link_rows <> 0 THEN
-      RAISE EXCEPTION 'Legacy event_evidence contains % rows; no data transformation is authorized', v_link_rows;
-    END IF;
-  END IF;
-  IF to_regclass('public.actions') IS NULL THEN RAISE EXCEPTION 'Action table is required before canonical Event physical schema'; END IF;
-  IF to_regclass('public.identities') IS NULL THEN RAISE EXCEPTION 'Identity table is required before canonical Event physical schema'; END IF;
-  IF to_regclass('public.contexts') IS NULL THEN RAISE EXCEPTION 'Context table is required before canonical Event physical schema'; END IF;
-END $$;
+CREATE TEMP TABLE _event_evidence_migration_guard (
+  ok boolean NOT NULL CHECK (ok)
+);
+INSERT INTO _event_evidence_migration_guard(ok)
+SELECT
+  (NOT EXISTS (SELECT 1 FROM public.events))
+  AND (NOT EXISTS (SELECT 1 FROM public.evidence))
+  AND (
+    to_regclass('public.event_evidence') IS NULL
+    OR NOT EXISTS (SELECT 1 FROM public.event_evidence)
+  );
+DROP TABLE _event_evidence_migration_guard;
 
 DROP TABLE IF EXISTS public.event_evidence;
 

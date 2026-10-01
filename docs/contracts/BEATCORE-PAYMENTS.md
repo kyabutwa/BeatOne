@@ -58,6 +58,7 @@ Required semantic data:
 - actor/authorization basis;
 - idempotency key;
 - correlation identifiers;
+- optional canonical Action reference (`action_id`) when consequential execution has been accepted;
 - timestamps;
 - external references where an integration exists.
 
@@ -76,6 +77,8 @@ Provider-reported balances are external information and do not automatically est
 ## 5. Authorization Boundary
 
 Payment execution requires the canonical BeatCore Authorization boundary.
+
+A persisted `action_id` must reference an existing canonical BeatCore Action. The linked Action must use the same actor and authorization basis as the Payment. Payment and Action remain separate records with separate lifecycle ownership.
 
 Payment-specific capabilities may constrain which payment operation is possible, but capability is not authorization.
 
@@ -122,6 +125,8 @@ Payments preserves the canonical separation:
 
 Payment Intent → Authorization → Action → External Processing → Event → Evidence.
 
+The Payment may carry `action_id` as the explicit link to the canonical BeatCore Action. This is optional at request-level creation when no Action has yet been created. Once a Payment enters a consequential execution path that has an accepted Action, the Payment must carry that Action reference.
+
 Action represents the accepted consequential operation.
 
 Event represents an actual recognized payment occurrence or state transition.
@@ -149,7 +154,7 @@ Where applicable, Payments preserves distinct:
 - request_id;
 - correlation_id;
 - causation_id;
-- action_id;
+- action_id (optional on request-level Payment; required once consequential execution has an accepted Action);
 - event_id;
 - evidence_id;
 - external_reference.

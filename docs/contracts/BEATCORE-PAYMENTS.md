@@ -278,8 +278,9 @@ Payments is not a generic credential vault.
 3. Payment authorization cannot be replaced by Capability alone.
 4. Payment provider IDs are never canonical BeatOne identity.
 5. Amount and currency are explicit and exact.
-6. Consequential payment initiation is idempotent.
-7. Duplicate retries cannot create duplicate consequential outcomes.
+7. A persisted Payment `action_id` references only a canonical Action with matching actor and authorization basis.
+8. Consequential payment initiation is idempotent.
+8. Duplicate retries cannot create duplicate consequential outcomes.
 8. Action is not automatically Event.
 9. Event is not automatically Evidence.
 10. Provider acknowledgement is not automatically payment completion.
@@ -311,11 +312,12 @@ Before Payments implementation is considered complete, verification must prove:
 - external provider identifiers remain secondary;
 - cross-domain direct writes are blocked;
 - refund/reversal operations preserve original-payment linkage;
+- a persisted `action_id` requires an existing canonical Action with matching actor and authorization basis;
 - GENESIS cannot bypass authorization.
 
 ## 20. Implementation Sequence
 
-Fresh Payments Reconciliation → Payments Contract → Payments Implementation → Payments Persistence Reconciliation → Payments Tests/Invariants → CI Verification → Fresh Payments Final Reconciliation.
+Fresh Payments Reconciliation → Payments Action-Link Contract Update → Payments Implementation/Persistence Update → Action-Link Tests/Invariants → CI Verification → Physical PostgreSQL Schema Contract.
 
 Provider integration remains a later controlled stage.
 

@@ -50,7 +50,7 @@ runtimeTest("PostgreSQL Payment runtime: chain, idempotency, CAS, status, atomic
   psql("UPDATE payments SET status='PROCESSING', version=2, updated_at=clock_timestamp() WHERE id='payment:test' AND version=1");
   assert.equal(psql("SELECT version FROM payments WHERE id='payment:test'"), "2");
   assert.equal(psql("SELECT status FROM payments WHERE id='payment:test'"), "PROCESSING");
-  assert.equal(psql("UPDATE payments SET status='COMPLETED', version=3, updated_at=clock_timestamp() WHERE id='payment:test' AND version=1 RETURNING id"), "");
+  assert.equal(psql("UPDATE payments SET status='COMPLETED', version=3, updated_at=clock_timestamp() WHERE id='payment:test' AND version=1 RETURNING id"), "UPDATE 0");
   assert.equal(psql("SELECT status FROM payments WHERE id='payment:test'"), "PROCESSING");
   psql("UPDATE payments SET status='UNKNOWN', version=3, updated_at=clock_timestamp() WHERE id='payment:test' AND version=2");
   assert.equal(psql("SELECT status || ':' || version FROM payments WHERE id='payment:test'"), "UNKNOWN:3");

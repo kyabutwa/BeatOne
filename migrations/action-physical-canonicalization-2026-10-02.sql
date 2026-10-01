@@ -83,7 +83,7 @@ BEGIN
     AND child.relname = 'action_executions'
     AND parent_ns.nspname = 'public'
     AND parent.relname = 'actions'
-    AND pg_get_constraintdef(con.oid) ILIKE '%(action_id)% REFERENCES public.actions(id)%';
+    AND pg_get_constraintdef(con.oid) ILIKE '%FOREIGN KEY (action_id) REFERENCES actions(id)%';
 
   IF v_action_execution_fk <> 1 THEN
     RAISE EXCEPTION

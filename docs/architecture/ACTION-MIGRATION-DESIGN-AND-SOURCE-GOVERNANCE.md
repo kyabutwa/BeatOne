@@ -1,10 +1,10 @@
 # Action Physical Migration Design + Migration-Source Implementation Governance
 
-**Status:** 🔵 PROPOSED — REVIEWABLE MIGRATION DESIGN; NO MIGRATION SQL EXECUTED  
+**Status:** 🔵 PROPOSED — REVIEWABLE MIGRATION SOURCE IMPLEMENTED; NOT EXECUTED  
 **Scope:** Current live `public.actions` table and its physical dependencies only  
 **Production mutation:** NONE  
 **Payments migration:** NOT INCLUDED  
-**Migration identifier:** NOT assigned or registered
+**Migration identifier:** `action-physical-canonicalization-2026-10-02` — source committed; not applied
 
 ## 1. Purpose and boundary
 
@@ -408,13 +408,32 @@ The controlled sequence is:
 
 Payments must not bypass the Action dependency by creating a parallel Action representation.
 
-## 17. Final gate
+## 17. Source implementation record
 
-**🔵 PROPOSED — ACTION MIGRATION DESIGN + MIGRATION-SOURCE IMPLEMENTATION GOVERNANCE COMPLETE.**
+The first reviewable migration source is now committed at:
+
+`migrations/action-physical-canonicalization-2026-10-02.sql`
+
+The source performs guarded in-place canonicalization of the currently empty `public.actions` table. It:
+
+- preflights the migration ledger, table shape, zero-row condition, required parent tables, and the live `action_executions.action_id` dependency;
+- preserves `public.actions.id` and the `action_executions → actions.id` foreign key;
+- removes only legacy Action-only constraints that would prevent canonical writes;
+- retains legacy columns temporarily but makes them nullable;
+- establishes canonical Action columns, foreign keys, lifecycle validation, idempotency uniqueness, timestamps, version checks, and indexes;
+- registers the migration ID only after the schema work succeeds inside the transaction.
+
+The source deliberately performs no legacy row transformation because the live preflight requires zero Action rows. If that condition is not true, the migration aborts.
+
+The migration identifier was rechecked against the live ledger before authoring and was not present. The source has not been executed against Neon production.
+
+## 18. Final gate
+
+**🔵 PROPOSED — ACTION MIGRATION SOURCE IMPLEMENTED FOR REVIEW; PRODUCTION EXECUTION REMAINS CLOSED.**
 
 This document is the reviewable bridge from the approved Action physical schema to future migration implementation.
 
-**No migration SQL was created.**  
+**Migration SQL source is now committed for review; it has NOT been executed.**  
 **No Neon production object was altered.**  
 **No production data was changed.**  
 **No Payments migration was executed or designed beyond its dependency on canonical Action.**

@@ -19,6 +19,7 @@ The persistence layer implements BeatCore. It does not redefine BeatCore.
 | credentials | BeatCore / Identity | credential.id |
 | sessions | BeatCore / Identity | session.id |
 | participants | BeatCore / Participant | participant.id |
+| accesses | BeatCore / Access | access.id |
 | places | BeatCore / Place | place.id |
 | contexts | BeatCore / Context | context.id |
 | relationships | BeatCore / Relationship | relationship.id |
@@ -83,6 +84,13 @@ No second foundational identity, participant, authorization, action, event, or e
 - identity_id required reference to identities.id.
 - community_id optional reference to communities.id.
 - context_id optional reference to contexts.id.
+
+### accesses
+- id primary key.
+- participant_id required reference to participants.id.
+- target_type required canonical Access target category.
+- target_id required target identifier.
+- mode required canonical Access mode.
 
 ### places
 - id primary key.

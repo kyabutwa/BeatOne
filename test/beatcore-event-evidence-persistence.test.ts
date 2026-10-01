@@ -84,6 +84,7 @@ test("Event replacement uses strict version CAS", async () => {
   await seed(repository);
   await repository.transaction((tx) => {
     tx.insert("events", event);
+    tx.replace("actions", { ...action, state: "PROCESSING" });
     tx.replace("events", { ...event, state: "PROCESSING", version: 2 });
   });
   assert.equal(repository.read("events", event.id)?.version, 2);

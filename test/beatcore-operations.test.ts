@@ -69,16 +69,15 @@ test("denied authorization cannot create an Action", async () => {
   const repository = new InMemoryPersistenceRepository();
   await seedAuthorization(repository);
 
+  await repository.transaction((tx) => {
+    tx.replace("authorizations", {
+      ...authorization(),
+      decision: "DENY"
+    });
+  });
+
   await assert.rejects(
-    executeAuthorizedAction(
-      repository,
-      command({
-        authorization: {
-          ...authorization(),
-          decision: "DENY"
-        }
-      })
-    ),
+    executeAuthorizedAction(repository, command()),
     /UNAUTHORIZED/
   );
 
@@ -90,16 +89,15 @@ test("expired authorization cannot create an Action", async () => {
   const repository = new InMemoryPersistenceRepository();
   await seedAuthorization(repository);
 
+  await repository.transaction((tx) => {
+    tx.replace("authorizations", {
+      ...authorization(),
+      validUntil: "2026-10-01T14:30:00.000Z"
+    });
+  });
+
   await assert.rejects(
-    executeAuthorizedAction(
-      repository,
-      command({
-        authorization: {
-          ...authorization(),
-          validUntil: "2026-10-01T14:30:00.000Z"
-        }
-      })
-    ),
+    executeAuthorizedAction(repository, command()),
     /EXPIRED/
   );
 

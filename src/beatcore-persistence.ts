@@ -7,7 +7,7 @@ import type {
 
 export type PersistenceTable =
   | "persons" | "communities" | "identities" | "accounts" | "credentials"
-  | "sessions" | "participants" | "places" | "contexts" | "relationships"
+  | "sessions" | "participants" | "accesses" | "places" | "contexts" | "relationships"
   | "capabilities" | "authorizations" | "intents" | "proposals" | "actions"
   | "events" | "evidences";
 
@@ -66,6 +66,27 @@ export interface StoredParticipant {
   readonly identityId: Id;
   readonly communityId?: Id;
   readonly contextId?: Id;
+}
+export interface StoredAccess {
+  readonly id: Id;
+  readonly participantId: Id;
+  readonly targetType:
+    | "place"
+    | "building"
+    | "floor"
+    | "unit"
+    | "resource"
+    | "service"
+    | "digital";
+  readonly targetId: Id;
+  readonly mode:
+    | "physical"
+    | "digital"
+    | "service"
+    | "resource"
+    | "contextual"
+    | "temporary"
+    | "delegated";
 }
 export interface StoredPlace {
   readonly id: Id;
@@ -150,7 +171,7 @@ export interface StoredEvidence {
 
 export type BeatCorePersistenceRecord =
   | StoredPerson | StoredCommunity | StoredIdentity | StoredAccount
-  | StoredCredential | StoredSession | StoredParticipant | StoredPlace
+  | StoredCredential | StoredSession | StoredParticipant | StoredAccess | StoredPlace
   | StoredContext | StoredRelationship | StoredCapability
   | StoredAuthorization | StoredIntent | StoredProposal | StoredAction
   | StoredEvent | StoredEvidence;

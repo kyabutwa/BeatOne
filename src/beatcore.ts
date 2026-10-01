@@ -330,6 +330,10 @@ export function createEvidence(input: {
   externalReference?: ExternalReference;
 }): Evidence {
   requiredText(input.source);
+  const verification = input.verification ?? "UNVERIFIED";
+  if (!["UNVERIFIED", "VERIFIED", "REJECTED"].includes(verification)) {
+    throw new Error("VALIDATION_FAILURE");
+  }
   if (input.externalReference) {
     requiredText(input.externalReference.provider);
     requiredText(input.externalReference.reference);
@@ -338,7 +342,7 @@ export function createEvidence(input: {
     id: input.id,
     ...(input.event ? { eventId: input.event.id } : {}),
     source: input.source,
-    verification: input.verification ?? "UNVERIFIED",
+    verification,
     recordedAt: parseTime(input.recordedAt ?? new Date().toISOString()).toISOString(),
     ...(input.externalReference ? { externalReference: input.externalReference } : {})
   };

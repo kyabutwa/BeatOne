@@ -1,6 +1,6 @@
 # Action Persistence Reconciliation
 
-**Status:** VERIFIED - RECONCILED
+**Status:** 🟢 VERIFIED - RECONCILED
 **Date:** 2026-10-01
 
 ## Canonical ownership
@@ -24,6 +24,7 @@ The repository now enforces:
 - Action actor references an existing Identity;
 - Authorization exists;
 - Authorization actor equals Action actor;
+- the persisted Authorization is the authority source; caller-supplied Authorization fields cannot override persisted decision/validity;
 - optional Proposal exists;
 - Proposal actor equals Action actor;
 - optional Context exists;
@@ -47,4 +48,4 @@ Action authorization is canonical. Event is a separate occurrence record. Eviden
 
 No production schema, migration, ORM, database vendor, provider, or infrastructure work is introduced.
 
-**Result: VERIFIED - Action persistence is canonically owned and invariant-enforced.**
+**Result: 🟢 VERIFIED - Action persistence is canonically owned and invariant-enforced.**

@@ -9,7 +9,7 @@ export type PersistenceTable =
   | "persons" | "communities" | "identities" | "accounts" | "credentials"
   | "sessions" | "participants" | "accesses" | "places" | "contexts" | "relationships"
   | "capabilities" | "authorizations" | "intents" | "proposals" | "actions"
-  | "events" | "evidences";
+  | "events" | "evidences" | "payments";
 
 export interface PersistenceTableDefinition {
   readonly table: PersistenceTable;
@@ -35,7 +35,8 @@ export const persistenceTables: readonly PersistenceTableDefinition[] = [
   { table: "proposals", owner: "Proposal", primaryKey: "id" },
   { table: "actions", owner: "Action", primaryKey: "id" },
   { table: "events", owner: "Event", primaryKey: "id" },
-  { table: "evidences", owner: "Evidence", primaryKey: "id" }
+  { table: "evidences", owner: "Evidence", primaryKey: "id" },
+  { table: "payments", owner: "Payment", primaryKey: "id" }
 ];
 
 export interface StoredPerson { readonly id: Id; }
@@ -169,13 +170,36 @@ export interface StoredEvidence {
   readonly externalProvider?: string;
   readonly externalReference?: string;
 }
+export type StoredPaymentStatus =
+  | "REQUESTED" | "AUTHORIZED" | "PROCESSING" | "PENDING" | "COMPLETED"
+  | "FAILED" | "DENIED" | "REJECTED" | "CANCELLED" | "PARTIAL" | "UNKNOWN"
+  | "REVERSED" | "RECONCILIATION_REQUIRED" | "RECONCILED";
+export interface StoredPayment {
+  readonly id: Id;
+  readonly payerParticipantId?: Id;
+  readonly payeeParticipantId?: Id;
+  readonly amount: string;
+  readonly currency: string;
+  readonly purpose: string;
+  readonly status: StoredPaymentStatus;
+  readonly actorId: Id;
+  readonly authorizationId: Id;
+  readonly idempotencyKey: string;
+  readonly requestId?: Id;
+  readonly correlationId?: Id;
+  readonly causationId?: Id;
+  readonly externalProvider?: string;
+  readonly externalReference?: string;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
 
 export type BeatCorePersistenceRecord =
   | StoredPerson | StoredCommunity | StoredIdentity | StoredAccount
   | StoredCredential | StoredSession | StoredParticipant | StoredAccess | StoredPlace
   | StoredContext | StoredRelationship | StoredCapability
   | StoredAuthorization | StoredIntent | StoredProposal | StoredAction
-  | StoredEvent | StoredEvidence;
+  | StoredEvent | StoredEvidence | StoredPayment;
 
 export const canonicalPersistenceTableNames: readonly PersistenceTable[] =
   persistenceTables.map((definition) => definition.table);

@@ -23,7 +23,8 @@ import type {
   StoredProposal,
   StoredAction,
   StoredEvent,
-  StoredEvidence
+  StoredEvidence,
+  StoredPayment
 } from "./beatcore-persistence.js";
 
 export interface PersistenceRecordMap {
@@ -45,6 +46,7 @@ export interface PersistenceRecordMap {
   actions: StoredAction;
   events: StoredEvent;
   evidences: StoredEvidence;
+  payments: StoredPayment;
 }
 
 export interface PersistenceTransaction {
@@ -56,6 +58,10 @@ export interface PersistenceTransaction {
   findActionByIdempotencyKey(
     idempotencyKey: string
   ): StoredAction | undefined;
+
+  findPaymentByIdempotencyKey(
+    idempotencyKey: string
+  ): StoredPayment | undefined;
 
   insert<T extends PersistenceTable>(
     table: T,
@@ -331,6 +337,60 @@ function validateRecord(
       break;
     }
 
+    case "payments": {
+      const value = record as StoredPayment;
+      requireText(value.purpose);
+      requireText(value.idempotencyKey);
+      requireText(value.currency);
+      if (!/^[A-Z]{3}$/.test(value.currency)) failure("VALIDATION_FAILURE");
+
+      if (!/^\d+(?:\.\d+)?$/.test(value.amount)) failure("VALIDATION_FAILURE");
+      if (/^0\d/.test(value.amount)) failure("VALIDATION_FAILURE");
+      if (value.amount.includes(".")) {
+        const fraction = value.amount.split(".")[1] ?? "";
+        if (!fraction || /0$/.test(fraction)) failure("VALIDATION_FAILURE");
+      }
+      if (value.amount === "0") failure("VALIDATION_FAILURE");
+
+      const statuses = [
+        "REQUESTED", "AUTHORIZED", "PROCESSING", "PENDING", "COMPLETED",
+        "FAILED", "DENIED", "REJECTED", "CANCELLED", "PARTIAL", "UNKNOWN",
+        "REVERSED", "RECONCILIATION_REQUIRED", "RECONCILED"
+      ];
+      if (!statuses.includes(value.status)) failure("VALIDATION_FAILURE");
+
+      requireReference("identities", value.actorId);
+      requireReference("authorizations", value.authorizationId);
+      const authorization = tx.get("authorizations", value.authorizationId);
+      if (!authorization) failure("NOT_FOUND");
+      if (authorization!.actorId !== value.actorId) failure("UNAUTHORIZED");
+      if (value.payerParticipantId) requireReference("participants", value.payerParticipantId);
+      if (value.payeeParticipantId) requireReference("participants", value.payeeParticipantId);
+
+      for (const reference of [value.requestId, value.correlationId, value.causationId]) {
+        if (reference !== undefined) requireText(reference);
+      }
+
+      const createdAt = new Date(value.createdAt);
+      const updatedAt = new Date(value.updatedAt);
+      if (Number.isNaN(createdAt.getTime()) || Number.isNaN(updatedAt.getTime())) {
+        failure("INVALID_INPUT");
+      }
+      if (updatedAt < createdAt) failure("VALIDATION_FAILURE");
+
+      const hasProvider = Boolean(value.externalProvider);
+      const hasReference = Boolean(value.externalReference);
+      if (hasProvider !== hasReference) failure("INVALID_INPUT");
+      if (hasProvider) {
+        requireText(value.externalProvider!);
+        requireText(value.externalReference!);
+      }
+
+      const existing = tx.findPaymentByIdempotencyKey(value.idempotencyKey);
+      if (existing && existing.id !== value.id) failure("CONFLICT");
+      break;
+    }
+
     case "evidences": {
       const value = record as StoredEvidence;
       requireText(value.source);
@@ -383,6 +443,17 @@ function createTransaction(
       return undefined;
     },
 
+    findPaymentByIdempotencyKey(idempotencyKey: string): StoredPayment | undefined {
+      requireText(idempotencyKey);
+      const payments = store.get("payments");
+      if (!payments) return undefined;
+      for (const record of payments.values()) {
+        const payment = record as StoredPayment;
+        if (payment.idempotencyKey === idempotencyKey) return payment;
+      }
+      return undefined;
+    },
+
     insert(table, record) {
       validateRecord(table, record as StoredRecord, this, false);
       store.get(table)?.set(record.id, record as StoredRecord);
@@ -417,7 +488,8 @@ export class InMemoryPersistenceRepository implements PersistenceRepository {
     ["proposals", new Map()],
     ["actions", new Map()],
     ["events", new Map()],
-    ["evidences", new Map()]
+    ["evidences", new Map()],
+    ["payments", new Map()]
   ]);
 
   read<T extends PersistenceTable>(

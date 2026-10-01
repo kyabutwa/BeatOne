@@ -99,9 +99,9 @@ test("authorized action is distinct from event", () => {
   const event = createEvent({
     id: id("event-1"),
     action,
-    type: "access.completed",
+    type: "access.authorized",
     occurredAt: "2026-10-01T10:00:00.000Z",
-    state: "COMPLETED",
+    state: "AUTHORIZED",
     source: "beatcore",
     actorId: actor,
     contextId: context,
@@ -146,7 +146,7 @@ test("invalid lifecycle transitions are rejected", () => {
   );
 });
 
-test("failed or denied action cannot produce a successful event", () => {
+test("event state must match the linked Action state", () => {
   const failedAction = {
     ...createAction({
       id: id("action-3"),
@@ -165,6 +165,76 @@ test("failed or denied action cannot produce a successful event", () => {
       occurredAt: "2026-10-01T10:00:00.000Z",
       state: "COMPLETED",
       source: "beatcore"
+    }),
+    /VALIDATION_FAILURE/
+  );
+
+  const failedEvent = createEvent({
+    id: id("event-3-failed"),
+    action: failedAction,
+    type: "resource.write.failed",
+    occurredAt: "2026-10-01T10:00:00.000Z",
+    state: "FAILED",
+    source: "beatcore"
+  });
+  assert.equal(failedEvent.state, "FAILED");
+});
+
+test("event attribution must agree with the linked Action", () => {
+  const action = createAction({
+    id: id("action-event-attribution"),
+    actorId: actor,
+    operation: "resource.read",
+    authorization,
+    contextId: context,
+    now: new Date("2026-10-01T00:00:00.000Z")
+  });
+
+  assert.throws(
+    () => createEvent({
+      id: id("event-actor-mismatch"),
+      action,
+      type: "resource.read",
+      occurredAt: "2026-10-01T10:00:00.000Z",
+      state: "AUTHORIZED",
+      source: "beatcore",
+      actorId: id("different-identity")
+    }),
+    /UNAUTHORIZED/
+  );
+
+  assert.throws(
+    () => createEvent({
+      id: id("event-context-mismatch"),
+      action,
+      type: "resource.read",
+      occurredAt: "2026-10-01T10:00:00.000Z",
+      state: "AUTHORIZED",
+      source: "beatcore",
+      contextId: id("different-context")
+    }),
+    /VALIDATION_FAILURE/
+  );
+});
+
+test("event version must be a positive integer", () => {
+  const action = createAction({
+    id: id("action-event-version"),
+    actorId: actor,
+    operation: "resource.read",
+    authorization,
+    now: new Date("2026-10-01T00:00:00.000Z")
+  });
+
+  assert.throws(
+    () => createEvent({
+      id: id("event-version-invalid"),
+      action,
+      type: "resource.read",
+      occurredAt: "2026-10-01T10:00:00.000Z",
+      state: "AUTHORIZED",
+      source: "beatcore",
+      version: 0
     }),
     /VALIDATION_FAILURE/
   );

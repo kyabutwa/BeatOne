@@ -36,18 +36,6 @@ export async function createPlace(
     throw new Error("VALIDATION_FAILURE");
   }
 
-  if (command.parentId) {
-    const parent = repository.read("places", command.parentId);
-    if (!parent) {
-      throw new Error("NOT_FOUND");
-    }
-
-    const expected = expectedParentKind[command.kind as Exclude<Place["kind"], "PLACE">];
-    if (expected && parent.kind !== expected) {
-      throw new Error("VALIDATION_FAILURE");
-    }
-  }
-
   const place: StoredPlace = {
     id: command.placeId,
     kind: command.kind,
@@ -55,6 +43,18 @@ export async function createPlace(
   };
 
   await repository.transaction((tx) => {
+    if (command.parentId) {
+      const parent = tx.get("places", command.parentId);
+      if (!parent) {
+        throw new Error("NOT_FOUND");
+      }
+
+      const expected = expectedParentKind[command.kind as Exclude<Place["kind"], "PLACE">];
+      if (expected && parent.kind !== expected) {
+        throw new Error("VALIDATION_FAILURE");
+      }
+    }
+
     tx.insert("places", place);
   });
 

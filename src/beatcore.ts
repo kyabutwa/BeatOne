@@ -236,6 +236,7 @@ export function createAction(input: {
 }): Action {
   requiredText(input.operation);
   assertAuthorizationForAction(input.authorization, input.now);
+  if (input.actorId !== input.authorization.actorId) throw new Error("UNAUTHORIZED");
   return {
     id: input.id,
     actorId: input.actorId,

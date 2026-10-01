@@ -34,6 +34,8 @@ export interface Payment {
   readonly requestId?: Id;
   readonly correlationId?: Id;
   readonly causationId?: Id;
+  /** Canonical BeatCore Action for the consequential execution path, when one exists. */
+  readonly actionId?: Id;
   readonly externalReference?: {
     readonly provider: string;
     readonly reference: string;
@@ -55,6 +57,8 @@ export interface CreatePaymentInput {
   readonly requestId?: Id;
   readonly correlationId?: Id;
   readonly causationId?: Id;
+  /** Canonical BeatCore Action for the consequential execution path, when one exists. */
+  readonly actionId?: Id;
   readonly createdAt: string;
   readonly now?: Date;
 }
@@ -92,6 +96,7 @@ export function createPayment(input: CreatePaymentInput): Payment {
     ...(input.requestId ? { requestId: input.requestId } : {}),
     ...(input.correlationId ? { correlationId: input.correlationId } : {}),
     ...(input.causationId ? { causationId: input.causationId } : {}),
+    ...(input.actionId ? { actionId: input.actionId } : {}),
     createdAt,
     updatedAt: createdAt
   };

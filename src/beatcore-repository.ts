@@ -345,7 +345,7 @@ function validateRecord(
       if (!/^[A-Z]{3}$/.test(value.currency)) failure("VALIDATION_FAILURE");
 
       if (!/^\d+(?:\.\d+)?$/.test(value.amount)) failure("VALIDATION_FAILURE");
-      if (/^0\\d/.test(value.amount)) failure("VALIDATION_FAILURE");
+      if (/^0\d/.test(value.amount)) failure("VALIDATION_FAILURE");
       if (value.amount.includes(".")) {
         const fraction = value.amount.split(".")[1] ?? "";
         if (!fraction || /0$/.test(fraction)) failure("VALIDATION_FAILURE");

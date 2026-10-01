@@ -3,16 +3,14 @@ import { strict as assert } from "node:assert";
 import { test } from "node:test";
 
 const url = process.env.DATABASE_URL;
-if (!url) {
-  test("PostgreSQL Payments runtime verification requires DATABASE_URL", { skip: true }, () => {});
-}
+const runtimeTest = url ? test : test.skip;
 
 const psql = (sql: string) =>
   execFileSync("psql", [url, "-v", "ON_ERROR_STOP=1", "-X", "-A", "-t", "-c", sql], {
     encoding: "utf8"
   }).trim();
 
-test("PostgreSQL Payment runtime: chain, idempotency, CAS, status, atomic reference, rollback", () => {
+runtimeTest("PostgreSQL Payment runtime: chain, idempotency, CAS, status, atomic reference, rollback", () => {
   execFileSync("psql", [url, "-v", "ON_ERROR_STOP=1", "-X", "-f", "test/fixtures/payments-postgres-runtime.sql"], { encoding: "utf8" });
   execFileSync("psql", [url, "-v", "ON_ERROR_STOP=1", "-X", "-f", "migrations/action-physical-canonicalization-2026-10-02.sql"], { encoding: "utf8" });
   execFileSync("psql", [url, "-v", "ON_ERROR_STOP=1", "-X", "-f", "migrations/payments-physical-canonicalization-2026-10-02.sql"], { encoding: "utf8" });

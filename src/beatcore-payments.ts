@@ -189,7 +189,7 @@ function normalizeCurrency(value: string): string {
 function normalizeAmount(value: string): string {
   const amount = value.trim();
   if (!/^\d+(?:\.\d+)?$/.test(amount)) throw new Error("VALIDATION_FAILURE");
-  const [whole, fraction = ""] = amount.split(".");
+  const [whole = "", fraction = ""] = amount.split(".");
   const normalizedWhole = whole.replace(/^0+(?=\d)/, "");
   const normalized = fraction.length
     ? `${normalizedWhole}.${fraction.replace(/0+$/, "")}`

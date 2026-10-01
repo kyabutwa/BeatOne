@@ -1,9 +1,7 @@
 import {
   assertAuthorizationForAction,
-  assertActionTransition,
   type Authorization,
-  type Id,
-  type LifecycleState
+  type Id
 } from "./beatcore.js";
 
 export type PaymentStatus =
@@ -125,15 +123,6 @@ export function transitionPayment(
     throw new Error("VALIDATION_FAILURE");
   }
 
-  // Keep the foundational transition validator authoritative where states overlap.
-  if (isBeatCoreLifecycle(payment.status) && isBeatCoreLifecycle(to)) {
-    try {
-      assertActionTransition(payment.status, to);
-    } catch {
-      // Payment-specific states (for example UNKNOWN) have their own explicit map.
-    }
-  }
-
   if (!allowedPaymentTransitions[payment.status].includes(to)) {
     throw new Error("VALIDATION_FAILURE");
   }
@@ -177,12 +166,6 @@ export function applyIntegrationOutcome(
     : next;
 }
 
-function isBeatCoreLifecycle(value: PaymentStatus): value is LifecycleState {
-  return value !== "PENDING" &&
-    value !== "UNKNOWN" &&
-    value !== "RECONCILIATION_REQUIRED";
-}
-
 function requireId(value: Id): void {
   if (!value.trim()) throw new Error("INVALID_INPUT");
 }
@@ -205,9 +188,9 @@ function normalizeCurrency(value: string): string {
 
 function normalizeAmount(value: string): string {
   const amount = value.trim();
-  if (!/^\\d+(?:\\.\\d+)?$/.test(amount)) throw new Error("VALIDATION_FAILURE");
+  if (!/^\d+(?:\.\d+)?$/.test(amount)) throw new Error("VALIDATION_FAILURE");
   const [whole, fraction = ""] = amount.split(".");
-  const normalizedWhole = whole.replace(/^0+(?=\\d)/, "");
+  const normalizedWhole = whole.replace(/^0+(?=\d)/, "");
   const normalized = fraction.length
     ? `${normalizedWhole}.${fraction.replace(/0+$/, "")}`
     : normalizedWhole;

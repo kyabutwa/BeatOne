@@ -113,30 +113,33 @@ test("duplicate Action idempotency key conflicts", async () => {
   );
 });
 
-test("Action and Event roll back together when Event persistence fails", async () => {
+test("repository transaction rolls back Action and Event together", async () => {
   const repository = await baseRepository();
-  const original = repository.transaction.bind(repository);
-  const failingRepository = {
-    read: repository.read.bind(repository),
-    transaction: async <T>(work: Parameters<InMemoryPersistenceRepository["transaction"]>[0]) =>
-      original(async (tx) => {
-        const result = await work({
-          ...tx,
-          insert(table, record) {
-            if (table === "events") throw new Error("EVENT_WRITE_FAILED");
-            tx.insert(table, record);
-          }
-        });
-        return result;
-      })
+  const action = {
+    id: id("action-rollback"),
+    actorId: id("identity-action"),
+    proposalId: id("proposal-action"),
+    authorizationId: id("authorization-action"),
+    state: "AUTHORIZED" as const,
+    operation: "rollback-test"
+  };
+  const event = {
+    id: id("event-rollback"),
+    actionId: action.id,
+    type: "ACTION_AUTHORIZED",
+    occurredAt: "2026-06-01T00:00:00Z",
+    state: "AUTHORIZED" as const,
+    source: "beatcore-test",
+    version: 1
   };
   await assert.rejects(
-    createAuthorizedAction(failingRepository, command({
-      actionId: id("action-rollback"),
-      eventId: id("event-rollback")
-    })),
-    /EVENT_WRITE_FAILED/
+    repository.transaction(async (tx) => {
+      tx.insert("actions", action);
+      tx.insert("events", event);
+      throw new Error("ROLLBACK");
+    }),
+    /ROLLBACK/
   );
-  assert.equal(repository.read("actions", id("action-rollback")), undefined);
-  assert.equal(repository.read("events", id("event-rollback")), undefined);
+  assert.equal(repository.read("actions", action.id), undefined);
+  assert.equal(repository.read("events", event.id), undefined);
 });

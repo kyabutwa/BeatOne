@@ -101,7 +101,7 @@ test("Event/Evidence transaction rolls back as one unit", async () => {
     tx.insert("actions", action);
     tx.insert("events", event);
     tx.insert("evidences", evidence);
-    tx.insert("evidences", { ...evidence, id: id("evidence:duplicate") });
+    tx.insert("evidences", evidence);
   }), /CONFLICT/);
   assert.equal(repository.read("events", event.id), undefined);
   assert.equal(repository.read("evidences", evidence.id), undefined);

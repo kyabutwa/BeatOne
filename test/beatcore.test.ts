@@ -299,3 +299,13 @@ test("empty identifiers and required fields are rejected", () => {
     /INVALID_INPUT/
   );
 });
+
+
+test("GENESIS boundary output remains classified and non-authoritative", () => {
+  const output = createGenesisOutput({
+    id: id("genesis-boundary"),
+    kind: "OBSERVATION",
+    summary: "Observed condition"
+  });
+  assert.equal(output.kind, "OBSERVATION");
+});

@@ -86,16 +86,15 @@ test("denied authorization remains a domain authorization error", async () => {
   const repository = new InMemoryPersistenceRepository();
   await seedAuthorization(repository);
 
+  await repository.transaction((tx) => {
+    tx.replace("authorizations", {
+      ...authorization(),
+      decision: "DENY"
+    });
+  });
+
   await assert.rejects(
-    executeAuthorizedApplicationCommand(
-      repository,
-      command({
-        authorization: {
-          ...authorization(),
-          decision: "DENY"
-        }
-      })
-    ),
+    executeAuthorizedApplicationCommand(repository, command()),
     /UNAUTHORIZED/
   );
 });
@@ -104,16 +103,15 @@ test("expired authorization remains a domain expiry error", async () => {
   const repository = new InMemoryPersistenceRepository();
   await seedAuthorization(repository);
 
+  await repository.transaction((tx) => {
+    tx.replace("authorizations", {
+      ...authorization(),
+      validUntil: "2026-10-01T14:30:00.000Z"
+    });
+  });
+
   await assert.rejects(
-    executeAuthorizedApplicationCommand(
-      repository,
-      command({
-        authorization: {
-          ...authorization(),
-          validUntil: "2026-10-01T14:30:00.000Z"
-        }
-      })
-    ),
+    executeAuthorizedApplicationCommand(repository, command()),
     /EXPIRED/
   );
 });

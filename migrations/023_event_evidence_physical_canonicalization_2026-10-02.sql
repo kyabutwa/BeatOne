@@ -1,7 +1,3 @@
--- Event/Evidence physical canonicalization
--- Migration ID: 023_event_evidence_physical_canonicalization_2026-10-02
--- Scope: canonical public.events/public.evidence; retire empty legacy event_evidence bridge.
--- Production execution is a separate explicit gate.
 
 BEGIN;
 

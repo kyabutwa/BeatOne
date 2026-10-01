@@ -46,7 +46,7 @@ test("payment rejects invalid money and currency", () => {
   assert.throws(() => payment({ amount: "0" }), /VALIDATION_FAILURE/);
   assert.throws(() => payment({ amount: "-1.00" }), /VALIDATION_FAILURE/);
   assert.throws(() => payment({ amount: "1e3" }), /VALIDATION_FAILURE/);
-  assert.throws(() => payment({ currency: "KEN" }), /VALIDATION_FAILURE/);
+  assert.throws(() => payment({ currency: "KE" }), /VALIDATION_FAILURE/);
 });
 
 test("payment requires canonical authorization actor and active authorization", () => {

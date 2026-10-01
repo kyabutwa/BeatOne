@@ -67,6 +67,11 @@ test("Intent requires an existing actor and optional Context", async () => {
 
 test("creates Proposal with or without Authorization", async () => {
   const repository = await baseRepository();
+  await createIntent(repository, {
+    intentId: id("intent-for-proposal"),
+    actorId: id("identity-intent"),
+    purpose: "proposal source"
+  });
   const openIntent = await createIntent(repository, {
     intentId: id("intent-for-proposal"),
     actorId: id("identity-intent"),

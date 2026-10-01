@@ -22,9 +22,6 @@ runtimeTest("PostgreSQL Event/Evidence migration rehearsal: legacy conversion, b
   assert.throws(() => execFileSync("psql", [url!, "-v", "ON_ERROR_STOP=1", "-X", "-f", "migrations/023_event_evidence_physical_canonicalization_2026-10-02.sql"], { encoding: "utf8" }));
 
   psql("TRUNCATE action_outcome_trace, event_evidence, evidence, events");
-  psql("DROP TABLE event_evidence");
-  psql("CREATE TABLE event_evidence (event_id text NOT NULL REFERENCES events(id), evidence_id text NOT NULL REFERENCES evidence(id), PRIMARY KEY(event_id,evidence_id))");
-  psql("DROP TABLE event_evidence");
 
   execFileSync("psql", [url!, "-v", "ON_ERROR_STOP=1", "-X", "-f", "migrations/023_event_evidence_physical_canonicalization_2026-10-02.sql"], { encoding: "utf8" });
 

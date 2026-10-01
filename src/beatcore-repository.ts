@@ -266,8 +266,7 @@ function validateRecord(
         requireReference("authorizations", value.authorizationId);
         const authorization = tx.get("authorizations", value.authorizationId);
         if (!authorization) failure("NOT_FOUND");
-        const storedAuthorization = authorization;
-        if (storedAuthorization.actorId !== value.actorId) failure("UNAUTHORIZED");
+        if (authorization.actorId !== value.actorId) failure("UNAUTHORIZED");
       }
       requireText(value.summary);
       break;

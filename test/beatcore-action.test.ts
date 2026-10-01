@@ -143,3 +143,41 @@ test("repository transaction rolls back Action and Event together", async () => 
   assert.equal(repository.read("actions", action.id), undefined);
   assert.equal(repository.read("events", event.id), undefined);
 });
+test("caller-supplied Authorization cannot override persisted authorization", async () => {
+  const repository = new InMemoryPersistenceRepository();
+  await createIdentity(repository, { identityId: id("identity-authority"), kind: "human" });
+  await createCapability(repository, { capabilityId: id("capability-authority"), name: "authority-test" });
+  await repository.transaction((tx) => {
+    tx.insert("authorizations", {
+      id: id("authorization-authority"),
+      decision: "DENY",
+      actorId: id("identity-authority"),
+      capabilityId: id("capability-authority"),
+      validFrom: "2026-01-01T00:00:00Z"
+    });
+  });
+
+  await assert.rejects(
+    createAuthorizedAction(repository, {
+      actionId: id("action-authority"),
+      eventId: id("event-authority"),
+      actorId: id("identity-authority"),
+      operation: "must-not-execute",
+      authorization: {
+        id: id("authorization-authority"),
+        decision: "ALLOW",
+        actorId: id("identity-authority"),
+        capabilityId: id("capability-authority"),
+        validFrom: "2026-01-01T00:00:00Z"
+      },
+      eventType: "ACTION_AUTHORIZED",
+      eventSource: "beatcore-test",
+      occurredAt: "2026-06-01T00:00:00Z",
+      now: new Date("2026-06-01T00:00:00Z")
+    }),
+    /UNAUTHORIZED/
+  );
+  assert.equal(repository.read("actions", id("action-authority")), undefined);
+  assert.equal(repository.read("events", id("event-authority")), undefined);
+});
+

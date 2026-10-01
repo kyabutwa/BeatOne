@@ -478,6 +478,13 @@ function createTransaction(
       if (table === "payments") {
         const existingPayment = existing as StoredPayment;
         const replacementPayment = record as StoredPayment;
+        if (!Number.isInteger(existingPayment.version) || existingPayment.version < 1 ||
+            !Number.isInteger(replacementPayment.version) || replacementPayment.version < 1) {
+          failure("VALIDATION_FAILURE");
+        }
+        if (replacementPayment.version !== existingPayment.version + 1) {
+          failure("CONFLICT");
+        }
         const existingUpdatedAt = new Date(existingPayment.updatedAt);
         const replacementUpdatedAt = new Date(replacementPayment.updatedAt);
         if (replacementUpdatedAt <= existingUpdatedAt) {

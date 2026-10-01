@@ -43,7 +43,8 @@ const payment = {
   correlationId: id("correlation-1"),
   causationId: id("causation-1"),
   createdAt: now,
-  updatedAt: now
+  updatedAt: now,
+  version: 1
 };
 
 async function seed(repository: InMemoryPersistenceRepository): Promise<void> {
@@ -324,7 +325,8 @@ test("payment replacement rejects stale writes against committed payment state",
     tx.replace("payments", {
       ...payment,
       status: "PROCESSING",
-      updatedAt: "2026-10-01T12:01:00.000Z"
+      updatedAt: "2026-10-01T12:01:00.000Z",
+      version: 2
     });
   });
 
@@ -333,7 +335,8 @@ test("payment replacement rejects stale writes against committed payment state",
       tx.replace("payments", {
         ...payment,
         status: "COMPLETED",
-        updatedAt: "2026-10-01T12:01:00.000Z"
+        updatedAt: "2026-10-01T12:01:00.000Z",
+        version: 2
       });
     }),
     /CONFLICT/
@@ -348,7 +351,7 @@ test("payment replacement preserves identity and rejects stale temporal state", 
 
   await repository.transaction((tx) => {
     tx.insert("payments", payment);
-    tx.replace("payments", { ...payment, status: "PROCESSING", updatedAt: "2026-10-01T12:01:00.000Z" });
+    tx.replace("payments", { ...payment, status: "PROCESSING", updatedAt: "2026-10-01T12:01:00.000Z", version: 2 });
   });
 
   assert.equal(repository.read("payments", payment.id)?.status, "PROCESSING");
@@ -358,7 +361,8 @@ test("payment replacement preserves identity and rejects stale temporal state", 
       tx.replace("payments", {
         ...payment,
         status: "COMPLETED",
-        updatedAt: "2026-10-01T11:59:00.000Z"
+        updatedAt: "2026-10-01T11:59:00.000Z",
+        version: 2
       });
     }),
     /VALIDATION_FAILURE/

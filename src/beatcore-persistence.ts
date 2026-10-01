@@ -193,6 +193,7 @@ export interface StoredPayment {
   readonly externalReference?: string;
   readonly createdAt: string;
   readonly updatedAt: string;
+  readonly version: number;
 }
 
 export type BeatCorePersistenceRecord =

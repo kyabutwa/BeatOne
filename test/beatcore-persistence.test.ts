@@ -6,11 +6,11 @@ import {
 } from "../src/beatcore-persistence.js";
 
 test("BeatCore persistence represents every canonical entity exactly once", () => {
-  assert.equal(persistenceTables.length, 17);
-  assert.equal(new Set(canonicalPersistenceTableNames).size, 17);
+  assert.equal(persistenceTables.length, 18);
+  assert.equal(new Set(canonicalPersistenceTableNames).size, 18);
   assert.deepEqual(canonicalPersistenceTableNames, [
     "persons", "communities", "identities", "accounts", "credentials",
-    "sessions", "participants", "places", "contexts", "relationships",
+    "sessions", "participants", "accesses", "places", "contexts", "relationships",
     "capabilities", "authorizations", "intents", "proposals", "actions",
     "events", "evidences"
   ]);

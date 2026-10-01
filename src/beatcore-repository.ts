@@ -475,6 +475,18 @@ function createTransaction(
       }
       validateRecord(table, record as StoredRecord, this, true);
 
+      if (table === "events") {
+        const existingEvent = existing as StoredEvent;
+        const replacementEvent = record as StoredEvent;
+        if (!Number.isInteger(existingEvent.version) || existingEvent.version < 1 ||
+            !Number.isInteger(replacementEvent.version) || replacementEvent.version < 1) {
+          failure("VALIDATION_FAILURE");
+        }
+        if (replacementEvent.version !== existingEvent.version + 1) {
+          failure("CONFLICT");
+        }
+      }
+
       if (table === "payments") {
         const existingPayment = existing as StoredPayment;
         const replacementPayment = record as StoredPayment;

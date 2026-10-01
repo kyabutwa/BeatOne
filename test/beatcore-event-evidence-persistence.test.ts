@@ -1,7 +1,8 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { id, type Action, type Authorization, type Event, type Evidence } from "../src/beatcore.js";
+import { id, type Action, type Authorization } from "../src/beatcore.js";
 import { InMemoryPersistenceRepository } from "../src/beatcore-repository.js";
+import type { StoredEvent, StoredEvidence } from "../src/beatcore-persistence.js";
 
 const identity = { id: id("identity:events"), kind: "human" as const };
 const capability = { id: id("capability:events"), name: "event test" };
@@ -19,7 +20,7 @@ const action: Action = {
   state: "AUTHORIZED",
   operation: "event.runtime.test"
 };
-const event: Event = {
+const event: StoredEvent = {
   id: id("event:events"),
   actionId: action.id,
   type: "action.authorized",
@@ -30,7 +31,7 @@ const event: Event = {
   causationId: action.id,
   version: 1
 };
-const evidence: Evidence = {
+const evidence: StoredEvidence = {
   id: id("evidence:events"),
   eventId: event.id,
   source: "test",

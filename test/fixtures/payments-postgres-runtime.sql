@@ -7,6 +7,9 @@ CREATE TABLE contexts (id text PRIMARY KEY, participant_id text NOT NULL REFEREN
 CREATE TABLE services (id text PRIMARY KEY, name text NOT NULL, domain text NOT NULL, status text NOT NULL);
 CREATE TABLE capabilities (id text PRIMARY KEY, service_id text NOT NULL REFERENCES services(id), name text NOT NULL, action text NOT NULL, allowed_roles jsonb NOT NULL, requires_explicit_authorization boolean NOT NULL, resource_type text NOT NULL, scope jsonb NOT NULL);
 CREATE TABLE proposals (id text PRIMARY KEY, context_id text NOT NULL REFERENCES contexts(id), required_capability_id text NOT NULL REFERENCES capabilities(id), summary text NOT NULL);
+ALTER TABLE contexts ADD CONSTRAINT contexts_id_participant_uq UNIQUE (id, participant_id);
+ALTER TABLE capabilities ADD CONSTRAINT capabilities_id_action_uq UNIQUE (id, action);
+ALTER TABLE proposals ADD CONSTRAINT proposals_binding_uq UNIQUE (id, context_id, required_capability_id);
 CREATE TABLE authorizations (
   id text PRIMARY KEY,
   participant_id text NOT NULL REFERENCES participants(id),
@@ -20,9 +23,6 @@ CREATE TABLE authorizations (
   proposal_id text REFERENCES proposals(id),
   FOREIGN KEY (context_id, participant_id) REFERENCES contexts(id, participant_id)
 );
-ALTER TABLE contexts ADD CONSTRAINT contexts_id_participant_uq UNIQUE (id, participant_id);
-ALTER TABLE capabilities ADD CONSTRAINT capabilities_id_action_uq UNIQUE (id, action);
-ALTER TABLE proposals ADD CONSTRAINT proposals_binding_uq UNIQUE (id, context_id, required_capability_id);
 ALTER TABLE authorizations ADD CONSTRAINT authorizations_capability_action_fkey FOREIGN KEY (capability_id, action) REFERENCES capabilities(id, action);
 ALTER TABLE authorizations ADD CONSTRAINT authorizations_proposal_binding_fkey FOREIGN KEY (proposal_id, context_id, capability_id) REFERENCES proposals(id, context_id, required_capability_id);
 CREATE TABLE actions (

@@ -106,7 +106,7 @@ test("proposal does not silently become an action without authorization", () => 
     intentId: id("intent-1"),
     summary: "enter building"
   };
-  assert.equal(proposal.authorizationId, undefined);
+  assert.equal("authorizationId" in proposal, false);
   assert.throws(
     () => createAction({
       id: id("action-2"),

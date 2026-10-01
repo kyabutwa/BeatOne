@@ -40,6 +40,12 @@ test("creates a canonical provider-neutral Payment", () => {
   assert.equal(result.currency, "KES");
   assert.equal(result.authorizationId, authorization.id);
   assert.equal(result.idempotencyKey, "payment-key-1");
+  assert.equal(result.actionId, undefined);
+});
+
+test("preserves an optional canonical Action link", () => {
+  const result = payment({ actionId: id("action-payment-1") });
+  assert.equal(result.actionId, id("action-payment-1"));
 });
 
 test("payment rejects invalid money and currency", () => {

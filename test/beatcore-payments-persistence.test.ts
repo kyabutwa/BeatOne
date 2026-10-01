@@ -19,6 +19,15 @@ const participant = {
   identityId: identity.id
 };
 
+const action = {
+  id: id("payment-action-1"),
+  actorId: identity.id,
+  authorizationId: authorization.id,
+  state: "AUTHORIZED" as const,
+  operation: "execute-payment",
+  idempotencyKey: "payment-action-key-1"
+};
+
 const payment = {
   id: id("payment-1"),
   payerParticipantId: participant.id,
@@ -43,6 +52,7 @@ async function seed(repository: InMemoryPersistenceRepository): Promise<void> {
     tx.insert("capabilities", capability);
     tx.insert("authorizations", authorization);
     tx.insert("participants", participant);
+    tx.insert("actions", action);
   });
 }
 
@@ -58,6 +68,72 @@ test("payments are a distinct canonical persistence table", async () => {
   assert.equal(repository.read("actions", payment.id), undefined);
   assert.equal(repository.read("events", payment.id), undefined);
   assert.equal(repository.read("evidences", payment.id), undefined);
+});
+
+test("payment actionId references the canonical Action and preserves separate ownership", async () => {
+  const repository = new InMemoryPersistenceRepository();
+  await seed(repository);
+
+  const linkedPayment = {
+    ...payment,
+    id: id("payment-with-action"),
+    idempotencyKey: "payment-operation-with-action",
+    actionId: action.id
+  };
+
+  await repository.transaction((tx) => {
+    tx.insert("payments", linkedPayment);
+  });
+
+  assert.equal(repository.read("payments", linkedPayment.id)?.actionId, action.id);
+  assert.equal(repository.read("actions", action.id)?.id, action.id);
+  assert.equal(repository.read("events", linkedPayment.id), undefined);
+  assert.equal(repository.read("evidences", linkedPayment.id), undefined);
+});
+
+test("payment actionId requires an existing Action with matching actor and authorization", async () => {
+  const repository = new InMemoryPersistenceRepository();
+  await seed(repository);
+
+  await assert.rejects(
+    repository.transaction((tx) => {
+      tx.insert("payments", {
+        ...payment,
+        id: id("payment-missing-action"),
+        idempotencyKey: "payment-missing-action-key",
+        actionId: id("missing-action")
+      });
+    }),
+    /NOT_FOUND/
+  );
+
+  const otherAuthorization = {
+    ...authorization,
+    id: id("payment-authorization-other"),
+    actorId: identity.id
+  };
+
+  await repository.transaction((tx) => {
+    tx.insert("authorizations", otherAuthorization);
+    tx.insert("actions", {
+      ...action,
+      id: id("payment-action-other-authorization"),
+      authorizationId: otherAuthorization.id,
+      idempotencyKey: "payment-action-other-authorization-key"
+    });
+  });
+
+  await assert.rejects(
+    repository.transaction((tx) => {
+      tx.insert("payments", {
+        ...payment,
+        id: id("payment-action-auth-mismatch"),
+        idempotencyKey: "payment-action-auth-mismatch-key",
+        actionId: id("payment-action-other-authorization")
+      });
+    }),
+    /VALIDATION_FAILURE/
+  );
 });
 
 test("payment participant and authorization references are enforced", async () => {

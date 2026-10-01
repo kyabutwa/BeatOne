@@ -364,6 +364,15 @@ function validateRecord(
       const authorization = tx.get("authorizations", value.authorizationId);
       if (!authorization) failure("NOT_FOUND");
       if (authorization!.actorId !== value.actorId) failure("UNAUTHORIZED");
+
+      if (value.actionId) {
+        requireReference("actions", value.actionId);
+        const action = tx.get("actions", value.actionId);
+        if (!action) failure("NOT_FOUND");
+        if (action!.actorId !== value.actorId) failure("UNAUTHORIZED");
+        if (action!.authorizationId !== value.authorizationId) failure("VALIDATION_FAILURE");
+      }
+
       if (value.payerParticipantId) requireReference("participants", value.payerParticipantId);
       if (value.payeeParticipantId) requireReference("participants", value.payeeParticipantId);
 

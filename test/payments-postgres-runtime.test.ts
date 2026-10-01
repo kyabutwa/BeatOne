@@ -6,7 +6,7 @@ const url = process.env.DATABASE_URL;
 const runtimeTest = url ? test : test.skip;
 
 const psql = (sql: string) =>
-  execFileSync("psql", [url, "-v", "ON_ERROR_STOP=1", "-X", "-A", "-t", "-c", sql], {
+  execFileSync("psql", [url!, "-v", "ON_ERROR_STOP=1", "-X", "-A", "-t", "-c", sql], {
     encoding: "utf8"
   }).trim();
 

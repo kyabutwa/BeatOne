@@ -12,7 +12,7 @@ Relationship { id, subjectId, targetId, kind, validFrom, validUntil? }
 
 Invariants:
 1. id, subjectId, targetId, kind, and validFrom are non-empty.
-2. subjectId and targetId must reference existing canonical participants or entities represented by canonical IDs.
+2. subjectId and targetId are non-empty canonical IDs; their authoritative target domains validate entity existence where applicable.
 3. subjectId may not equal targetId.
 4. validFrom must be a valid timestamp.
 5. validUntil, when present, must be a valid timestamp after validFrom.

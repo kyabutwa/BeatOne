@@ -264,6 +264,9 @@ function validateRecord(
       requireReference("intents", value.intentId);
       if (value.authorizationId) {
         requireReference("authorizations", value.authorizationId);
+        const authorization = tx.get("authorizations", value.authorizationId);
+        if (!authorization) failure("NOT_FOUND");
+        if (authorization.actorId !== value.actorId) failure("UNAUTHORIZED");
       }
       requireText(value.summary);
       break;

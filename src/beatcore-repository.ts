@@ -305,10 +305,27 @@ function validateRecord(
       requireText(value.type);
       requireText(value.occurredAt);
       requireText(value.source);
+
+      const occurredAt = new Date(value.occurredAt);
+      if (Number.isNaN(occurredAt.getTime())) failure("INVALID_INPUT");
+
       if (!Number.isInteger(value.version) || value.version < 1) {
         failure("VALIDATION_FAILURE");
       }
-      if (value.actionId) requireReference("actions", value.actionId);
+
+      if (value.actionId) {
+        requireReference("actions", value.actionId);
+        const action = tx.get("actions", value.actionId);
+        if (!action) failure("NOT_FOUND");
+        if (value.state !== action!.state) failure("VALIDATION_FAILURE");
+        if (value.actorId && value.actorId !== action!.actorId) {
+          failure("UNAUTHORIZED");
+        }
+        if (value.contextId && value.contextId !== action!.contextId) {
+          failure("VALIDATION_FAILURE");
+        }
+      }
+
       if (value.actorId) requireReference("identities", value.actorId);
       if (value.contextId) requireReference("contexts", value.contextId);
       break;

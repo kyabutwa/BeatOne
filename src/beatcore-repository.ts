@@ -335,12 +335,25 @@ function validateRecord(
       const value = record as StoredEvidence;
       requireText(value.source);
       requireText(value.recordedAt);
+      const recordedAt = new Date(value.recordedAt);
+      if (Number.isNaN(recordedAt.getTime())) failure("INVALID_INPUT");
+
+      if (value.verification !== "UNVERIFIED" &&
+          value.verification !== "VERIFIED" &&
+          value.verification !== "REJECTED") {
+        failure("VALIDATION_FAILURE");
+      }
+
       if (value.eventId) requireReference("events", value.eventId);
 
       const hasProvider = Boolean(value.externalProvider);
       const hasReference = Boolean(value.externalReference);
       if (hasProvider !== hasReference) {
         failure("INVALID_INPUT");
+      }
+      if (hasProvider) {
+        requireText(value.externalProvider!);
+        requireText(value.externalReference!);
       }
       break;
     }

@@ -94,9 +94,10 @@ No second foundational identity, participant, authorization, action, event, or e
 
 ### places
 - id primary key.
-- kind required.
-- parent_id optional self-reference to places.id.
-The kind value preserves the canonical Place/Building/Floor/Unit/Resource distinction without creating competing identity models for physical concepts.
+- kind required canonical Place kind.
+- parent_id optional for PLACE and BUILDING; required for FLOOR, UNIT, and RESOURCE.
+- parent_id references places.id when present.
+- parent kind must follow PLACE → BUILDING → FLOOR → UNIT → RESOURCE.
 
 ### contexts
 - id primary key.

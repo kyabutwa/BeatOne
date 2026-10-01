@@ -1,0 +1,353 @@
+import type {
+  AuthorizationDecision,
+  Id,
+  LifecycleState,
+  VerificationState
+} from "./beatcore.js";
+import type {
+  PersistenceTable,
+  StoredPerson,
+  StoredCommunity,
+  StoredIdentity,
+  StoredAccount,
+  StoredCredential,
+  StoredSession,
+  StoredParticipant,
+  StoredPlace,
+  StoredContext,
+  StoredRelationship,
+  StoredCapability,
+  StoredAuthorization,
+  StoredIntent,
+  StoredProposal,
+  StoredAction,
+  StoredEvent,
+  StoredEvidence
+} from "./beatcore-persistence.js";
+
+export interface PersistenceRecordMap {
+  persons: StoredPerson;
+  communities: StoredCommunity;
+  identities: StoredIdentity;
+  accounts: StoredAccount;
+  credentials: StoredCredential;
+  sessions: StoredSession;
+  participants: StoredParticipant;
+  places: StoredPlace;
+  contexts: StoredContext;
+  relationships: StoredRelationship;
+  capabilities: StoredCapability;
+  authorizations: StoredAuthorization;
+  intents: StoredIntent;
+  proposals: StoredProposal;
+  actions: StoredAction;
+  events: StoredEvent;
+  evidences: StoredEvidence;
+}
+
+export interface PersistenceTransaction {
+  get<T extends PersistenceTable>(
+    table: T,
+    id: Id
+  ): PersistenceRecordMap[T] | undefined;
+
+  findActionByIdempotencyKey(
+    idempotencyKey: string
+  ): StoredAction | undefined;
+
+  insert<T extends PersistenceTable>(
+    table: T,
+    record: PersistenceRecordMap[T]
+  ): void;
+
+  replace<T extends PersistenceTable>(
+    table: T,
+    record: PersistenceRecordMap[T]
+  ): void;
+}
+
+export interface PersistenceRepository {
+  read<T extends PersistenceTable>(
+    table: T,
+    id: Id
+  ): PersistenceRecordMap[T] | undefined;
+
+  transaction<T>(
+    work: (tx: PersistenceTransaction) => Promise<T> | T
+  ): Promise<T>;
+}
+
+type StoredRecord = PersistenceRecordMap[PersistenceTable];
+
+const failure = (code: string): never => {
+  throw new Error(code);
+};
+
+const requireText = (value: string, code = "INVALID_INPUT"): void => {
+  if (!value.trim()) failure(code);
+};
+
+const cloneStore = (
+  source: Map<PersistenceTable, Map<Id, StoredRecord>>
+): Map<PersistenceTable, Map<Id, StoredRecord>> =>
+  new Map(
+    Array.from(source.entries(), ([table, records]) => [
+      table,
+      new Map(records)
+    ])
+  );
+
+function validateRecord(
+  table: PersistenceTable,
+  record: StoredRecord,
+  tx: PersistenceTransaction,
+  replacing: boolean
+): void {
+  requireText(record.id);
+
+  if (!replacing && tx.get(table, record.id)) {
+    failure("CONFLICT");
+  }
+
+  const requireReference = (
+    referenceTable: PersistenceTable,
+    referenceId: Id
+  ): void => {
+    if (!tx.get(referenceTable, referenceId)) {
+      failure("NOT_FOUND");
+    }
+  };
+
+  switch (table) {
+    case "persons":
+      break;
+
+    case "communities": {
+      const value = record as StoredCommunity;
+      requireText(value.name);
+      break;
+    }
+
+    case "identities": {
+      const value = record as StoredIdentity;
+      if (value.personId) requireReference("persons", value.personId);
+      break;
+    }
+
+    case "accounts": {
+      const value = record as StoredAccount;
+      requireReference("identities", value.identityId);
+      break;
+    }
+
+    case "credentials": {
+      const value = record as StoredCredential;
+      requireText(value.kind);
+      requireReference("accounts", value.accountId);
+      break;
+    }
+
+    case "sessions": {
+      const value = record as StoredSession;
+      requireReference("accounts", value.accountId);
+      requireText(value.authenticatedAt);
+      requireText(value.expiresAt);
+      break;
+    }
+
+    case "participants": {
+      const value = record as StoredParticipant;
+      requireReference("identities", value.identityId);
+      if (value.communityId) requireReference("communities", value.communityId);
+      if (value.contextId) requireReference("contexts", value.contextId);
+      break;
+    }
+
+    case "places": {
+      const value = record as StoredPlace;
+      if (value.parentId) requireReference("places", value.parentId);
+      break;
+    }
+
+    case "contexts": {
+      const value = record as StoredContext;
+      requireReference("participants", value.participantId);
+      if (value.placeId) requireReference("places", value.placeId);
+      if (value.communityId) requireReference("communities", value.communityId);
+      break;
+    }
+
+    case "relationships": {
+      const value = record as StoredRelationship;
+      requireText(value.subjectId);
+      requireText(value.targetId);
+      requireText(value.kind);
+      requireText(value.validFrom);
+      break;
+    }
+
+    case "capabilities": {
+      const value = record as StoredCapability;
+      requireText(value.name);
+      break;
+    }
+
+    case "authorizations": {
+      const value = record as StoredAuthorization;
+      requireReference("identities", value.actorId);
+      requireReference("capabilities", value.capabilityId);
+      if (value.participantId) requireReference("participants", value.participantId);
+      if (value.contextId) requireReference("contexts", value.contextId);
+      if (value.relationshipId) requireReference("relationships", value.relationshipId);
+      if (value.delegatedBy) requireReference("identities", value.delegatedBy);
+      requireText(value.validFrom);
+      break;
+    }
+
+    case "intents": {
+      const value = record as StoredIntent;
+      requireReference("identities", value.actorId);
+      if (value.contextId) requireReference("contexts", value.contextId);
+      requireText(value.purpose);
+      break;
+    }
+
+    case "proposals": {
+      const value = record as StoredProposal;
+      requireReference("identities", value.actorId);
+      requireReference("intents", value.intentId);
+      if (value.authorizationId) {
+        requireReference("authorizations", value.authorizationId);
+      }
+      requireText(value.summary);
+      break;
+    }
+
+    case "actions": {
+      const value = record as StoredAction;
+      requireReference("identities", value.actorId);
+      requireReference("authorizations", value.authorizationId);
+      if (value.proposalId) requireReference("proposals", value.proposalId);
+      if (value.contextId) requireReference("contexts", value.contextId);
+      requireText(value.operation);
+
+      if (value.idempotencyKey) {
+        requireText(value.idempotencyKey);
+        const existing = tx.findActionByIdempotencyKey(value.idempotencyKey);
+        if (existing && existing.id !== value.id) {
+          failure("CONFLICT");
+        }
+      }
+      break;
+    }
+
+    case "events": {
+      const value = record as StoredEvent;
+      requireText(value.type);
+      requireText(value.occurredAt);
+      requireText(value.source);
+      if (!Number.isInteger(value.version) || value.version < 1) {
+        failure("VALIDATION_FAILURE");
+      }
+      if (value.actionId) requireReference("actions", value.actionId);
+      if (value.actorId) requireReference("identities", value.actorId);
+      if (value.contextId) requireReference("contexts", value.contextId);
+      break;
+    }
+
+    case "evidences": {
+      const value = record as StoredEvidence;
+      requireText(value.source);
+      requireText(value.recordedAt);
+      if (value.eventId) requireReference("events", value.eventId);
+
+      const hasProvider = Boolean(value.externalProvider);
+      const hasReference = Boolean(value.externalReference);
+      if (hasProvider !== hasReference) {
+        failure("INVALID_INPUT");
+      }
+      break;
+    }
+  }
+}
+
+function createTransaction(
+  store: Map<PersistenceTable, Map<Id, StoredRecord>>
+): PersistenceTransaction {
+  const get = <T extends PersistenceTable>(
+    table: T,
+    id: Id
+  ): PersistenceRecordMap[T] | undefined =>
+    store.get(table)?.get(id) as PersistenceRecordMap[T] | undefined;
+
+  return {
+    get,
+
+    findActionByIdempotencyKey(idempotencyKey: string): StoredAction | undefined {
+      requireText(idempotencyKey);
+      const actions = store.get("actions");
+      if (!actions) return undefined;
+      for (const record of actions.values()) {
+        const action = record as StoredAction;
+        if (action.idempotencyKey === idempotencyKey) return action;
+      }
+      return undefined;
+    },
+
+    insert(table, record) {
+      validateRecord(table, record as StoredRecord, this, false);
+      store.get(table)?.set(record.id, record as StoredRecord);
+    },
+
+    replace(table, record) {
+      if (!store.get(table)?.has(record.id)) {
+        failure("NOT_FOUND");
+      }
+      validateRecord(table, record as StoredRecord, this, true);
+      store.get(table)?.set(record.id, record as StoredRecord);
+    }
+  };
+}
+
+export class InMemoryPersistenceRepository implements PersistenceRepository {
+  private store = new Map<PersistenceTable, Map<Id, StoredRecord>>([
+    ["persons", new Map()],
+    ["communities", new Map()],
+    ["identities", new Map()],
+    ["accounts", new Map()],
+    ["credentials", new Map()],
+    ["sessions", new Map()],
+    ["participants", new Map()],
+    ["places", new Map()],
+    ["contexts", new Map()],
+    ["relationships", new Map()],
+    ["capabilities", new Map()],
+    ["authorizations", new Map()],
+    ["intents", new Map()],
+    ["proposals", new Map()],
+    ["actions", new Map()],
+    ["events", new Map()],
+    ["evidences", new Map()]
+  ]);
+
+  read<T extends PersistenceTable>(
+    table: T,
+    id: Id
+  ): PersistenceRecordMap[T] | undefined {
+    return this.store.get(table)?.get(id) as PersistenceRecordMap[T] | undefined;
+  }
+
+  async transaction<T>(
+    work: (tx: PersistenceTransaction) => Promise<T> | T
+  ): Promise<T> {
+    const workingState = cloneStore(this.store);
+    const tx = createTransaction(workingState);
+    const result = await work(tx);
+    this.store = workingState;
+    return result;
+  }
+}
+
+export type RepositoryAuthorizationDecision = AuthorizationDecision;
+export type RepositoryLifecycleState = LifecycleState;
+export type RepositoryVerificationState = VerificationState;

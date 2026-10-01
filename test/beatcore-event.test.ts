@@ -1,6 +1,7 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { createAction, createEvent, id } from "../src/beatcore.js";
+import { createAction, id } from "../src/beatcore.js";
+import { createCanonicalEvent } from "../src/beatcore-event.js";
 import { createCapability, createAuthorization } from "../src/beatcore-capability-authorization.js";
 import { createIdentity } from "../src/beatcore-identity-participant.js";
 import { InMemoryPersistenceRepository } from "../src/beatcore-repository.js";
@@ -37,7 +38,7 @@ test("Event is persisted as a distinct occurrence linked to an Action", async ()
 
   await repository.transaction((tx) => {
     tx.insert("actions", action);
-    tx.insert("events", createEvent({
+    tx.insert("events", createCanonicalEvent({
       id: id("event-foundation"),
       action,
       type: "ACTION_AUTHORIZED",

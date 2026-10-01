@@ -1,11 +1,16 @@
 # Action Final Fresh Reconciliation
 
-**Status:** VERIFIED - IMPLEMENTED, CI VERIFIED, FRESHLY RECONCILED
+**Status:** 🟢 VERIFIED — IMPLEMENTED, CI VERIFIED, FRESHLY RECONCILED
 **Date:** 2026-10-01
 
 ## Completed sequence
 
-Fresh Reconciliation → Contract → Implementation → Persistence Reconciliation → Tests → CI → Fresh Reconciliation.
+Fresh Reconciliation → Action Contract → Implementation Audit/Repair → Persistence Reconciliation → Dedicated Tests → CI → Final Fresh Reconciliation.
+
+## Full-system position
+
+All foundation layers below Action remain reconciled and green:
+BeatCore → People + Communities → Identity + Participant → Access → Place / Building / Floor / Unit / Resource → Relationship + Context → Capability + Authorization → Intent + Proposal.
 
 ## Verified Action boundary
 
@@ -13,7 +18,10 @@ Action is the canonical record of an authorized operation.
 
 Verified invariants:
 - Action requires an existing Authorization;
-- Action actor equals Authorization actor;
+- the persisted Authorization is the authority source;
+- persisted Authorization must be ALLOW and valid at the operation time;
+- Action actor equals persisted Authorization actor;
+- caller-supplied Authorization data cannot override the persisted decision/validity;
 - optional Proposal exists and belongs to the same actor;
 - optional Context exists;
 - operation is non-empty;
@@ -25,32 +33,51 @@ Verified invariants:
 
 ## Implementation
 
-The dedicated Action boundary delegates to the existing canonical authorized-action domain operation. That operation remains responsible for validation, authorization, Action creation, local Event creation, and atomic local persistence.
+The dedicated Action entry point delegates to the canonical authorized-action domain operation.
+
+The operation now loads the persisted Authorization inside the same repository transaction before creating the Action. This prevents a caller-supplied Authorization object from manufacturing authority while reusing an existing Authorization ID.
+
+The operation continues to create:
+
+`AUTHORIZED Action → ACTION_AUTHORIZED Event`
+
+as a local canonical occurrence.
 
 ## Persistence
 
-`actions` is the canonical persistence owner for Action. Existing DB-neutral persistence representation is sufficient. Repository-level invariants now enforce authorization actor and proposal actor consistency.
+`actions` is the canonical persistence owner for Action.
 
-## Verification
+Existing DB-neutral persistence representation remains sufficient.
 
-- Run #112 — 36900348068 — success
-- Typecheck — success
-- npm test — success
+Repository invariants enforce:
+- canonical Identity reference;
+- canonical Authorization reference;
+- Authorization/Action actor consistency;
+- Proposal existence and actor consistency;
+- Context existence;
+- non-empty operation;
+- idempotency uniqueness.
+
+## Test and CI verification
+
+Intermediate CI failures were real findings caused by tests still treating the caller-supplied Authorization object as authoritative. Those tests were corrected to mutate the persisted Authorization and verify the new canonical rule.
+
+Final verification:
+- **Run #119 — `36901737898` — 🟢 success**
+- Typecheck — 🟢 success
+- npm test — 🟢 success
 
 ## Explicit non-goals
 
-No new Event/Evidence domain implementation, GENESIS, external provider, migration, production database, infrastructure, or higher-domain implementation.
-
-## Foundation order
-
-BeatCore → People + Communities → Identity + Participant → Access → Place / Building / Floor / Unit / Resource → Relationship + Context → Capability + Authorization → Intent + Proposal → Action → Event.
+No Event redesign, Evidence implementation, GENESIS, external provider, authentication provider, migration, production database, infrastructure, OneApp, Website, or higher-domain implementation.
 
 ## Final gate
 
-**VERIFIED — ACTION FOUNDATION COMPLETE.**
+**🟢 VERIFIED — ACTION FOUNDATION COMPLETE.**
 
 ### Next exact layer
 
 **EVENT**
 
-Continue with the same review-first discipline: Fresh Reconciliation → Contract → Implementation → Persistence Reconciliation → Tests → CI → Fresh Reconciliation.
+Continue with the same review-first discipline:
+Fresh Reconciliation → Event Contract → Implementation → Persistence Reconciliation → Tests → CI → Fresh Fresh Reconciliation.

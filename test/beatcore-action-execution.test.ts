@@ -48,6 +48,15 @@ async function seed(repository: InMemoryPersistenceRepository) {
       source: "BeatCore",
       version: 1
     });
+    tx.insert("events", {
+      id: id("event-2"),
+      actionId: id("action-2"),
+      type: "ACTION_AUTHORIZED",
+      occurredAt: "2026-10-01T01:00:00.000Z",
+      state: "AUTHORIZED",
+      source: "BeatCore",
+      version: 1
+    });
     tx.insert("evidences", {
       id: id("evidence-1"),
       eventId: id("event-1"),
@@ -119,6 +128,16 @@ test("ActionOutcomeTrace cannot cross Action boundaries", async () => {
   });
 
   assert.deepEqual(repository.read("action_outcome_trace", id("execution-1")), trace);
+
+  await assert.rejects(
+    repository.transaction((tx) => {
+      tx.insert("action_outcome_trace", {
+        ...trace,
+        eventId: id("event-2")
+      });
+    }),
+    /VALIDATION_FAILURE/
+  );
 });
 
 test("ActionExecution lifecycle requires started before a terminal state", async () => {

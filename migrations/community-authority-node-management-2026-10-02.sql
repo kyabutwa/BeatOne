@@ -61,6 +61,6 @@ CREATE INDEX IF NOT EXISTS idx_community_capability_bindings_community
 CREATE INDEX IF NOT EXISTS idx_community_capability_bindings_capability
   ON public.community_capability_bindings(capability_id, status);
 
-INSERT INTO public.migration_ledger (migration_id, applied_at)
+INSERT INTO public.zalagren_schema_migrations (migration_id, applied_at)
 VALUES ('community-authority-node-management-2026-10-02', now())
 ON CONFLICT (migration_id) DO NOTHING;

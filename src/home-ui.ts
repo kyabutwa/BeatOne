@@ -155,7 +155,7 @@ input::placeholder,.lede,.section-copy,.surface-copy,.control-copy,.row-meta,.de
    <label class="label" for="email">Email</label><input id="email" autocomplete="email" inputmode="email" type="email" placeholder="you@example.com"><div id="signupPhoneField"><label class="label" for="phone">Phone number</label><input id="phone" autocomplete="tel" inputmode="tel" type="tel" placeholder="+254 7XX XXX XXX"></div>
    <label class="label" for="password">Password</label><input id="password" autocomplete="new-password" type="password" placeholder="Password (8+ characters)">
    <div class="actions"><button id="submit" class="action primary" type="submit">Create account</button><button id="mode" class="action secondary" type="button">Sign in instead</button></div>
-   <div id="verificationBox" class="verification-box hidden">
+   <div id="verificationBox" class="verification-box">
  <div class="verification-title">Verify your contact details</div>
  <div id="verificationCopy" class="verification-copy"></div>
  <label class="label" for="emailVerificationCode">Email verification code</label>
@@ -164,7 +164,7 @@ input::placeholder,.lede,.section-copy,.surface-copy,.control-copy,.row-meta,.de
   <button id="verifyEmailCode" type="button">Verify email</button>
   <button id="resendEmail" type="button">Send email verification again</button>
  </div>
- <div id="phoneVerificationSection" class="hidden">
+ <div id="phoneVerificationSection">
   <div class="verification-title" style="margin-top:14px">Phone verification</div>
   <label class="label" for="phoneVerificationCode">SMS verification code</label>
   <input id="phoneVerificationCode" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="Enter the SMS code">
@@ -468,7 +468,8 @@ $("authForm").onsubmit=async event=>{
  if(!r.ok){
   if(d.error==="EMAIL_NOT_VERIFIED"){
    $("verificationBox").classList.remove("hidden");
-   $("verificationCopy").textContent="Your email address is not verified yet. Check your inbox for the verification message, then return here and sign in again.";
+   $("phoneVerificationSection").classList.remove("hidden");
+   $("verificationCopy").textContent="Your email address is not verified yet. Enter the email code below. If you are verifying a phone number, enter the SMS code in the phone section below.";
    $("resendEmail").disabled=false;
    $("resendEmail").textContent="Send verification email again";
    setError("");

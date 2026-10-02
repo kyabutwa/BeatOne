@@ -470,9 +470,10 @@ $("authForm").onsubmit=async event=>{
   const r=await fetch(signup?"/api/auth/sign-up/email":"/api/auth/sign-in/email",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(authBody)});
   const d=await r.json().catch(()=>({}));
   if(!r.ok){setError(d.error||"Authentication failed.");return;}
-  const meResponse=await fetch("/api/me",{credentials:"same-origin"});const meData=meResponse.ok?await meResponse.json():{};
-  if(!meResponse.ok){setError(meData.error||"Account was created, but the session could not be opened.");return;}
-  showHome(d.canonical?Object.assign({},meData,{identity:d.user,participant:d.canonical}):meData);
+  // Let the browser commit the HttpOnly canonical cookie before the first authenticated read.
+  // A full same-origin reload is intentional: it exercises the exact persisted session boundary.
+  if(!d.canonical){setError("Authentication succeeded but no canonical BeatOne session was issued.");return;}
+  location.reload();
  } catch (error) {
   setError(error instanceof Error ? error.message : "Authentication failed. Please try again.");
  }

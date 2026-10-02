@@ -602,7 +602,12 @@ async function requireCommunityRepresentative(request: Request, env: Env, commun
 async function communityManagement(request: Request, env: Env): Promise<Response> {
   try {
     const communityId=new URL(request.url).searchParams.get("communityId")||"";
-    const {sql,representation}=await requireCommunityRepresentative(request,env,communityId);
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    if(!communityId){
+      const communities=await sql`SELECT cr.id AS representation_id,cr.community_id,cr.role,cr.status,c.name,c.type,c.location,c.verification FROM public.community_representatives cr JOIN public.communities c ON c.id=cr.community_id WHERE cr.participant_id=${participantId} AND cr.status='active' ORDER BY c.name`;
+      return json({service:"Zalagren",communities});
+    }
+    const {representation}=await requireCommunityRepresentative(request,env,communityId);
     const [community,onboarding,proposals,subscriptions,participations,serviceBindings,capabilityBindings,places,serviceCatalog,capabilityCatalog,representatives]=await Promise.all([
       sql`SELECT * FROM public.communities WHERE id=${{communityId} LIMIT 1`,
       sql`SELECT * FROM public.community_onboarding_requests WHERE community_id=${{communityId} AND status IN ('submitted','pending') ORDER BY created_at DESC`,

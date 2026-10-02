@@ -465,6 +465,130 @@ async function sendEmailVerification(request: Request, env: Env): Promise<Respon
   }catch(error){const m=error instanceof Error?error.message:"EMAIL_VERIFICATION_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
 }
 
+
+async function domainEvent(sql: DbSql, participantId: string, type: string, source: string, contextId?: string) {
+  const eventId = "event-" + crypto.randomUUID();
+  await sql`INSERT INTO public.events(id,type,context_id,actor_id,source,occurred_at,state,version)
+    VALUES(${eventId},${type},${contextId || null},${participantId},${source},now(),'COMPLETED',1)`;
+  return eventId;
+}
+
+async function participantIdFromSession(request: Request, env: Env): Promise<{active:any; participantId:string; sql:DbSql}> {
+  const active=await requireActive(request,env);
+  const participantId=active.canonical.participant_id || active.canonical.participantId;
+  return {active,participantId,sql:requireDatabase(env)};
+}
+
+async function listParticipation(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const [communities, memberships, listings, rides, foodOrders] = await Promise.all([
+      sql`SELECT id,name,type,location,verification FROM public.communities ORDER BY created_at DESC LIMIT 100`,
+      sql`SELECT cp.*,c.name community_name FROM public.community_participations cp JOIN public.communities c ON c.id=cp.community_id WHERE cp.participant_id=${participantId} ORDER BY cp.created_at DESC`,
+      sql`SELECT * FROM public.marketplace_listings WHERE participant_id=${participantId} ORDER BY created_at DESC`,
+      sql`SELECT * FROM public.beatride_requests WHERE participant_id=${participantId} ORDER BY created_at DESC`,
+      sql`SELECT * FROM public.beatfood_orders WHERE participant_id=${participantId} ORDER BY created_at DESC`
+    ]);
+    return json({service:"Zalagren",participantId,communities,memberships,listings,rides,foodOrders});
+  } catch(e){const m=e instanceof Error?e.message:"PARTICIPATION_LOOKUP_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:500);}
+}
+
+async function joinCommunity(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const body=await request.json() as {communityId?:string;role?:string};
+    if(!body.communityId) return json({service:"Zalagren",error:"COMMUNITY_REQUIRED"},400);
+    const exists=await sql`SELECT id FROM public.communities WHERE id=${body.communityId} LIMIT 1`;
+    if(!exists.length) return json({service:"Zalagren",error:"COMMUNITY_NOT_FOUND"},404);
+    const id="participation-"+crypto.randomUUID();
+    const rows=await sql`INSERT INTO public.community_participations(id,community_id,participant_id,role,status,source)
+      VALUES(${id},${body.communityId},${participantId},${String(body.role||"member").trim()},'pending','participant_request')
+      ON CONFLICT(community_id,participant_id) DO UPDATE SET role=EXCLUDED.role,status='pending',source='participant_request'
+      RETURNING *`;
+    await domainEvent(sql,participantId,"community.participation.requested","zalagren-worker");
+    return json({service:"Zalagren",status:"participation_requested",participation:rows[0]},201);
+  } catch(e){const m=e instanceof Error?e.message:"COMMUNITY_JOIN_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function communityPlans(request: Request, env: Env): Promise<Response> {
+  try {
+    const {sql}=await participantIdFromSession(request,env);
+    const body=await request.json().catch(()=>({})) as {communityId?:string};
+    if(!body.communityId) return json({service:"Zalagren",error:"COMMUNITY_REQUIRED"},400);
+    const plans=await sql`SELECT * FROM public.community_subscription_plans WHERE community_id=${body.communityId} AND status='active' ORDER BY created_at`;
+    return json({service:"Zalagren",plans});
+  } catch(e){const m=e instanceof Error?e.message:"COMMUNITY_PLANS_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function requestCommunitySubscription(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const body=await request.json().catch(()=>({})) as {communityId?:string;planId?:string};
+    if(!body.communityId) return json({service:"Zalagren",error:"COMMUNITY_REQUIRED"},400);
+    const id="community-subscription-"+crypto.randomUUID();
+    const rows=await sql`INSERT INTO public.community_subscription_requests(id,community_id,participant_id,plan_id,status)
+      VALUES(${id},${body.communityId},${participantId},${body.planId||null},'pending')
+      ON CONFLICT(community_id,participant_id,plan_id) DO UPDATE SET status='pending',updated_at=now()
+      RETURNING *`;
+    await domainEvent(sql,participantId,"community.subscription.requested","zalagren-worker");
+    return json({service:"Zalagren",status:"subscription_requested",subscription:rows[0]},201);
+  } catch(e){const m=e instanceof Error?e.message:"COMMUNITY_SUBSCRIPTION_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function createMarketplaceListing(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const b=await request.json() as {title?:string;description?:string;category?:string;priceMinor?:number;currency?:string;communityId?:string};
+    if(!b.title?.trim()||!b.description?.trim()||!b.category?.trim()) return json({service:"Zalagren",error:"LISTING_FIELDS_REQUIRED"},400);
+    if(b.priceMinor!==undefined && (!Number.isInteger(b.priceMinor)||b.priceMinor<0)) return json({service:"Zalagren",error:"INVALID_PRICE"},400);
+    const id="listing-"+crypto.randomUUID();
+    const rows=await sql`INSERT INTO public.marketplace_listings(id,participant_id,community_id,title,description,category,price_minor,currency,status)
+      VALUES(${id},${participantId},${b.communityId||null},${b.title.trim()},${b.description.trim()},${b.category.trim()},${b.priceMinor??null},${b.currency||null},'published') RETURNING *`;
+    await domainEvent(sql,participantId,"marketplace.listing.created","zalagren-worker");
+    return json({service:"Zalagren",status:"listing_created",listing:rows[0]},201);
+  } catch(e){const m=e instanceof Error?e.message:"MARKETPLACE_CREATE_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function listMarketplace(request: Request, env: Env): Promise<Response> {
+  try {const {sql}=await participantIdFromSession(request,env);const u=new URL(request.url);const communityId=u.searchParams.get("communityId");const rows=communityId?await sql`SELECT * FROM public.marketplace_listings WHERE status='published' AND (community_id=${communityId} OR community_id IS NULL) ORDER BY created_at DESC LIMIT 100`:await sql`SELECT * FROM public.marketplace_listings WHERE status='published' ORDER BY created_at DESC LIMIT 100`;return json({service:"Zalagren",items:rows});}
+  catch(e){const m=e instanceof Error?e.message:"MARKETPLACE_LOOKUP_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:500);}
+}
+
+async function createBeatFoodMerchant(request: Request, env: Env): Promise<Response> {
+  try {const {participantId,sql}=await participantIdFromSession(request,env);const b=await request.json() as {name?:string;communityId?:string};if(!b.name?.trim())return json({service:"Zalagren",error:"MERCHANT_NAME_REQUIRED"},400);const id="food-merchant-"+crypto.randomUUID();const rows=await sql`INSERT INTO public.beatfood_merchants(id,participant_id,community_id,name,status) VALUES(${id},${participantId},${b.communityId||null},${b.name.trim()},'active') RETURNING *`;await domainEvent(sql,participantId,"beatfood.merchant.created","zalagren-worker");return json({service:"Zalagren",status:"merchant_created",merchant:rows[0]},201);}
+  catch(e){const m=e instanceof Error?e.message:"BEATFOOD_MERCHANT_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function createBeatFoodItem(request: Request, env: Env): Promise<Response> {
+  try {const {participantId,sql}=await participantIdFromSession(request,env);const b=await request.json() as {merchantId?:string;name?:string;description?:string;priceMinor?:number;currency?:string};if(!b.merchantId||!b.name?.trim()||!Number.isInteger(b.priceMinor)||Number(b.priceMinor)<0)return json({service:"Zalagren",error:"FOOD_ITEM_FIELDS_REQUIRED"},400);const owner=await sql`SELECT id FROM public.beatfood_merchants WHERE id=${b.merchantId} AND participant_id=${participantId} LIMIT 1`;if(!owner.length)return json({service:"Zalagren",error:"MERCHANT_NOT_OWNED"},403);const id="food-item-"+crypto.randomUUID();const rows=await sql`INSERT INTO public.beatfood_items(id,merchant_id,name,description,price_minor,currency) VALUES(${id},${b.merchantId},${b.name.trim()},${b.description?.trim()||null},${b.priceMinor},${b.currency||"KES"}) RETURNING *`;await domainEvent(sql,participantId,"beatfood.item.created","zalagren-worker");return json({service:"Zalagren",status:"food_item_created",item:rows[0]},201);}
+  catch(e){const m=e instanceof Error?e.message:"BEATFOOD_ITEM_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function createBeatFoodOrder(request: Request, env: Env): Promise<Response> {
+  try {const {participantId,sql}=await participantIdFromSession(request,env);const b=await request.json() as {merchantId?:string;communityId?:string;items?:Array<{itemId:string;quantity:number}>;idempotencyKey?:string};if(!b.merchantId||!b.items?.length||!b.idempotencyKey)return json({service:"Zalagren",error:"FOOD_ORDER_FIELDS_REQUIRED"},400);const ids=b.items.map(x=>x.itemId);const items=await sql`SELECT id,price_minor,currency FROM public.beatfood_items WHERE merchant_id=${b.merchantId} AND available=true AND id = ANY(${ids})`;if(items.length!==ids.length)return json({service:"Zalagren",error:"FOOD_ITEM_NOT_AVAILABLE"},409);const byId=new Map(items.map(x=>[x.id,x]));let total=0;for(const x of b.items){if(!Number.isInteger(x.quantity)||x.quantity<1)return json({service:"Zalagren",error:"INVALID_QUANTITY"},400);total+=Number(byId.get(x.itemId).price_minor)*x.quantity;}const orderId="food-order-"+crypto.randomUUID();const rows=await sql`INSERT INTO public.beatfood_orders(id,participant_id,merchant_id,community_id,status,total_minor,currency,idempotency_key) VALUES(${orderId},${participantId},${b.merchantId},${b.communityId||null},'requested',${total},${items[0].currency||"KES"},${b.idempotencyKey}) ON CONFLICT(participant_id,idempotency_key) DO UPDATE SET updated_at=now() RETURNING *`;for(const x of b.items) await sql`INSERT INTO public.beatfood_order_items(id,order_id,item_id,quantity,unit_price_minor) VALUES('food-order-item-'||gen_random_uuid()::text,${rows[0].id},${x.itemId},${x.quantity},${byId.get(x.itemId).price_minor}) ON CONFLICT DO NOTHING`;await domainEvent(sql,participantId,"beatfood.order.requested","zalagren-worker");return json({service:"Zalagren",status:"food_order_requested",order:rows[0]},201);}
+  catch(e){const m=e instanceof Error?e.message:"BEATFOOD_ORDER_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function createBeatRideProfile(request: Request, env: Env): Promise<Response> {
+  try {const {participantId,sql}=await participantIdFromSession(request,env);const b=await request.json() as {role?:string;displayName?:string;communityId?:string};if(!b.role||!b.displayName?.trim())return json({service:"Zalagren",error:"RIDE_PROFILE_FIELDS_REQUIRED"},400);const role=["rider","driver","provider"].includes(b.role)?b.role:null;if(!role)return json({service:"Zalagren",error:"INVALID_RIDE_ROLE"},400);const id="ride-profile-"+crypto.randomUUID();const rows=await sql`INSERT INTO public.beatride_profiles(id,participant_id,community_id,role,display_name,status) VALUES(${id},${participantId},${b.communityId||null},${role},${b.displayName.trim()},'active') RETURNING *`;await domainEvent(sql,participantId,"beatride.profile.created","zalagren-worker");return json({service:"Zalagren",status:"ride_profile_created",profile:rows[0]},201);}
+  catch(e){const m=e instanceof Error?e.message:"BEATRIDE_PROFILE_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function requestBeatRide(request: Request, env: Env): Promise<Response> {
+  try {const {participantId,sql}=await participantIdFromSession(request,env);const b=await request.json() as {pickup?:string;destination?:string;communityId?:string};if(!b.pickup?.trim()||!b.destination?.trim())return json({service:"Zalagren",error:"RIDE_ROUTE_REQUIRED"},400);const id="ride-request-"+crypto.randomUUID();const rows=await sql`INSERT INTO public.beatride_requests(id,participant_id,community_id,pickup_text,destination_text,status) VALUES(${id},${participantId},${b.communityId||null},${b.pickup.trim()},${b.destination.trim()},'requested') RETURNING *`;await domainEvent(sql,participantId,"beatride.requested","zalagren-worker");return json({service:"Zalagren",status:"ride_requested",ride:rows[0],provider:"none"} ,201);}
+  catch(e){const m=e instanceof Error?e.message:"BEATRIDE_REQUEST_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function submitCommunityProposal(request: Request, env: Env): Promise<Response> {
+  try {const {participantId,sql}=await participantIdFromSession(request,env);const b=await request.json() as {communityId?:string;proposalType?:string;title?:string;description?:string};if(!b.communityId||!b.title?.trim()||!b.description?.trim())return json({service:"Zalagren",error:"COMMUNITY_PROPOSAL_FIELDS_REQUIRED"},400);const community=await sql`SELECT id,name FROM public.communities WHERE id=${b.communityId} LIMIT 1`;if(!community.length)return json({service:"Zalagren",error:"COMMUNITY_NOT_FOUND"},404);const id="community-proposal-"+crypto.randomUUID();const rows=await sql`INSERT INTO public.community_proposals(id,community_id,participant_id,proposal_type,title,description,status) VALUES(${id},${b.communityId},${participantId},${b.proposalType||"service"},${b.title.trim()},${b.description.trim()},'pending') RETURNING *`;await domainEvent(sql,participantId,"community.proposal.submitted","zalagren-worker");return json({service:"Zalagren",status:"proposal_submitted",community:community[0],proposal:rows[0]},201);}
+  catch(e){const m=e instanceof Error?e.message:"COMMUNITY_PROPOSAL_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function proposeCommunityOnboarding(request: Request, env: Env): Promise<Response> {
+  try {const {participantId,sql}=await participantIdFromSession(request,env);const b=await request.json() as {communityId?:string;communityName?:string;nodeName?:string;proposal?:string;planCode?:string;seats?:number};if(!b.communityName?.trim()||!b.proposal?.trim())return json({service:"Zalagren",error:"COMMUNITY_ONBOARDING_FIELDS_REQUIRED"},400);const id="community-onboarding-"+crypto.randomUUID();const req=await sql`INSERT INTO public.community_onboarding_requests(id,community_id,requested_by_participant_id,community_name,node_name,proposal) VALUES(${id},${b.communityId||null},${participantId},${b.communityName.trim()},${b.nodeName?.trim()||null},${b.proposal.trim()}) RETURNING *`;let subscription=null;if(b.communityId&&b.planCode){const sid="platform-subscription-"+crypto.randomUUID();const rows=await sql`INSERT INTO public.platform_community_subscriptions(id,community_id,requested_by_participant_id,plan_code,status,seats) VALUES(${sid},${b.communityId},${participantId},${b.planCode},'proposed',${b.seats||null}) RETURNING *`;subscription=rows[0];}await domainEvent(sql,participantId,"community.onboarding.proposed","zalagren-worker");return json({service:"Zalagren",status:"community_onboarding_submitted",request:req[0],subscription});}
+  catch(e){const m=e instanceof Error?e.message:"COMMUNITY_ONBOARDING_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
 async function me(request: Request, env: Env): Promise<Response> {
   try {
     const active = await currentSession(request, env);
@@ -633,6 +757,19 @@ export default {
     if (request.method === "GET" && url.pathname === "/api/home/communities") return homeCommunities(request, env);
     if (request.method === "GET" && url.pathname === "/api/home/services") return homeServices(request, env);
     if (request.method === "GET" && url.pathname === "/api/home/foundation") return homeFoundation(request, env);
+    if (request.method === "GET" && url.pathname === "/api/participation") return listParticipation(request, env);
+    if (request.method === "POST" && url.pathname === "/api/participation/community/join") return joinCommunity(request, env);
+    if (request.method === "POST" && url.pathname === "/api/community/plans") return communityPlans(request, env);
+    if (request.method === "POST" && url.pathname === "/api/community/subscription") return requestCommunitySubscription(request, env);
+    if (request.method === "POST" && url.pathname === "/api/community/proposal") return submitCommunityProposal(request, env);
+    if (request.method === "POST" && url.pathname === "/api/community/onboarding") return proposeCommunityOnboarding(request, env);
+    if (request.method === "GET" && url.pathname === "/api/marketplace") return listMarketplace(request, env);
+    if (request.method === "POST" && url.pathname === "/api/marketplace/listing") return createMarketplaceListing(request, env);
+    if (request.method === "POST" && url.pathname === "/api/beatfood/merchant") return createBeatFoodMerchant(request, env);
+    if (request.method === "POST" && url.pathname === "/api/beatfood/item") return createBeatFoodItem(request, env);
+    if (request.method === "POST" && url.pathname === "/api/beatfood/order") return createBeatFoodOrder(request, env);
+    if (request.method === "POST" && url.pathname === "/api/beatride/profile") return createBeatRideProfile(request, env);
+    if (request.method === "POST" && url.pathname === "/api/beatride/request") return requestBeatRide(request, env);
     if (request.method === "GET" && url.pathname === "/api/me") return me(request, env);
     if (request.method === "POST" && url.pathname === "/api/auth/sign-up/email") return authMutation(request, env, "/sign-up/email");
     if (request.method === "POST" && url.pathname === "/api/auth/sign-in/email") return authMutation(request, env, "/sign-in/email");

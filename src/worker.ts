@@ -218,6 +218,21 @@ async function authMutation(request: Request, env: Env, endpoint: string): Promi
       "content-type": "application/json; charset=utf-8",
       "access-control-allow-origin": "*"
     });
+
+    // Preserve the provider session as a fallback on the BeatOne origin.
+    // Neon Auth's cookie is scoped to the provider origin, so the browser cannot
+    // accept its original Domain attribute from this Worker response. Strip only
+    // Domain and normalize Path; currentSession will forward this fallback cookie
+    // back to Neon Auth when the canonical BeatOne session is unavailable.
+    for (const cookie of setCookies) {
+      outHeaders.append(
+        "set-cookie",
+        cookie
+          .replace(/;\s*Domain=[^;]+/gi, "")
+          .replace(/;\s*Path=\/[^;]*/i, "; Path=/")
+      );
+    }
+
     if (canonical?.sessionToken && canonical?.expiresAt) {
       const maxAge = Math.max(60, Math.floor((new Date(canonical.expiresAt).getTime() - Date.now()) / 1000));
       outHeaders.append("set-cookie", "__Host-beatone_session=" + encodeURIComponent(canonical.sessionToken) + "; Path=/; Max-Age=" + maxAge + "; HttpOnly; Secure; SameSite=Lax");
@@ -268,17 +283,11 @@ async function currentSession(request: Request, env: Env): Promise<{ user: any; 
   const user = providerUser(payload);
   const session = providerSession(payload);
   if (!user?.id || !user?.email) return null;
-  const rows = await sql`
-    SELECT p.id AS participant_id, a.id AS account_id, s.id AS session_id
-    FROM public.auth_methods am
-    JOIN public.identities i ON i.id = am.identity_id
-    JOIN public.participants p ON p.identity_id = i.id
-    JOIN public.accounts a ON a.identity_id = i.id
-    LEFT JOIN public.sessions s ON s.account_id = a.id AND s.expires_at > now()
-    WHERE am.kind = 'email' AND am.identifier = ${String(user.email).trim().toLowerCase()} AND am.status <> 'revoked' AND a.status = 'ACTIVE'
-    LIMIT 1
-  `;
-  const canonical = rows[0] || await syncCanonicalAuth(env, user, session);
+  // A valid provider session is the recovery/fallback path for a missing or
+  // rejected canonical cookie. Always rotate a fresh canonical session here so
+  // the next /api/me response can repair the BeatOne cookie instead of leaving
+  // the browser stuck on an unrecoverable stale cookie.
+  const canonical = await syncCanonicalAuth(env, user, session);
   return { user, session, canonical };
 }
 async function verificationAccountForContact(sql: DbSql, kind: "email" | "phone", value: string): Promise<{identityId:string;accountId:string}|null> {
@@ -956,7 +965,25 @@ async function me(request: Request, env: Env): Promise<Response> {
       WHERE p.id=${participantId}
       LIMIT 1
     `;
-    return json({
+    const responseHeaders = headers({
+      "content-type": "application/json; charset=utf-8"
+    });
+    if (active.canonical?.sessionToken && active.canonical?.expiresAt) {
+      const maxAge = Math.max(
+        60,
+        Math.floor((new Date(active.canonical.expiresAt).getTime() - Date.now()) / 1000)
+      );
+      responseHeaders.append(
+        "set-cookie",
+        "__Host-beatone_session=" +
+          encodeURIComponent(active.canonical.sessionToken) +
+          "; Path=/; Max-Age=" +
+          maxAge +
+          "; HttpOnly; Secure; SameSite=Lax"
+      );
+    }
+
+    return new Response(JSON.stringify({
       service: "BeatOne",
       authenticated: true,
       participant: active.canonical,
@@ -989,7 +1016,7 @@ async function me(request: Request, env: Env): Promise<Response> {
         services: "Ready for participant context",
         genesis: "Proposal-only intelligence"
       }
-    });
+    }), { status: 200, headers: responseHeaders });
   } catch (error) {
     return json({ service: "BeatOne", error: error instanceof Error ? error.message : "SESSION_LOOKUP_FAILED" }, 500);
   }

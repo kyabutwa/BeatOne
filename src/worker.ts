@@ -540,20 +540,85 @@ async function requestCommunitySubscription(request: Request, env: Env): Promise
 async function createMarketplaceListing(request: Request, env: Env): Promise<Response> {
   try {
     const {participantId,sql}=await participantIdFromSession(request,env);
-    const b=await request.json() as {title?:string;description?:string;category?:string;priceMinor?:number;currency?:string;communityId?:string};
+    const b=await request.json().catch(()=>({})) as {
+      title?:string;description?:string;category?:string;priceMinor?:number;currency?:string;communityId?:string;
+      listingKind?:string;fulfillmentMode?:string;providerKind?:string;jurisdictionCountry?:string
+    };
+    const listingKinds=["goods","service","asset","project","opportunity","capability","accommodation"];
+    const fulfillmentModes=["direct","delivery","pickup","digital","appointment","stay","provider_dispatch"];
+    const providerKinds=["individual","business","organization","community"];
     if(!b.title?.trim()||!b.description?.trim()||!b.category?.trim()) return json({service:"Zalagren",error:"LISTING_FIELDS_REQUIRED"},400);
     if(b.priceMinor!==undefined && (!Number.isInteger(b.priceMinor)||b.priceMinor<0)) return json({service:"Zalagren",error:"INVALID_PRICE"},400);
+    if(b.listingKind && !listingKinds.includes(b.listingKind)) return json({service:"Zalagren",error:"INVALID_LISTING_KIND"},400);
+    if(b.fulfillmentMode && !fulfillmentModes.includes(b.fulfillmentMode)) return json({service:"Zalagren",error:"INVALID_FULFILLMENT_MODE"},400);
+    if(b.providerKind && !providerKinds.includes(b.providerKind)) return json({service:"Zalagren",error:"INVALID_PROVIDER_KIND"},400);
     const id="listing-"+crypto.randomUUID();
-    const rows=await sql`INSERT INTO public.marketplace_listings(id,participant_id,community_id,title,description,category,price_minor,currency,status)
-      VALUES(${id},${participantId},${b.communityId||null},${b.title.trim()},${b.description.trim()},${b.category.trim()},${b.priceMinor??null},${b.currency||null},'published') RETURNING *`;
-    await domainEvent(sql,participantId,"marketplace.listing.created","zalagren-worker");
-    return json({service:"Zalagren",status:"listing_created",listing:rows[0]},201);
+    const rows=await sql`INSERT INTO public.marketplace_listings(
+      id,participant_id,community_id,title,description,category,price_minor,currency,status,listing_kind,provider_kind,
+      fulfillment_mode,jurisdiction_country,verification_state,compliance_state,tax_state
+    ) VALUES(
+      ${id},${participantId},${b.communityId||null},${b.title.trim()},${b.description.trim()},${b.category.trim()},
+      ${b.priceMinor??null},${b.currency||"KES"},"pending_review",${b.listingKind||"service"},${b.providerKind||"individual"},
+      ${b.fulfillmentMode||"direct"},${(b.jurisdictionCountry||"KE").toUpperCase()},"proposed","proposed","not_assessed"
+    ) RETURNING *`;
+    await domainEvent(sql,participantId,"marketplace.listing.submitted","zalagren-worker");
+    return json({service:"Zalagren",status:"listing_submitted_for_review",listing:rows[0]},201);
   } catch(e){const m=e instanceof Error?e.message:"MARKETPLACE_CREATE_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
 }
 
 async function listMarketplace(request: Request, env: Env): Promise<Response> {
-  try {const {sql}=await participantIdFromSession(request,env);const u=new URL(request.url);const communityId=u.searchParams.get("communityId");const rows=communityId?await sql`SELECT * FROM public.marketplace_listings WHERE status='published' AND (community_id=${communityId} OR community_id IS NULL) ORDER BY created_at DESC LIMIT 100`:await sql`SELECT * FROM public.marketplace_listings WHERE status='published' ORDER BY created_at DESC LIMIT 100`;return json({service:"Zalagren",items:rows});}
-  catch(e){const m=e instanceof Error?e.message:"MARKETPLACE_LOOKUP_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:500);}
+  try {
+    const {sql}=await participantIdFromSession(request,env);
+    const u=new URL(request.url);const communityId=u.searchParams.get("communityId");
+    const rows=communityId
+      ?await sql`SELECT ml.*,mlp.summary,mlp.terms,mlp.availability AS profile_availability
+        FROM public.marketplace_listings ml LEFT JOIN public.marketplace_listing_profiles mlp ON mlp.listing_id=ml.id
+        WHERE ml.status='published' AND ml.verification_state IN ('supported','verified') AND ml.compliance_state IN ('supported','verified')
+        AND (ml.community_id=${communityId} OR ml.community_id IS NULL) ORDER BY ml.created_at DESC LIMIT 100`
+      :await sql`SELECT ml.*,mlp.summary,mlp.terms,mlp.availability AS profile_availability
+        FROM public.marketplace_listings ml LEFT JOIN public.marketplace_listing_profiles mlp ON mlp.listing_id=ml.id
+        WHERE ml.status='published' AND ml.verification_state IN ('supported','verified') AND ml.compliance_state IN ('supported','verified')
+        ORDER BY ml.created_at DESC LIMIT 100`;
+    return json({service:"Zalagren",items:rows});
+  } catch(e){const m=e instanceof Error?e.message:"MARKETPLACE_LOOKUP_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:500);}
+}
+
+async function listMyMarketplace(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const rows=await sql`SELECT ml.*,mlp.summary,mlp.terms,mlp.availability AS profile_availability
+      FROM public.marketplace_listings ml LEFT JOIN public.marketplace_listing_profiles mlp ON mlp.listing_id=ml.id
+      WHERE ml.participant_id=${participantId} ORDER BY ml.created_at DESC LIMIT 100`;
+    return json({service:"Zalagren",items:rows});
+  } catch(e){const m=e instanceof Error?e.message:"MARKETPLACE_MINE_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:500);}
+}
+
+async function createAccommodationProfile(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const b=await request.json().catch(()=>({})) as {
+      listingId?:string;accommodationType?:string;stayType?:string;maxGuests?:number;bedrooms?:number;bathrooms?:number;
+      checkInTime?:string;checkOutTime?:string;amenities?:string[];houseRules?:string[];locationVisibility?:string;addressLabel?:string
+    };
+    if(!b.listingId||!b.accommodationType?.trim()||!Number.isInteger(b.maxGuests)||b.maxGuests<1) return json({service:"Zalagren",error:"ACCOMMODATION_FIELDS_REQUIRED"},400);
+    const listing=await sql`SELECT id,listing_kind FROM public.marketplace_listings WHERE id=${b.listingId} AND participant_id=${participantId} LIMIT 1`;
+    if(!listing.length)return json({service:"Zalagren",error:"LISTING_NOT_OWNED"},403);
+    if(listing[0].listing_kind!=="accommodation")return json({service:"Zalagren",error:"LISTING_NOT_ACCOMMODATION"},400);
+    const visibility=["hidden","approximate","exact"];if(b.locationVisibility&&!visibility.includes(b.locationVisibility))return json({service:"Zalagren",error:"INVALID_LOCATION_VISIBILITY"},400);
+    const stay=["short_stay","long_stay","both"];if(b.stayType&&!stay.includes(b.stayType))return json({service:"Zalagren",error:"INVALID_STAY_TYPE"},400);
+    const rows=await sql`INSERT INTO public.marketplace_accommodation_profiles(
+      listing_id,accommodation_type,stay_type,max_guests,bedrooms,bathrooms,check_in_time,check_out_time,amenities,house_rules,location_visibility,address_label
+    ) VALUES(
+      ${b.listingId},${b.accommodationType.trim()},${b.stayType||"short_stay"},${b.maxGuests},${b.bedrooms??null},${b.bathrooms??null},
+      ${b.checkInTime||null},${b.checkOutTime||null},${JSON.stringify(b.amenities||[])},${JSON.stringify(b.houseRules||[])},
+      ${b.locationVisibility||"approximate"},${b.addressLabel||null}
+    ) ON CONFLICT(listing_id) DO UPDATE SET accommodation_type=EXCLUDED.accommodation_type,stay_type=EXCLUDED.stay_type,max_guests=EXCLUDED.max_guests,
+      bedrooms=EXCLUDED.bedrooms,bathrooms=EXCLUDED.bathrooms,check_in_time=EXCLUDED.check_in_time,check_out_time=EXCLUDED.check_out_time,
+      amenities=EXCLUDED.amenities,house_rules=EXCLUDED.house_rules,location_visibility=EXCLUDED.location_visibility,address_label=EXCLUDED.address_label,updated_at=now()
+    RETURNING *`;
+    await domainEvent(sql,participantId,"marketplace.accommodation.profile.updated","zalagren-worker");
+    return json({service:"Zalagren",status:"accommodation_profile_saved",profile:rows[0]},201);
+  } catch(e){const m=e instanceof Error?e.message:"ACCOMMODATION_PROFILE_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
 }
 
 async function createBeatFoodMerchant(request: Request, env: Env): Promise<Response> {
@@ -940,7 +1005,9 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/community/proposal") return submitCommunityProposal(request, env);
     if (request.method === "POST" && url.pathname === "/api/community/onboarding") return proposeCommunityOnboarding(request, env);
     if (request.method === "GET" && url.pathname === "/api/marketplace") return listMarketplace(request, env);
+    if (request.method === "GET" && url.pathname === "/api/marketplace/mine") return listMyMarketplace(request, env);
     if (request.method === "POST" && url.pathname === "/api/marketplace/listing") return createMarketplaceListing(request, env);
+    if (request.method === "POST" && url.pathname === "/api/marketplace/accommodation") return createAccommodationProfile(request, env);
     if (request.method === "POST" && url.pathname === "/api/beatfood/merchant") return createBeatFoodMerchant(request, env);
     if (request.method === "POST" && url.pathname === "/api/beatfood/item") return createBeatFoodItem(request, env);
     if (request.method === "POST" && url.pathname === "/api/beatfood/order") return createBeatFoodOrder(request, env);

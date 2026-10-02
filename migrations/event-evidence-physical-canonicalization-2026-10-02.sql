@@ -129,7 +129,12 @@ ALTER TABLE public.evidences
     CHECK (
       (external_provider IS NULL AND external_reference IS NULL)
       OR
-      (btrim(external_provider) <> '' AND btrim(external_reference) <> '')
+      (
+        external_provider IS NOT NULL
+        AND external_reference IS NOT NULL
+        AND btrim(external_provider) <> ''
+        AND btrim(external_reference) <> ''
+      )
     );
 
 CREATE INDEX idx_evidences_event

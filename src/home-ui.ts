@@ -6,7 +6,8 @@ const escapeHtml = (value: unknown): string =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 
-const ZALAGREN_LOGO = "https://raw.githubusercontent.com/kyabutwa/BeatOne/main/IMG_1382.png";
+const ZALAGREN_LOGO = "https://raw.githubusercontent.com/kyabutwa/BeatOne/main/IMG_1383.jpeg";
+const ZALAGREN_REFERENCE_IMAGE = "https://raw.githubusercontent.com/kyabutwa/BeatOne/main/IMG_1384.jpeg";
 
 export const renderHome = (headers: (extra?: HeadersInit) => Headers): Response =>
   new Response(`<!doctype html>

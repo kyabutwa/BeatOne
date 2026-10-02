@@ -47,4 +47,4 @@ jobs:
           printf "%s" "$body" | grep -q "Zalagren"
           printf "%s" "$body" | grep -q "Participant Home"
           printf "%s" "$body" | grep -q "GENESIS"
-          printf "%s" "$body" | grep -q "IMG_1383.jpeg"
+          printf "%s" "$body" | grep -q "Ecosystem domains"

@@ -16,6 +16,12 @@ async function seed(repository: InMemoryPersistenceRepository) {
       intentId: id("intent-1"),
       summary: "operate"
     });
+    tx.insert("proposals", {
+      id: id("proposal-2"),
+      actorId: id("identity-1"),
+      intentId: id("intent-1"),
+      summary: "operate second"
+    });
     tx.insert("authorizations", {
       id: id("authorization-1"),
       decision: "ALLOW",
@@ -34,7 +40,7 @@ async function seed(repository: InMemoryPersistenceRepository) {
     tx.insert("actions", {
       id: id("action-2"),
       actorId: id("identity-1"),
-      proposalId: id("proposal-1"),
+      proposalId: id("proposal-2"),
       authorizationId: id("authorization-1"),
       state: "AUTHORIZED",
       operation: "operate"

@@ -556,6 +556,47 @@ async function listMarketplace(request: Request, env: Env): Promise<Response> {
   catch(e){const m=e instanceof Error?e.message:"MARKETPLACE_LOOKUP_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:500);}
 }
 
+async function createAccommodationProfile(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const b=await request.json().catch(()=>({})) as {listingId?:string;accommodationType?:string;stayType?:string;maxGuests?:number;bedrooms?:number;bathrooms?:number;checkInTime?:string;checkOutTime?:string;amenities?:string[];houseRules?:string[];locationVisibility?:string;addressLabel?:string};
+    if(!b.listingId||!b.accommodationType?.trim()||!Number.isInteger(b.maxGuests)||b.maxGuests<1) return json({service:"Zalagren",error:"ACCOMMODATION_FIELDS_REQUIRED"},400);
+    const listing=await sql`SELECT id,listing_kind,participant_id FROM public.marketplace_listings WHERE id=${b.listingId} LIMIT 1`;
+    if(!listing.length)return json({service:"Zalagren",error:"LISTING_NOT_FOUND"},404);
+    if(listing[0].participant_id!==participantId)return json({service:"Zalagren",error:"LISTING_NOT_OWNED"},403);
+    if(listing[0].listing_kind!=="accommodation")return json({service:"Zalagren",error:"LISTING_NOT_ACCOMMODATION"},400);
+    if(b.stayType&&!["short_stay","long_stay","both"].includes(b.stayType))return json({service:"Zalagren",error:"INVALID_STAY_TYPE"},400);
+    if(b.locationVisibility&&!["hidden","approximate","exact"].includes(b.locationVisibility))return json({service:"Zalagren",error:"INVALID_LOCATION_VISIBILITY"},400);
+    const rows=await sql`INSERT INTO public.marketplace_accommodation_profiles(listing_id,accommodation_type,stay_type,max_guests,bedrooms,bathrooms,check_in_time,check_out_time,amenities,house_rules,location_visibility,address_label)
+      VALUES(${b.listingId},${b.accommodationType.trim()},${b.stayType||"short_stay"},${b.maxGuests},${b.bedrooms??null},${b.bathrooms??null},${b.checkInTime||null},${b.checkOutTime||null},${JSON.stringify(b.amenities||[])},${JSON.stringify(b.houseRules||[])},${b.locationVisibility||"approximate"},${b.addressLabel||null})
+      ON CONFLICT(listing_id) DO UPDATE SET accommodation_type=EXCLUDED.accommodation_type,stay_type=EXCLUDED.stay_type,max_guests=EXCLUDED.max_guests,bedrooms=EXCLUDED.bedrooms,bathrooms=EXCLUDED.bathrooms,check_in_time=EXCLUDED.check_in_time,check_out_time=EXCLUDED.check_out_time,amenities=EXCLUDED.amenities,house_rules=EXCLUDED.house_rules,location_visibility=EXCLUDED.location_visibility,address_label=EXCLUDED.address_label,updated_at=now() RETURNING *`;
+    await domainEvent(sql,participantId,"marketplace.accommodation.profile.updated","zalagren-worker");
+    return json({service:"Zalagren",status:"accommodation_profile_saved",profile:rows[0]},201);
+  } catch(e){const m=e instanceof Error?e.message:"ACCOMMODATION_PROFILE_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function requestAccommodationReservation(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const b=await request.json().catch(()=>({})) as {listingId?:string;startsOn?:string;endsOn?:string;guests?:number;idempotencyKey?:string};
+    if(!b.listingId||!b.startsOn||!b.endsOn||!Number.isInteger(b.guests)||b.guests<1||!b.idempotencyKey?.trim()) return json({service:"Zalagren",error:"RESERVATION_FIELDS_REQUIRED"},400);
+    const listing=await sql`SELECT ml.id,ml.status,ml.listing_kind,ml.verification_state,ml.compliance_state,map.max_guests FROM public.marketplace_listings ml LEFT JOIN public.marketplace_accommodation_profiles map ON map.listing_id=ml.id WHERE ml.id=${b.listingId} LIMIT 1`;
+    if(!listing.length)return json({service:"Zalagren",error:"LISTING_NOT_FOUND"},404);
+    const x=listing[0];
+    if(x.listing_kind!=="accommodation")return json({service:"Zalagren",error:"LISTING_NOT_ACCOMMODATION"},400);
+    if(x.status!=="published")return json({service:"Zalagren",error:"LISTING_NOT_PUBLISHED"},409);
+    if(!["supported","verified"].includes(x.verification_state)||!["supported","verified"].includes(x.compliance_state))return json({service:"Zalagren",error:"LISTING_NOT_READY_FOR_RESERVATION"},409);
+    if(!x.max_guests||b.guests>Number(x.max_guests))return json({service:"Zalagren",error:"GUEST_CAPACITY_EXCEEDED"},409);
+    if(new Date(b.endsOn)<=new Date(b.startsOn))return json({service:"Zalagren",error:"INVALID_RESERVATION_DATES"},400);
+    const conflicts=await sql`SELECT id FROM public.marketplace_reservation_requests WHERE listing_id=${b.listingId} AND status IN ('pending','accepted') AND starts_on < ${b.endsOn}::date AND ends_on > ${b.startsOn}::date LIMIT 1`;
+    if(conflicts.length)return json({service:"Zalagren",error:"DATES_UNAVAILABLE"},409);
+    const id="reservation-"+crypto.randomUUID();
+    const rows=await sql`INSERT INTO public.marketplace_reservation_requests(id,listing_id,participant_id,starts_on,ends_on,guests,status,idempotency_key) VALUES(${id},${b.listingId},${participantId},${b.startsOn},${b.endsOn},${b.guests},'pending',${b.idempotencyKey.trim()}) ON CONFLICT(participant_id,idempotency_key) DO UPDATE SET updated_at=now() RETURNING *`;
+    await domainEvent(sql,participantId,"marketplace.accommodation.reservation.requested","zalagren-worker");
+    return json({service:"Zalagren",status:"reservation_requested",reservation:rows[0],payment:"not_executed",provider:"none"},201);
+  } catch(e){const m=e instanceof Error?e.message:"ACCOMMODATION_RESERVATION_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
 async function createBeatFoodMerchant(request: Request, env: Env): Promise<Response> {
   try {const {participantId,sql}=await participantIdFromSession(request,env);const b=await request.json() as {name?:string;communityId?:string};if(!b.name?.trim())return json({service:"Zalagren",error:"MERCHANT_NAME_REQUIRED"},400);const id="food-merchant-"+crypto.randomUUID();const rows=await sql`INSERT INTO public.beatfood_merchants(id,participant_id,community_id,name,status) VALUES(${id},${participantId},${b.communityId||null},${b.name.trim()},'active') RETURNING *`;await domainEvent(sql,participantId,"beatfood.merchant.created","zalagren-worker");return json({service:"Zalagren",status:"merchant_created",merchant:rows[0]},201);}
   catch(e){const m=e instanceof Error?e.message:"BEATFOOD_MERCHANT_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
@@ -941,6 +982,8 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/community/onboarding") return proposeCommunityOnboarding(request, env);
     if (request.method === "GET" && url.pathname === "/api/marketplace") return listMarketplace(request, env);
     if (request.method === "POST" && url.pathname === "/api/marketplace/listing") return createMarketplaceListing(request, env);
+    if (request.method === "POST" && url.pathname === "/api/marketplace/accommodation/profile") return createAccommodationProfile(request, env);
+    if (request.method === "POST" && url.pathname === "/api/marketplace/accommodation/reservation") return requestAccommodationReservation(request, env);
     if (request.method === "POST" && url.pathname === "/api/beatfood/merchant") return createBeatFoodMerchant(request, env);
     if (request.method === "POST" && url.pathname === "/api/beatfood/item") return createBeatFoodItem(request, env);
     if (request.method === "POST" && url.pathname === "/api/beatfood/order") return createBeatFoodOrder(request, env);

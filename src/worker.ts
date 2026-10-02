@@ -726,15 +726,15 @@ async function communitySubscriptionDecision(request: Request, env: Env): Promis
 }
 async function communityServiceBinding(request: Request, env: Env): Promise<Response> {
   try {
-    const b=await request.json() as {communityId?:string;serviceId?:string;status?:string;settings?:unknown};
-    if(!b.communityId||!b.serviceId||!["active","disabled"].includes(b.status||"")) return json({service:"BeatOne",error:"SERVICE_BINDING_FIELDS_REQUIRED"},400);
+    const b=await request.json() as {communityId?:string;serviceId?:string;settings?:unknown};
+    if(!b.communityId||!b.serviceId) return json({service:"BeatOne",error:"SERVICE_INTEGRATION_FIELDS_REQUIRED"},400);
     const {participantId,sql}=await requireCommunityRepresentative(request,env,b.communityId);
     const service=await sql`SELECT id FROM public.services WHERE id=${b.serviceId} LIMIT 1`;
     if(!service.length) return json({service:"BeatOne",error:"SERVICE_NOT_FOUND"},404);
     const id="community-service-"+crypto.randomUUID();
-    const rows=await sql`INSERT INTO public.community_service_bindings(id,community_id,service_id,status,settings,created_by_participant_id) VALUES(${id},${b.communityId},${b.serviceId},${b.status},${JSON.stringify(b.settings||{})}::jsonb,${participantId}) ON CONFLICT(community_id,service_id) DO UPDATE SET status=EXCLUDED.status,settings=EXCLUDED.settings,updated_at=now() RETURNING *`;
-    await domainEvent(sql,participantId,"community.service."+b.status,"zalagren-community-management");
-    return json({service:"BeatOne",status:"service_binding_saved",binding:rows[0]},201);
+    const rows=await sql`INSERT INTO public.community_service_bindings(id,community_id,service_id,status,settings,created_by_participant_id) VALUES(${id},${b.communityId},${b.serviceId},'active',${JSON.stringify(b.settings||{})}::jsonb,${participantId}) ON CONFLICT(community_id,service_id) DO UPDATE SET status='active',settings=EXCLUDED.settings,updated_at=now() RETURNING *`;
+    await domainEvent(sql,participantId,"community.service.integration_configured","zalagren-community-management");
+    return json({service:"BeatOne",status:"service_integration_configured",binding:rows[0],ownership:"BeatOne",communityRole:"integration_coordination_only"},201);
   } catch(e){const m=e instanceof Error?e.message:"SERVICE_BINDING_FAILED";return json({service:"BeatOne",error:m},m==="UNAUTHORIZED"?401:m==="COMMUNITY_REPRESENTATIVE_REQUIRED"?403:400);}
 }
 async function communityCapabilityBinding(request: Request, env: Env): Promise<Response> {
@@ -744,8 +744,8 @@ async function communityCapabilityBinding(request: Request, env: Env): Promise<R
     const {participantId,sql}=await requireCommunityRepresentative(request,env,b.communityId);
     const cap=await sql`SELECT id,service_id FROM public.capabilities WHERE id=${b.capabilityId} LIMIT 1`;
     if(!cap.length) return json({service:"BeatOne",error:"CAPABILITY_NOT_FOUND"},404);
-    const service=await sql`SELECT id FROM public.community_service_bindings WHERE community_id=${b.communityId} AND service_id=${cap[0].service_id} AND status='active' LIMIT 1`;
-    if(!service.length) return json({service:"BeatOne",error:"SERVICE_MUST_BE_ACTIVE_FIRST"},409);
+    const service=await sql`SELECT id FROM public.community_service_bindings WHERE community_id=${b.communityId} AND service_id=${cap[0].service_id} LIMIT 1`;
+    if(!service.length) return json({service:"BeatOne",error:"SERVICE_INTEGRATION_REQUIRED_FIRST"},409);
     const id="community-capability-"+crypto.randomUUID();
     const rows=await sql`INSERT INTO public.community_capability_bindings(id,community_id,capability_id,status,scope,created_by_participant_id) VALUES(${id},${b.communityId},${b.capabilityId},${b.status},${JSON.stringify(b.scope||[])}::jsonb,${participantId}) ON CONFLICT(community_id,capability_id) DO UPDATE SET status=EXCLUDED.status,scope=EXCLUDED.scope,updated_at=now() RETURNING *`;
     await domainEvent(sql,participantId,"community.capability."+b.status,"zalagren-community-management");

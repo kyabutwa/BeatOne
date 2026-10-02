@@ -1,7 +1,31 @@
 -- Account / Credential / Session / Access physical canonicalization
--- 2026-10-02
--- Preconditions: identities and participants are already canonical and affected tables are empty.
+-- Migration ID: account-credential-session-access-physical-canonicalization-2026-10-02
+-- Scope: public.accounts, canonical Credential ownership, public.sessions, public.accesses.
+-- Preconditions: identities and participants are already canonical and all affected tables are empty.
 -- Provider auth tables remain separate infrastructure.
+-- Production execution is a separate explicit gate.
+
+BEGIN;
+
+-- Guard the exact zero-data/absence preconditions without procedural SQL.
+SELECT 1 / CASE
+  WHEN to_regclass('public.zalagren_schema_migrations') IS NOT NULL
+   AND to_regclass('public.identities') IS NOT NULL
+   AND to_regclass('public.participants') IS NOT NULL
+   AND to_regclass('public.credentials') IS NOT NULL
+   AND to_regclass('public.accounts') IS NULL
+   AND to_regclass('public.sessions') IS NULL
+   AND to_regclass('public.accesses') IS NULL
+   AND (SELECT count(*) FROM public.identities) = 0
+   AND (SELECT count(*) FROM public.participants) = 0
+   AND (SELECT count(*) FROM public.credentials) = 0
+   AND NOT EXISTS (
+     SELECT 1 FROM public.zalagren_schema_migrations
+     WHERE id = 'account-credential-session-access-physical-canonicalization-2026-10-02'
+   )
+  THEN 1
+  ELSE 0
+END;
 
 CREATE TABLE public.accounts (
   id text NOT NULL,
@@ -74,3 +98,9 @@ CREATE INDEX idx_accesses_participant_id
 
 CREATE INDEX idx_accesses_target
   ON public.accesses(target_type, target_id);
+
+-- Register applied state only after the complete schema change succeeds.
+INSERT INTO public.zalagren_schema_migrations (id)
+VALUES ('account-credential-session-access-physical-canonicalization-2026-10-02');
+
+COMMIT;

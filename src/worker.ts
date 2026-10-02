@@ -133,6 +133,31 @@ async function syncCanonicalAuth(
     ]);
   }
 
+  const emailHash = await sha256Hex(email);
+  const emailContactId = "identity-contact-email-" + crypto.randomUUID();
+  await sql`
+    INSERT INTO public.identity_contacts(id, identity_id, kind, value_normalized, value_hash, status, verified_at, is_primary, updated_at)
+    VALUES(
+      ${emailContactId}, ${identityId}, 'email', ${email}, ${emailHash},
+      CASE WHEN ${Boolean(user.emailVerified)} THEN 'active' ELSE 'pending' END,
+      CASE WHEN ${Boolean(user.emailVerified)} THEN now() ELSE NULL END,
+      true, now()
+    )
+    ON CONFLICT (kind, value_hash) DO UPDATE SET
+      identity_id=EXCLUDED.identity_id,
+      status=EXCLUDED.status,
+      verified_at=EXCLUDED.verified_at,
+      is_primary=true,
+      updated_at=now()
+  `;
+
+  await sql`
+    UPDATE public.auth_methods
+    SET status = CASE WHEN ${Boolean(user.emailVerified)} THEN 'active' ELSE 'pending' END,
+        verified_at = CASE WHEN ${Boolean(user.emailVerified)} THEN now() ELSE NULL END
+    WHERE identity_id = ${identityId} AND kind = 'email' AND identifier = ${email} AND status <> 'revoked'
+  `;
+
   const cookieMaterial = cookieHeader || setCookies.join("; ");
   if (!cookieMaterial) throw new Error("AUTH_SESSION_COOKIE_MISSING");
   const sessionId = "session-neon-" + crypto.randomUUID();
@@ -172,6 +197,21 @@ async function authMutation(request: Request, env: Env, endpoint: string): Promi
       ? await syncCanonicalAuth(env, user, session, null, setCookies)
       : null;
 
+    let emailVerificationRequested = false;
+    if (endpoint === "/sign-up/email" && user?.email) {
+      try {
+        const verification = await providerRequest(
+          request,
+          env,
+          "/send-verification-email",
+          { email: String(user.email).trim().toLowerCase(), callbackURL: new URL("/", request.url).toString() }
+        );
+        emailVerificationRequested = verification.ok;
+      } catch {
+        emailVerificationRequested = false;
+      }
+    }
+
     const outHeaders = headers({
       "content-type": "application/json; charset=utf-8",
       "access-control-allow-origin": "*"
@@ -184,8 +224,9 @@ async function authMutation(request: Request, env: Env, endpoint: string): Promi
     return new Response(JSON.stringify({
       service: "Zalagren",
       status: "authenticated",
-      user: user ? { id: user.id, name: user.name, email: user.email } : undefined,
-      canonical
+      user: user ? { id: user.id, name: user.name, email: user.email, emailVerified: Boolean(user.emailVerified) } : undefined,
+      canonical,
+      verification: { email: Boolean(user?.emailVerified), emailVerificationRequested }
     }), { status: upstream.status, headers: outHeaders });
   } catch (error) {
     return json({ service: "Zalagren", error: error instanceof Error ? error.message : "AUTHENTICATION_FAILED" }, 500);

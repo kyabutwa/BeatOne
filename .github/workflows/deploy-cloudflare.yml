@@ -29,3 +29,22 @@ jobs:
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      - name: Verify production health
+        run: |
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            status=$(curl -L -sS -o /tmp/health.json -w "%{http_code}" https://zalagren.kyabutwabis-f.workers.dev/api/health || true)
+            if [ "$status" = "200" ]; then
+              cat /tmp/health.json
+              exit 0
+            fi
+            sleep 3
+          done
+          cat /tmp/health.json || true
+          exit 1
+      - name: Verify production shell
+        run: |
+          body=$(curl -L -sS https://zalagren.kyabutwabis-f.workers.dev/)
+          printf "%s" "$body" | grep -q "Zalagren"
+          printf "%s" "$body" | grep -q "Participant Home"
+          printf "%s" "$body" | grep -q "GENESIS"
+          printf "%s" "$body" | grep -q "IMG_1383.jpeg"

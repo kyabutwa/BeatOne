@@ -153,7 +153,10 @@ input::placeholder{color:#7a8798}
       <div><label class="label" for="documentType">Identity document</label><select id="documentType" style="width:100%;min-height:46px;padding:11px 13px;border:1px solid #cbd5e1;border-radius:13px;background:#fff;color:var(--navy)"><option value="national_id">National ID</option><option value="passport">Passport</option><option value="residence_permit">Residence permit</option><option value="refugee_document">Refugee document</option><option value="other">Other</option></select></div>
       <div><label class="label" for="issuingCountry">Issuing country</label><input id="issuingCountry" placeholder="ISO country code"></div>
       <div><label class="label" for="issuingAuthority">Issuing authority</label><input id="issuingAuthority" placeholder="Authority name"></div>
-      <div><label class="label" for="documentNumber">Document number</label><input id="documentNumber" autocomplete="off" placeholder="Document number"></div>
+      <div><label class="label" for="documentNumber">Document / card number</label><input id="documentNumber" autocomplete="off" placeholder="Document number"></div>
+      <div><label class="label" for="nationalIdentifier">National identifier</label><input id="nationalIdentifier" autocomplete="off" placeholder="NIN / national ID number"></div>
+      <div><label class="label" for="documentSerialNumber">Document serial number</label><input id="documentSerialNumber" autocomplete="off" placeholder="Serial number if present"></div>
+      <div><label class="label" for="issuePlace">Place of issue</label><input id="issuePlace" placeholder="City / place of issue"></div>
       <div><label class="label" for="issueDate">Issue date</label><input id="issueDate" type="date"></div>
       <div><label class="label" for="expiryDate">Expiry date</label><input id="expiryDate" type="date"></div>
       <div><label class="label" for="addressLine1">Address</label><input id="addressLine1" autocomplete="street-address" placeholder="Address line"></div>
@@ -284,7 +287,7 @@ $("authForm").onsubmit=async event=>{
      birthCountryCode:$("birthCountry").value.trim(),birthPlace:$("birthPlace").value.trim(),residenceCountryCode:$("residenceCountry").value.trim(),
      addressLine1:$("addressLine1").value.trim(),city:$("city").value.trim(),region:$("region").value.trim(),postalCode:$("postalCode").value.trim(),
      documentType:$("documentType").value,issuingCountryCode:$("issuingCountry").value.trim(),issuingAuthority:$("issuingAuthority").value.trim(),
-     documentNumber:$("documentNumber").value.trim(),issueDate:$("issueDate").value,expiryDate:$("expiryDate").value
+     documentNumber:$("documentNumber").value.trim(),nationalIdentifier:$("nationalIdentifier").value.trim(),documentSerialNumber:$("documentSerialNumber").value.trim(),issuePlace:$("issuePlace").value.trim(),issueDate:$("issueDate").value,expiryDate:$("expiryDate").value
    };
    if(legal.documentNumber&&legal.issuingCountryCode){
      const lr=await fetch("/api/identity/legal",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(legal)});

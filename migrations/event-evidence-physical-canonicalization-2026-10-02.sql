@@ -90,10 +90,6 @@ CREATE INDEX idx_events_actor_time
   ON public.events(actor_id, occurred_at DESC)
   WHERE actor_id IS NOT NULL;
 
-CREATE INDEX idx_events_context_time
-  ON public.events(context_id, occurred_at DESC)
-  WHERE context_id IS NOT NULL;
-
 ALTER TABLE public.action_outcome_trace
   DROP CONSTRAINT IF EXISTS action_outcome_trace_evidence_id_fkey;
 

@@ -6,9 +6,8 @@ Date: 2026-10-02
 
 The repository's uploaded assets are authoritative brand inputs:
 
-- IMG_1382.png
-- IMG_1383.jpeg
-- IMG_1384.jpeg
+- IMG_1383.jpeg — canonical primary UI logo asset
+- IMG_1384.jpeg — preserved project-owned reference asset
 
 The current interface uses the uploaded Zalagren artwork rather than re-typesetting or recreating the logo in CSS.
 
@@ -38,9 +37,9 @@ The logo is never replaced with the text Zalagren merely because a text wordmark
 
 ## Asset provenance
 
-The current primary UI asset is the repository file IMG_1382.png, uploaded by the project owner on 2026-10-02. Its repository location is the source of truth.
+The current primary UI asset is the repository file IMG_1383.jpeg, retained by the project owner after the earlier IMG_1382.png asset was removed. Its repository location is the source of truth.
 
-The JPEG uploads remain preserved as project-owned brand/reference assets and must not be deleted or silently replaced during UI work.
+IMG_1384.jpeg remains preserved as a project-owned brand/reference asset and must not be deleted or silently replaced during UI work.
 
 ## Prohibited regressions
 

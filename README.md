@@ -46,7 +46,7 @@ Cloudflare Worker + Neon PostgreSQL are the current production infrastructure.
 
 ## Brand
 
-The owner-provided BeatOne logo is the intended canonical UI logo. The repository currently does not contain the owner logo binary, so the interface uses a self-contained BeatOne fallback mark until that asset is restored. IMG_1384.jpeg remains a preserved project-owned reference asset.
+The owner-provided BeatOne logo is the intended canonical UI logo. The repository currently does not contain the owner logo binary, so the interface uses a self-contained BeatOne fallback mark until that asset is restored. The previously referenced IMG_1383.jpeg / IMG_1384.jpeg files are not currently present in the repository; no missing asset is treated as live.
 
 No EarthBeat, SpeedMe or Zalagren visible product branding is permitted. Zalagren remains the architectural lineage underneath the BeatOne ecosystem.
 

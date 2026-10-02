@@ -200,7 +200,7 @@ input::placeholder{color:#7a8798}
  <section class="section">
   <div class="section-head"><div><h2 class="section-title">Create & participate</h2><p class="section-copy">Your participation gives you the ability to create, request and propose. Provider execution remains a separate verified boundary.</p></div></div>
   <div class="surface-grid">
-   <button class="surface" id="createListing"><div class="surface-mark">MARKETPLACE</div><div class="surface-title">Create a listing</div><div class="surface-copy">Offer a real product or service under your participant identity.</div><div class="surface-state">CREATE · REAL PERSISTENCE</div></button>
+   <button class="surface" id="createListing"><div class="surface-mark">MARKETPLACE</div><div class="surface-title">Create a listing</div><div class="surface-copy">Describe the real offer, commercial meaning, fulfillment and compliance state before publication.</div><div class="surface-state">SUBMIT · REVIEWABLE</div></button>
    <button class="surface" id="requestRide"><div class="surface-mark">BEATRIDE</div><div class="surface-title">Request a ride</div><div class="surface-copy">Create a mobility request tied to your participation context.</div><div class="surface-state">REQUEST · PROVIDER OPTIONAL</div></button>
    <button class="surface" id="createFood"><div class="surface-mark">BEATFOOD</div><div class="surface-title">Become a food provider</div><div class="surface-copy">Create your merchant identity and build a menu.</div><div class="surface-state">CREATE · REAL PERSISTENCE</div></button>
    <button class="surface" id="communityJoin"><div class="surface-mark">COMMUNITY</div><div class="surface-title">Join or subscribe</div><div class="surface-copy">Request participation in a community or propose a community node.</div><div class="surface-state">REQUEST · AUTHORITY REQUIRED</div></button>
@@ -213,6 +213,27 @@ input::placeholder{color:#7a8798}
   <div class="context-card participant-card"><div><div class="identity" id="identityName">Participant</div><div class="identity-meta" id="identityMeta"></div></div><span class="pill">AUTHENTICATED</span></div>
  </section>
 
+ <section id="marketplaceDetail" class="detail-card">
+  <div class="detail-head"><div><h3 class="detail-title">Marketplace</h3><div class="detail-sub">Structured commerce: offer → trust → compliance → fulfillment → transaction</div></div></div>
+  <div class="verification-box">
+   <div class="verification-title">Publication is not verification</div>
+   <div class="verification-copy">Every listing carries separate verification, compliance and tax states. Zalagren does not claim a seller, permit, eTIMS status or regulated provider connection without evidence.</div>
+  </div>
+  <form id="marketplaceForm" class="auth-card" style="margin-top:12px;box-shadow:none">
+   <div class="form-grid">
+    <div><label class="label" for="listingTitle">Title</label><input id="listingTitle" required placeholder="What are you offering?"></div>
+    <div><label class="label" for="listingKind">Type</label><select id="listingKind" style="width:100%;min-height:46px;padding:11px 13px;border:1px solid #cbd5e1;border-radius:13px;background:#fff;color:var(--navy)"><option value="goods">Goods</option><option value="service">Service</option><option value="asset">Asset</option><option value="project">Project</option><option value="opportunity">Opportunity</option><option value="capability">Capability</option><option value="accommodation">Accommodation / BnB</option></select></div>
+    <div><label class="label" for="listingCategory">Category</label><input id="listingCategory" required placeholder="Category"></div>
+    <div><label class="label" for="listingPrice">Price (minor KES units)</label><input id="listingPrice" type="number" min="0" step="1" placeholder="Optional"></div>
+    <div><label class="label" for="listingFulfillment">Fulfillment</label><select id="listingFulfillment" style="width:100%;min-height:46px;padding:11px 13px;border:1px solid #cbd5e1;border-radius:13px;background:#fff;color:var(--navy)"><option value="direct">Direct</option><option value="delivery">Delivery</option><option value="pickup">Pickup</option><option value="digital">Digital</option><option value="appointment">Appointment</option><option value="stay">Stay</option><option value="provider_dispatch">Provider dispatch</option></select></div>
+   </div>
+   <label class="label" for="listingDescription">Description</label><textarea id="listingDescription" required rows="4" placeholder="Describe the offer, important conditions and what the participant receives." style="width:100%;padding:11px 13px;border:1px solid #cbd5e1;border-radius:13px;background:#fff;color:var(--navy);resize:vertical"></textarea>
+   <div class="verification-box"><div class="verification-title">Initial trust state</div><div class="verification-copy">Submitted listings enter reviewable state. Verification, compliance and tax evidence remain separate and are never inferred from the form.</div></div>
+   <div class="actions"><button class="action primary" type="submit">Submit listing</button></div>
+   <div id="marketplaceFormStatus" class="status hidden"></div>
+  </form>
+ </section>
+
  <section id="identityDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">Identity</h3><div class="detail-sub">Canonical participant foundation</div></div></div><div id="identityBody"></div></section>
  <section id="communityDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">Community</h3><div class="detail-sub">Participation and context</div></div></div><div id="communityBody"></div></section>
  <section id="serviceDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">Services</h3><div class="detail-sub">Declared capabilities, never invented provider connections</div></div></div><div id="serviceBody"></div></section>
@@ -220,6 +241,34 @@ input::placeholder{color:#7a8798}
  <section id="worldDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">World</h3><div class="detail-sub">Community → phase → place → context</div></div></div><div class="row"><div class="row-title">No world context connected yet.</div><div class="row-meta">The platform preserves a truthful empty state.</div></div></section>
  <section id="activityDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">Activity</h3><div class="detail-sub">Action → event → evidence</div></div></div><div class="row"><div class="row-title">No participant activity yet.</div><div class="row-meta">Nothing is fabricated before a real authorized action occurs.</div></div></section>
 
+
+ <section id="managementDetail" class="detail-card">
+  <div class="detail-head"><div><h3 class="detail-title">Community Management</h3><div class="detail-sub">Representative authority → node configuration → participant approval → authorized context</div></div></div>
+  <div id="managementGate" class="row"><div class="row-title">Checking community representative authority…</div><div class="row-meta">Participant identity alone never grants community authority.</div></div>
+  <div id="managementWorkspace" class="hidden">
+   <div class="context-card">
+    <label class="label" for="managementCommunity">Managed community</label>
+    <select id="managementCommunity"></select>
+    <div class="row-meta" style="margin-top:8px">Only communities where this participant has active representative authority appear here.</div>
+   </div>
+   <div id="managementStatus" class="status hidden"></div>
+   <div class="surface-grid">
+    <div class="surface"><div class="surface-mark">NODE</div><div class="surface-title">Onboarding & proposals</div><div class="surface-copy">Review participant proposals and community onboarding requests.</div><div id="managementRequests" class="rows"></div></div>
+    <div class="surface"><div class="surface-mark">SUBSCRIPTION</div><div class="surface-title">Zalagren subscription</div><div class="surface-copy">Approve or reject the community subscription request. Billing remains a separate provider boundary.</div><div id="managementSubscriptions" class="rows"></div></div>
+    <div class="surface"><div class="surface-mark">PARTICIPATION</div><div class="surface-title">Participation requests</div><div class="surface-copy">Approve a participant only with an explicit role, enabled capability and optional place.</div><div id="managementParticipations" class="rows"></div></div>
+    <div class="surface"><div class="surface-mark">SERVICES</div><div class="surface-title">Define services</div><div class="surface-copy">Enable real Zalagren service definitions for this community node.</div><div id="managementServices" class="rows"></div></div>
+    <div class="surface"><div class="surface-mark">CAPABILITIES</div><div class="surface-title">Define capabilities</div><div class="surface-copy">Enable only the capabilities this community actually authorizes.</div><div id="managementCapabilities" class="rows"></div></div>
+    <div class="surface"><div class="surface-mark">PLACES</div><div class="surface-title">Define places</div><div class="surface-copy">Create the node's real places without inventing geometry verification.</div>
+      <div class="form-grid">
+       <input id="managementPlaceName" placeholder="Place name">
+       <input id="managementPlaceType" placeholder="Type, e.g. property / building / unit">
+       <input id="managementPlaceParent" placeholder="Parent place ID (optional)">
+      </div>
+      <button class="action" id="managementCreatePlace" type="button">Create place</button>
+    </div>
+   </div>
+  </div>
+ </section>
  <div class="status"><strong>Session:</strong> authenticated through the production identity boundary. External provider integrations remain explicitly bounded.</div>
  <div class="actions"><button id="signout" class="action secondary" type="button">Sign out</button></div>
 </section>
@@ -251,7 +300,7 @@ function closeMenu(){ $("menuOverlay").classList.remove("open");$("menuOverlay")
 function navigate(name){
  closeMenu();
  document.querySelectorAll(".bottom-nav button").forEach(b=>b.classList.toggle("active",b.dataset.nav===name));
- const map={home:null,world:"worldDetail",services:"serviceDetail",activity:"activityDetail",account:"identityDetail",community:"communityDetail",genesis:"genesisDetail",management:"serviceDetail"};
+ const map={home:null,world:"worldDetail",services:"serviceDetail",activity:"activityDetail",account:"identityDetail",community:"communityDetail",genesis:"genesisDetail",management:"managementDetail"};
  if(name==="home"){window.scrollTo({top:0,behavior:"smooth"});return;}
  openDetail(map[name]||"identityDetail");
 }
@@ -269,10 +318,62 @@ function showHome(d){
 }
 async function apiPost(path,body){const r=await fetch(path,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"REQUEST_FAILED");return d;}
 function showOperation(message){$("operationStatus").classList.remove("hidden");$("operationStatus").textContent=String(message);}
-$("createListing").onclick=async()=>{const title=prompt("Listing title");if(!title)return;const description=prompt("Describe the product or service");if(!description)return;const category=prompt("Category")||"general";const price=prompt("Price in minor currency units (optional)");try{await apiPost("/api/marketplace/listing",{title,description,category,priceMinor:price?Number(price):undefined,currency:"KES"});showOperation("Marketplace listing created.");}catch(e){showOperation(e.message);}};
+$("createListing").onclick=()=>{document.querySelectorAll(".detail-card").forEach(x=>x.classList.remove("active"));$("marketplaceDetail").classList.add("active");$("marketplaceDetail").scrollIntoView({behavior:"smooth",block:"start"});};
+$("marketplaceForm").onsubmit=async(event)=>{event.preventDefault();const status=$("marketplaceFormStatus");status.classList.remove("hidden");status.textContent="Submitting…";const price=$("listingPrice").value.trim();try{const d=await apiPost("/api/marketplace/listing",{title:$("listingTitle").value.trim(),description:$("listingDescription").value.trim(),category:$("listingCategory").value.trim(),listingKind:$("listingKind").value,fulfillmentMode:$("listingFulfillment").value,priceMinor:price?Number(price):undefined,currency:"KES"});status.textContent="Submitted for marketplace review. Verification, compliance and tax status remain separate and are not claimed.";showOperation("Marketplace listing submitted for review · "+(d.listing?.id||"created"));event.target.reset();}catch(e){status.textContent=e.message;}};
 $("requestRide").onclick=async()=>{const pickup=prompt("Pickup");if(!pickup)return;const destination=prompt("Destination");if(!destination)return;try{await apiPost("/api/beatride/request",{pickup,destination});showOperation("BeatRide request created. No transport provider has been invented.");}catch(e){showOperation(e.message);}};
 $("createFood").onclick=async()=>{const name=prompt("Food merchant name");if(!name)return;try{const d=await apiPost("/api/beatfood/merchant",{name});showOperation("BeatFood merchant created. Merchant ID: "+(d.merchant?.id||"created"));}catch(e){showOperation(e.message);}};
 $("communityJoin").onclick=async()=>{const name=prompt("Community name (for a new node proposal)","TSAVO");if(!name)return;const proposal=prompt("What should Zalagren enable for this community?");if(!proposal)return;try{const d=await apiPost("/api/community/onboarding",{communityName:name,nodeName:name==="TSAVO"?"TSAVO first node":name+" node",proposal});showOperation("Community onboarding proposal submitted.");}catch(e){showOperation(e.message);}};
+async function loadManagementDirectory(){
+ try{
+  const r=await fetch("/api/community/management");const d=await r.json().catch(()=>({}));
+  if(!r.ok||!Array.isArray(d.communities)||!d.communities.length){
+    $("managementWorkspace").classList.add("hidden");
+    $("managementGate").innerHTML="<div class='row-title'>Community representative authority is not active for this account.</div><div class='row-meta'>A participant proposal or invitation does not create authority. A verified community representative must be active first.</div>";
+    return;
+  }
+  $("managementGate").classList.add("hidden");$("managementWorkspace").classList.remove("hidden");
+  $("managementCommunity").innerHTML=d.communities.map(c=>"<option value='"+c.community_id+"'></option>").join("");
+  d.communities.forEach((c,i)=>{const o=$("managementCommunity").options[i];o.textContent=c.name+" · "+c.role;o.value=c.community_id;});
+  await loadManagement();
+ }catch(e){$("managementGate").innerHTML="<div class='row-title'>Management authority could not be loaded.</div><div class='row-meta'>Truthful runtime state · no authority is assumed.</div>";}
+}
+async function managementPost(path,body){const r=await fetch(path,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"MANAGEMENT_REQUEST_FAILED");return d;}
+function managementRow(title,meta,buttons){
+ return "<div class='row'><div class='row-title'>"+String(title)+"</div><div class='row-meta'>"+String(meta||"")+"</div>"+(buttons||"")+"</div>";
+}
+async function loadManagement(){
+ const communityId=$("managementCommunity").value;if(!communityId)return;
+ try{
+  const r=await fetch("/api/community/management?communityId="+encodeURIComponent(communityId));const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"MANAGEMENT_LOAD_FAILED");
+  $("managementRequests").innerHTML=(d.onboarding?.length||d.proposals?.length)?(d.onboarding||[]).map(x=>managementRow(x.community_name||x.node_name||"Onboarding request",x.proposal,"<button class='action' data-mgmt='onboard' data-id='"+x.id+"'>Approve</button><button class='action secondary' data-mgmt='reject-onboard' data-id='"+x.id+"'>Reject</button>")).join("")+(d.proposals||[]).map(x=>managementRow(x.title,x.description,"<button class='action' data-mgmt='proposal' data-id='"+x.id+"'>Approve</button><button class='action secondary' data-mgmt='reject-proposal' data-id='"+x.id+"'>Reject</button>")).join(""):"<div class='row-title'>No pending proposals.</div>";
+  $("managementSubscriptions").innerHTML=d.subscriptions?.length?d.subscriptions.map(x=>managementRow(x.plan_code,x.status+" · "+(x.billing_currency||"")+" "+(x.amount_minor??"amount not set"),"<button class='action' data-mgmt='subscription' data-id='"+x.id+"'>Approve</button><button class='action secondary' data-mgmt='reject-subscription' data-id='"+x.id+"'>Reject</button>")).join(""):"<div class='row-title'>No subscription request.</div>";
+  $("managementParticipations").innerHTML=d.participations?.length?d.participations.map(x=>managementRow(x.requester_participant_id,x.role+" · pending","<button class='action' data-mgmt='participation' data-id='"+x.id+"'>Approve & authorize</button><button class='action secondary' data-mgmt='reject-participation' data-id='"+x.id+"'>Reject</button>")).join(""):"<div class='row-title'>No pending participation.</div>";
+  $("managementServices").innerHTML=(d.serviceCatalog||[]).map(x=>{const bound=(d.serviceBindings||[]).find(b=>b.service_id===x.id&&b.status==="active");return managementRow(x.name,x.domain+" · "+x.status,bound?"<span class='pill'>ENABLED</span>":"<button class='action' data-mgmt='service' data-id='"+x.id+"'>Enable</button>");}).join("")||"<div class='row-title'>No services registered.</div>";
+  $("managementCapabilities").innerHTML=(d.capabilityCatalog||[]).map(x=>{const bound=(d.capabilityBindings||[]).find(b=>b.capability_id===x.id&&b.status==="active");return managementRow(x.name,x.action+" · "+x.resource_type,bound?"<span class='pill'>ENABLED</span>":"<button class='action' data-mgmt='capability' data-id='"+x.id+"'>Enable</button>");}).join("")||"<div class='row-title'>No capabilities registered.</div>";
+  $("managementStatus").classList.add("hidden");
+  document.querySelectorAll("[data-mgmt]").forEach(el=>el.onclick=()=>handleManagement(el.dataset.mgmt,el.dataset.id));
+ }catch(e){$("managementStatus").classList.remove("hidden");$("managementStatus").textContent=e.message;}
+}
+async function handleManagement(kind,id){
+ const communityId=$("managementCommunity").value;
+ try{
+  if(kind==="onboard"||kind==="reject-onboard") await managementPost("/api/community/management/onboarding/decision",{communityId,requestId:id,decision:kind==="onboard"?"approved":"rejected"});
+  else if(kind==="proposal"||kind==="reject-proposal") await managementPost("/api/community/management/proposal/decision",{communityId,proposalId:id,decision:kind==="proposal"?"approved":"rejected"});
+  else if(kind==="subscription"||kind==="reject-subscription") await managementPost("/api/community/management/subscription/decision",{communityId,subscriptionId:id,decision:kind==="subscription"?"approved":"rejected"});
+  else if(kind==="service") await managementPost("/api/community/management/service",{communityId,serviceId:id,status:"active"});
+  else if(kind==="capability") await managementPost("/api/community/management/capability",{communityId,capabilityId:id,status:"active"});
+  else if(kind==="participation"||kind==="reject-participation"){
+   const role=kind==="participation"?(prompt("Approved community role","member")||"member"):"member";
+   const placeId=kind==="participation"?(prompt("Place ID (optional)","")||undefined):undefined;
+   const capabilityIds=kind==="participation"?(prompt("Enabled capability IDs (comma separated)")||"").split(",").map(x=>x.trim()).filter(Boolean):[];
+   await managementPost("/api/community/management/participation/decision",{communityId,participationId:id,decision:kind==="participation"?"approved":"rejected",role,placeId,capabilityIds});
+  }
+  $("managementStatus").classList.remove("hidden");$("managementStatus").textContent="Management change saved.";
+  await loadManagement();
+ }catch(e){$("managementStatus").classList.remove("hidden");$("managementStatus").textContent=e.message;}
+}
+$("managementCommunity").onchange=loadManagement;
+$("managementCreatePlace").onclick=async()=>{try{const communityId=$("managementCommunity").value;const name=$("managementPlaceName").value.trim();const type=$("managementPlaceType").value.trim();const parentId=$("managementPlaceParent").value.trim()||undefined;if(!name||!type)throw new Error("Place name and type are required.");await managementPost("/api/community/management/place",{communityId,name,type,parentId});$("managementPlaceName").value="";$("managementPlaceType").value="";$("managementPlaceParent").value="";$("managementStatus").classList.remove("hidden");$("managementStatus").textContent="Place created.";await loadManagement();}catch(e){$("managementStatus").classList.remove("hidden");$("managementStatus").textContent=e.message;}};
 async function loadViews(){
  try{
   const responses=await Promise.all([fetch("/api/home/communities"),fetch("/api/home/services"),fetch("/api/home/foundation")]);

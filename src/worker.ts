@@ -540,20 +540,85 @@ async function requestCommunitySubscription(request: Request, env: Env): Promise
 async function createMarketplaceListing(request: Request, env: Env): Promise<Response> {
   try {
     const {participantId,sql}=await participantIdFromSession(request,env);
-    const b=await request.json() as {title?:string;description?:string;category?:string;priceMinor?:number;currency?:string;communityId?:string};
+    const b=await request.json().catch(()=>({})) as {
+      title?:string;description?:string;category?:string;priceMinor?:number;currency?:string;communityId?:string;
+      listingKind?:string;fulfillmentMode?:string;providerKind?:string;jurisdictionCountry?:string
+    };
+    const listingKinds=["goods","service","asset","project","opportunity","capability","accommodation"];
+    const fulfillmentModes=["direct","delivery","pickup","digital","appointment","stay","provider_dispatch"];
+    const providerKinds=["individual","business","organization","community"];
     if(!b.title?.trim()||!b.description?.trim()||!b.category?.trim()) return json({service:"Zalagren",error:"LISTING_FIELDS_REQUIRED"},400);
     if(b.priceMinor!==undefined && (!Number.isInteger(b.priceMinor)||b.priceMinor<0)) return json({service:"Zalagren",error:"INVALID_PRICE"},400);
+    if(b.listingKind && !listingKinds.includes(b.listingKind)) return json({service:"Zalagren",error:"INVALID_LISTING_KIND"},400);
+    if(b.fulfillmentMode && !fulfillmentModes.includes(b.fulfillmentMode)) return json({service:"Zalagren",error:"INVALID_FULFILLMENT_MODE"},400);
+    if(b.providerKind && !providerKinds.includes(b.providerKind)) return json({service:"Zalagren",error:"INVALID_PROVIDER_KIND"},400);
     const id="listing-"+crypto.randomUUID();
-    const rows=await sql`INSERT INTO public.marketplace_listings(id,participant_id,community_id,title,description,category,price_minor,currency,status)
-      VALUES(${id},${participantId},${b.communityId||null},${b.title.trim()},${b.description.trim()},${b.category.trim()},${b.priceMinor??null},${b.currency||null},'published') RETURNING *`;
-    await domainEvent(sql,participantId,"marketplace.listing.created","zalagren-worker");
-    return json({service:"Zalagren",status:"listing_created",listing:rows[0]},201);
+    const rows=await sql`INSERT INTO public.marketplace_listings(
+      id,participant_id,community_id,title,description,category,price_minor,currency,status,listing_kind,provider_kind,
+      fulfillment_mode,jurisdiction_country,verification_state,compliance_state,tax_state
+    ) VALUES(
+      ${id},${participantId},${b.communityId||null},${b.title.trim()},${b.description.trim()},${b.category.trim()},
+      ${b.priceMinor??null},${b.currency||"KES"},"pending_review",${b.listingKind||"service"},${b.providerKind||"individual"},
+      ${b.fulfillmentMode||"direct"},${(b.jurisdictionCountry||"KE").toUpperCase()},"proposed","proposed","not_assessed"
+    ) RETURNING *`;
+    await domainEvent(sql,participantId,"marketplace.listing.submitted","zalagren-worker");
+    return json({service:"Zalagren",status:"listing_submitted_for_review",listing:rows[0]},201);
   } catch(e){const m=e instanceof Error?e.message:"MARKETPLACE_CREATE_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
 }
 
 async function listMarketplace(request: Request, env: Env): Promise<Response> {
-  try {const {sql}=await participantIdFromSession(request,env);const u=new URL(request.url);const communityId=u.searchParams.get("communityId");const rows=communityId?await sql`SELECT * FROM public.marketplace_listings WHERE status='published' AND (community_id=${communityId} OR community_id IS NULL) ORDER BY created_at DESC LIMIT 100`:await sql`SELECT * FROM public.marketplace_listings WHERE status='published' ORDER BY created_at DESC LIMIT 100`;return json({service:"Zalagren",items:rows});}
-  catch(e){const m=e instanceof Error?e.message:"MARKETPLACE_LOOKUP_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:500);}
+  try {
+    const {sql}=await participantIdFromSession(request,env);
+    const u=new URL(request.url);const communityId=u.searchParams.get("communityId");
+    const rows=communityId
+      ?await sql`SELECT ml.*,mlp.summary,mlp.terms,mlp.availability AS profile_availability
+        FROM public.marketplace_listings ml LEFT JOIN public.marketplace_listing_profiles mlp ON mlp.listing_id=ml.id
+        WHERE ml.status='published' AND ml.verification_state IN ('supported','verified') AND ml.compliance_state IN ('supported','verified')
+        AND (ml.community_id=${communityId} OR ml.community_id IS NULL) ORDER BY ml.created_at DESC LIMIT 100`
+      :await sql`SELECT ml.*,mlp.summary,mlp.terms,mlp.availability AS profile_availability
+        FROM public.marketplace_listings ml LEFT JOIN public.marketplace_listing_profiles mlp ON mlp.listing_id=ml.id
+        WHERE ml.status='published' AND ml.verification_state IN ('supported','verified') AND ml.compliance_state IN ('supported','verified')
+        ORDER BY ml.created_at DESC LIMIT 100`;
+    return json({service:"Zalagren",items:rows});
+  } catch(e){const m=e instanceof Error?e.message:"MARKETPLACE_LOOKUP_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:500);}
+}
+
+async function listMyMarketplace(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const rows=await sql`SELECT ml.*,mlp.summary,mlp.terms,mlp.availability AS profile_availability
+      FROM public.marketplace_listings ml LEFT JOIN public.marketplace_listing_profiles mlp ON mlp.listing_id=ml.id
+      WHERE ml.participant_id=${participantId} ORDER BY ml.created_at DESC LIMIT 100`;
+    return json({service:"Zalagren",items:rows});
+  } catch(e){const m=e instanceof Error?e.message:"MARKETPLACE_MINE_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:500);}
+}
+
+async function createAccommodationProfile(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const b=await request.json().catch(()=>({})) as {
+      listingId?:string;accommodationType?:string;stayType?:string;maxGuests?:number;bedrooms?:number;bathrooms?:number;
+      checkInTime?:string;checkOutTime?:string;amenities?:string[];houseRules?:string[];locationVisibility?:string;addressLabel?:string
+    };
+    if(!b.listingId||!b.accommodationType?.trim()||!Number.isInteger(b.maxGuests)||b.maxGuests<1) return json({service:"Zalagren",error:"ACCOMMODATION_FIELDS_REQUIRED"},400);
+    const listing=await sql`SELECT id,listing_kind FROM public.marketplace_listings WHERE id=${b.listingId} AND participant_id=${participantId} LIMIT 1`;
+    if(!listing.length)return json({service:"Zalagren",error:"LISTING_NOT_OWNED"},403);
+    if(listing[0].listing_kind!=="accommodation")return json({service:"Zalagren",error:"LISTING_NOT_ACCOMMODATION"},400);
+    const visibility=["hidden","approximate","exact"];if(b.locationVisibility&&!visibility.includes(b.locationVisibility))return json({service:"Zalagren",error:"INVALID_LOCATION_VISIBILITY"},400);
+    const stay=["short_stay","long_stay","both"];if(b.stayType&&!stay.includes(b.stayType))return json({service:"Zalagren",error:"INVALID_STAY_TYPE"},400);
+    const rows=await sql`INSERT INTO public.marketplace_accommodation_profiles(
+      listing_id,accommodation_type,stay_type,max_guests,bedrooms,bathrooms,check_in_time,check_out_time,amenities,house_rules,location_visibility,address_label
+    ) VALUES(
+      ${b.listingId},${b.accommodationType.trim()},${b.stayType||"short_stay"},${b.maxGuests},${b.bedrooms??null},${b.bathrooms??null},
+      ${b.checkInTime||null},${b.checkOutTime||null},${JSON.stringify(b.amenities||[])},${JSON.stringify(b.houseRules||[])},
+      ${b.locationVisibility||"approximate"},${b.addressLabel||null}
+    ) ON CONFLICT(listing_id) DO UPDATE SET accommodation_type=EXCLUDED.accommodation_type,stay_type=EXCLUDED.stay_type,max_guests=EXCLUDED.max_guests,
+      bedrooms=EXCLUDED.bedrooms,bathrooms=EXCLUDED.bathrooms,check_in_time=EXCLUDED.check_in_time,check_out_time=EXCLUDED.check_out_time,
+      amenities=EXCLUDED.amenities,house_rules=EXCLUDED.house_rules,location_visibility=EXCLUDED.location_visibility,address_label=EXCLUDED.address_label,updated_at=now()
+    RETURNING *`;
+    await domainEvent(sql,participantId,"marketplace.accommodation.profile.updated","zalagren-worker");
+    return json({service:"Zalagren",status:"accommodation_profile_saved",profile:rows[0]},201);
+  } catch(e){const m=e instanceof Error?e.message:"ACCOMMODATION_PROFILE_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
 }
 
 async function createBeatFoodMerchant(request: Request, env: Env): Promise<Response> {
@@ -591,6 +656,164 @@ async function proposeCommunityOnboarding(request: Request, env: Env): Promise<R
   catch(e){const m=e instanceof Error?e.message:"COMMUNITY_ONBOARDING_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
 }
 
+
+async function requireCommunityRepresentative(request: Request, env: Env, communityId: string) {
+  const {participantId,sql}=await participantIdFromSession(request,env);
+  if(!communityId?.trim()) throw new Error("COMMUNITY_REQUIRED");
+  const rows=await sql`SELECT cr.*,c.name AS community_name FROM public.community_representatives cr JOIN public.communities c ON c.id=cr.community_id WHERE cr.community_id=${{communityId} AND cr.participant_id=${{participantId} AND cr.status='active' LIMIT 1`;
+  if(!rows.length) throw new Error("COMMUNITY_REPRESENTATIVE_REQUIRED");
+  return {participantId,sql,representation:rows[0]};
+}
+async function communityManagement(request: Request, env: Env): Promise<Response> {
+  try {
+    const communityId=new URL(request.url).searchParams.get("communityId")||"";
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    if(!communityId){
+      const communities=await sql`SELECT cr.id AS representation_id,cr.community_id,cr.role,cr.status,c.name,c.type,c.location,c.verification FROM public.community_representatives cr JOIN public.communities c ON c.id=cr.community_id WHERE cr.participant_id=${participantId} AND cr.status='active' ORDER BY c.name`;
+      return json({service:"Zalagren",communities});
+    }
+    const {representation}=await requireCommunityRepresentative(request,env,communityId);
+    const [community,onboarding,proposals,subscriptions,participations,serviceBindings,capabilityBindings,places,serviceCatalog,capabilityCatalog,representatives]=await Promise.all([
+      sql`SELECT * FROM public.communities WHERE id=${{communityId} LIMIT 1`,
+      sql`SELECT * FROM public.community_onboarding_requests WHERE community_id=${{communityId} AND status IN ('submitted','pending') ORDER BY created_at DESC`,
+      sql`SELECT * FROM public.community_proposals WHERE community_id=${{communityId} AND status='pending' ORDER BY created_at DESC`,
+      sql`SELECT * FROM public.platform_community_subscriptions WHERE community_id=${{communityId} ORDER BY created_at DESC`,
+      sql`SELECT cp.*,p.id AS requester_participant_id FROM public.community_participations cp JOIN public.participants p ON p.id=cp.participant_id WHERE cp.community_id=${{communityId} AND cp.status='pending' ORDER BY cp.created_at DESC`,
+      sql`SELECT b.*,s.name AS service_name,s.domain,s.status AS service_status FROM public.community_service_bindings b JOIN public.services s ON s.id=b.service_id WHERE b.community_id=${{communityId} ORDER BY s.name`,
+      sql`SELECT b.*,c.name AS capability_name,c.action,c.service_id,c.resource_type FROM public.community_capability_bindings b JOIN public.capabilities c ON c.id=b.capability_id WHERE b.community_id=${{communityId} ORDER BY c.name`,
+      sql`SELECT * FROM public.places WHERE community_id=${{communityId} ORDER BY created_at DESC`,
+      sql`SELECT * FROM public.services ORDER BY name`,
+      sql`SELECT c.* FROM public.capabilities c JOIN public.services s ON s.id=c.service_id ORDER BY s.name,c.name`,
+      sql`SELECT * FROM public.community_representatives WHERE community_id=${{communityId} ORDER BY created_at`
+    ]);
+    return json({service:"Zalagren",community:community[0]||null,representative, onBoarding:onboarding,proposals,subscriptions,participations,serviceBindings,capabilityBindings,places,serviceCatalog,capabilityCatalog,representatives});
+  } catch(e) { const m=e instanceof Error?e.message:"COMMUNITY_MANAGEMENT_FAILED"; return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:m==="COMMUNITY_REPRESENTATIVE_REQUIRED"?403:400); }
+}
+async function requestRepresentative(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const b=await request.json() as {communityId?:string;role?:string};
+    if(!b.communityId) return json({service:"Zalagren",error:"COMMUNITY_REQUIRED"},400);
+    const c=await sql`SELECT id FROM public.communities WHERE id=${{b.communityId} LIMIT 1`;
+    if(!c.length) return json({service:"Zalagren",error:"COMMUNITY_NOT_FOUND"},404);
+    const id="community-representative-"+crypto.randomUUID();
+    const rows=await sql`INSERT INTO public.community_representatives(id,community_id,participant_id,role,status,source) VALUES(${{id},${{b.communityId},${{participantId},${{b.role||"representative"},'pending','representative_request') ON CONFLICT(community_id,participant_id) DO UPDATE SET role=EXCLUDED.role,status='pending',source='representative_request',updated_at=now() RETURNING *`;
+    await domainEvent(sql,participantId,"community.representative.requested","zalagren-worker");
+    return json({service:"Zalagren",status:"representative_request_submitted",representation:rows[0]},201);
+  } catch(e){const m=e instanceof Error?e.message:"REPRESENTATIVE_REQUEST_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+async function communityOnboardingDecision(request: Request, env: Env): Promise<Response> {
+  try {
+    const b=await request.json() as {communityId?:string;requestId?:string;decision?:string};
+    if(!b.communityId||!b.requestId||!["approved","rejected"].includes(b.decision||"")) return json({service:"Zalagren",error:"ONBOARDING_DECISION_FIELDS_REQUIRED"},400);
+    const {participantId,sql}=await requireCommunityRepresentative(request,env,b.communityId);
+    const rows=await sql`UPDATE public.community_onboarding_requests SET status=${{b.decision} WHERE id=${{b.requestId} AND community_id=${{b.communityId} AND status IN ('submitted','pending') RETURNING *`;
+    if(!rows.length) return json({service:"Zalagren",error:"ONBOARDING_REQUEST_NOT_FOUND"},404);
+    await domainEvent(sql,participantId,"community.onboarding."+b.decision,"zalagren-community-management");
+    return json({service:"Zalagren",status:"onboarding_"+b.decision,request:rows[0]});
+  } catch(e){const m=e instanceof Error?e.message:"ONBOARDING_DECISION_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:m==="COMMUNITY_REPRESENTATIVE_REQUIRED"?403:400);}
+}
+async function communitySubscriptionDecision(request: Request, env: Env): Promise<Response> {
+  try {
+    const b=await request.json() as {communityId?:string;subscriptionId?:string;decision?:string};
+    if(!b.communityId||!b.subscriptionId||!["approved","rejected"].includes(b.decision||"")) return json({service:"Zalagren",error:"SUBSCRIPTION_DECISION_FIELDS_REQUIRED"},400);
+    const {participantId,sql}=await requireCommunityRepresentative(request,env,b.communityId);
+    const rows=await sql`UPDATE public.platform_community_subscriptions SET status=${{b.decision},updated_at=now(),starts_at=CASE WHEN ${{b.decision}='approved' THEN COALESCE(starts_at,now()) ELSE starts_at END WHERE id=${{b.subscriptionId} AND community_id=${{b.communityId} AND status IN ('proposed','pending') RETURNING *`;
+    if(!rows.length) return json({service:"Zalagren",error:"SUBSCRIPTION_NOT_FOUND"},404);
+    await domainEvent(sql,participantId,"community.subscription."+b.decision,"zalagren-community-management");
+    return json({service:"Zalagren",status:"subscription_"+b.decision,subscription:rows[0],billing:"No payment provider execution is claimed by this approval."});
+  } catch(e){const m=e instanceof Error?e.message:"SUBSCRIPTION_DECISION_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:m==="COMMUNITY_REPRESENTATIVE_REQUIRED"?403:400);}
+}
+async function communityServiceBinding(request: Request, env: Env): Promise<Response> {
+  try {
+    const b=await request.json() as {communityId?:string;serviceId?:string;status?:string;settings?:unknown};
+    if(!b.communityId||!b.serviceId||!["active","disabled"].includes(b.status||"")) return json({service:"Zalagren",error:"SERVICE_BINDING_FIELDS_REQUIRED"},400);
+    const {participantId,sql}=await requireCommunityRepresentative(request,env,b.communityId);
+    const service=await sql`SELECT id FROM public.services WHERE id=${{b.serviceId} LIMIT 1`;
+    if(!service.length) return json({service:"Zalagren",error:"SERVICE_NOT_FOUND"},404);
+    const id="community-service-"+crypto.randomUUID();
+    const rows=await sql`INSERT INTO public.community_service_bindings(id,community_id,service_id,status,settings,created_by_participant_id) VALUES(${{id},${{b.communityId},${{b.serviceId},${{b.status},${{JSON.stringify(b.settings||{})}::jsonb,${{participantId}) ON CONFLICT(community_id,service_id) DO UPDATE SET status=EXCLUDED.status,settings=EXCLUDED.settings,updated_at=now() RETURNING *`;
+    await domainEvent(sql,participantId,"community.service."+b.status,"zalagren-community-management");
+    return json({service:"Zalagren",status:"service_binding_saved",binding:rows[0]},201);
+  } catch(e){const m=e instanceof Error?e.message:"SERVICE_BINDING_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:m==="COMMUNITY_REPRESENTATIVE_REQUIRED"?403:400);}
+}
+async function communityCapabilityBinding(request: Request, env: Env): Promise<Response> {
+  try {
+    const b=await request.json() as {communityId?:string;capabilityId?:string;status?:string;scope?:unknown};
+    if(!b.communityId||!b.capabilityId||!["active","disabled"].includes(b.status||"")) return json({service:"Zalagren",error:"CAPABILITY_BINDING_FIELDS_REQUIRED"},400);
+    const {participantId,sql}=await requireCommunityRepresentative(request,env,b.communityId);
+    const cap=await sql`SELECT id,service_id FROM public.capabilities WHERE id=${{b.capabilityId} LIMIT 1`;
+    if(!cap.length) return json({service:"Zalagren",error:"CAPABILITY_NOT_FOUND"},404);
+    const service=await sql`SELECT id FROM public.community_service_bindings WHERE community_id=${{b.communityId} AND service_id=${{cap[0].service_id} AND status='active' LIMIT 1`;
+    if(!service.length) return json({service:"Zalagren",error:"SERVICE_MUST_BE_ACTIVE_FIRST"},409);
+    const id="community-capability-"+crypto.randomUUID();
+    const rows=await sql`INSERT INTO public.community_capability_bindings(id,community_id,capability_id,status,scope,created_by_participant_id) VALUES(${{id},${{b.communityId},${{b.capabilityId},${{b.status},${{JSON.stringify(b.scope||[])}::jsonb,${{participantId}) ON CONFLICT(community_id,capability_id) DO UPDATE SET status=EXCLUDED.status,scope=EXCLUDED.scope,updated_at=now() RETURNING *`;
+    await domainEvent(sql,participantId,"community.capability."+b.status,"zalagren-community-management");
+    return json({service:"Zalagren",status:"capability_binding_saved",binding:rows[0]},201);
+  } catch(e){const m=e instanceof Error?e.message:"CAPABILITY_BINDING_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:m==="COMMUNITY_REPRESENTATIVE_REQUIRED"?403:400);}
+}
+async function communityPlaceCreate(request: Request, env: Env): Promise<Response> {
+  try {
+    const b=await request.json() as {communityId?:string;name?:string;type?:string;parentId?:string;latitude?:number;longitude?:number};
+    if(!b.communityId||!b.name?.trim()||!b.type?.trim()) return json({service:"Zalagren",error:"PLACE_FIELDS_REQUIRED"},400);
+    const {participantId,sql}=await requireCommunityRepresentative(request,env,b.communityId);
+    if(b.parentId){
+      const parent=await sql`SELECT community_id FROM public.places WHERE id=${{b.parentId} LIMIT 1`;
+      if(!parent.length||parent[0].community_id!==b.communityId) return json({service:"Zalagren",error:"PLACE_PARENT_INVALID"},409);
+    }
+    const id="place-"+crypto.randomUUID();
+    const rows=await sql`INSERT INTO public.places(id,community_id,name,type,parent_id,latitude,longitude,geometry_status) VALUES(${{id},${{b.communityId},${{b.name.trim()},${{b.type.trim()},${{b.parentId||null},${{Number.isFinite(b.latitude)?b.latitude:null},${{Number.isFinite(b.longitude)?b.longitude:null},'unverified') RETURNING *`;
+    await domainEvent(sql,participantId,"community.place.created","zalagren-community-management");
+    return json({service:"Zalagren",status:"place_created",place:rows[0]},201);
+  } catch(e){const m=e instanceof Error?e.message:"PLACE_CREATE_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:m==="COMMUNITY_REPRESENTATIVE_REQUIRED"?403:400);}
+}
+async function communityParticipationDecision(request: Request, env: Env): Promise<Response> {
+  try {
+    const b=await request.json() as {communityId?:string;participationId?:string;decision?:string;role?:string;placeId?:string;capabilityIds?:string[]};
+    if(!b.communityId||!b.participationId||!["approved","rejected"].includes(b.decision||"")) return json({service:"Zalagren",error:"PARTICIPATION_DECISION_FIELDS_REQUIRED"},400);
+    const {participantId:issuerId,sql}=await requireCommunityRepresentative(request,env,b.communityId);
+    const rows=await sql`SELECT * FROM public.community_participations WHERE id=${{b.participationId} AND community_id=${{b.communityId} AND status='pending' LIMIT 1`;
+    if(!rows.length) return json({service:"Zalagren",error:"PARTICIPATION_REQUEST_NOT_FOUND"},404);
+    const target=rows[0];
+    if(b.decision==="rejected"){
+      const rejected=await sql`UPDATE public.community_participations SET status='rejected' WHERE id=${{b.participationId} RETURNING *`;
+      await domainEvent(sql,issuerId,"community.participation.rejected","zalagren-community-management");
+      return json({service:"Zalagren",status:"participation_rejected",participation:rejected[0]});
+    }
+    const role=String(b.role||target.role||"member").trim();
+    const capabilityIds=Array.isArray(b.capabilityIds)?Array.from(new Set(b.capabilityIds.filter(Boolean))):[];
+    if(!capabilityIds.length) return json({service:"Zalagren",error:"CAPABILITY_APPROVAL_REQUIRED"},400);
+    if(b.placeId){
+      const place=await sql`SELECT id FROM public.places WHERE id=${{b.placeId} AND community_id=${{b.communityId} LIMIT 1`;
+      if(!place.length) return json({service:"Zalagren",error:"PLACE_NOT_FOUND"},404);
+    }
+    const caps=await sql`SELECT c.id,c.action,c.name FROM public.capabilities c JOIN public.community_capability_bindings b ON b.capability_id=c.id WHERE b.community_id=${{b.communityId} AND b.status='active' AND c.id=ANY(${{capabilityIds})`;
+    if(caps.length!==capabilityIds.length) return json({service:"Zalagren",error:"CAPABILITY_NOT_ENABLED_FOR_COMMUNITY"},409);
+    const contextId="context-"+crypto.randomUUID();
+    const state=JSON.stringify({source:"community_approval",approvedBy:issuerId,approvedAt:new Date().toISOString(),capabilities:caps.map((c:any)=>c.id)});
+    const relationshipId="relationship-"+crypto.randomUUID();
+    const statements=[
+      sql`UPDATE public.community_participations SET status='active',role=${{role},starts_at=now() WHERE id=${{b.participationId}`,
+      sql`INSERT INTO public.contexts(id,participant_id,community_id,place_id,role,purpose,active_at,state) VALUES(${{contextId},${{target.participant_id},${{b.communityId},${{b.placeId||null},${{role},'community_participation',now(),${{state}::jsonb)`,
+      sql`INSERT INTO public.relationships(id,subject_id,relationship_type,object_id,status,valid_from) VALUES(${{relationshipId},${{target.participant_id},'community_participation',${{b.communityId},'active',now())`
+    ];
+    for(const c of caps) statements.push(sql`INSERT INTO public.authorizations(id,participant_id,context_id,capability_id,action,source,issued_by_participant_id,status) VALUES(${{"authorization-"+crypto.randomUUID()},${{target.participant_id},${{contextId},${{c.id},${{c.action},'explicit',${{issuerId},'active')`);
+    await sql.transaction(statements);
+    await domainEvent(sql,target.participant_id,"community.participation.approved","zalagren-community-management",contextId);
+    return json({service:"Zalagren",status:"participation_approved",contextId,authorizationCount:caps.length,approvedBy:issuerId});
+  } catch(e){const m=e instanceof Error?e.message:"PARTICIPATION_DECISION_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:m==="COMMUNITY_REPRESENTATIVE_REQUIRED"?403:400);}
+}
+async function communityProposalDecision(request: Request, env: Env): Promise<Response> {
+  try {
+    const b=await request.json() as {communityId?:string;proposalId?:string;decision?:string};
+    if(!b.communityId||!b.proposalId||!["approved","rejected"].includes(b.decision||"")) return json({service:"Zalagren",error:"PROPOSAL_DECISION_FIELDS_REQUIRED"},400);
+    const {participantId,sql}=await requireCommunityRepresentative(request,env,b.communityId);
+    const rows=await sql`UPDATE public.community_proposals SET status=${{b.decision} WHERE id=${{b.proposalId} AND community_id=${{b.communityId} AND status='pending' RETURNING *`;
+    if(!rows.length) return json({service:"Zalagren",error:"PROPOSAL_NOT_FOUND"},404);
+    await domainEvent(sql,participantId,"community.proposal."+b.decision,"zalagren-community-management");
+    return json({service:"Zalagren",status:"proposal_"+b.decision,proposal:rows[0]});
+  } catch(e){const m=e instanceof Error?e.message:"PROPOSAL_DECISION_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:m==="COMMUNITY_REPRESENTATIVE_REQUIRED"?403:400);}
+}
 async function me(request: Request, env: Env): Promise<Response> {
   try {
     const active = await currentSession(request, env);
@@ -767,13 +990,24 @@ export default {
     if (request.method === "GET" && url.pathname === "/api/home/services") return homeServices(request, env);
     if (request.method === "GET" && url.pathname === "/api/home/foundation") return homeFoundation(request, env);
     if (request.method === "GET" && url.pathname === "/api/participation") return listParticipation(request, env);
+    if (request.method === "GET" && url.pathname === "/api/community/management") return communityManagement(request, env);
+    if (request.method === "POST" && url.pathname === "/api/community/representative/request") return requestRepresentative(request, env);
+    if (request.method === "POST" && url.pathname === "/api/community/management/onboarding/decision") return communityOnboardingDecision(request, env);
+    if (request.method === "POST" && url.pathname === "/api/community/management/subscription/decision") return communitySubscriptionDecision(request, env);
+    if (request.method === "POST" && url.pathname === "/api/community/management/service") return communityServiceBinding(request, env);
+    if (request.method === "POST" && url.pathname === "/api/community/management/capability") return communityCapabilityBinding(request, env);
+    if (request.method === "POST" && url.pathname === "/api/community/management/place") return communityPlaceCreate(request, env);
+    if (request.method === "POST" && url.pathname === "/api/community/management/participation/decision") return communityParticipationDecision(request, env);
+    if (request.method === "POST" && url.pathname === "/api/community/management/proposal/decision") return communityProposalDecision(request, env);
     if (request.method === "POST" && url.pathname === "/api/participation/community/join") return joinCommunity(request, env);
     if (request.method === "POST" && url.pathname === "/api/community/plans") return communityPlans(request, env);
     if (request.method === "POST" && url.pathname === "/api/community/subscription") return requestCommunitySubscription(request, env);
     if (request.method === "POST" && url.pathname === "/api/community/proposal") return submitCommunityProposal(request, env);
     if (request.method === "POST" && url.pathname === "/api/community/onboarding") return proposeCommunityOnboarding(request, env);
     if (request.method === "GET" && url.pathname === "/api/marketplace") return listMarketplace(request, env);
+    if (request.method === "GET" && url.pathname === "/api/marketplace/mine") return listMyMarketplace(request, env);
     if (request.method === "POST" && url.pathname === "/api/marketplace/listing") return createMarketplaceListing(request, env);
+    if (request.method === "POST" && url.pathname === "/api/marketplace/accommodation") return createAccommodationProfile(request, env);
     if (request.method === "POST" && url.pathname === "/api/beatfood/merchant") return createBeatFoodMerchant(request, env);
     if (request.method === "POST" && url.pathname === "/api/beatfood/item") return createBeatFoodItem(request, env);
     if (request.method === "POST" && url.pathname === "/api/beatfood/order") return createBeatFoodOrder(request, env);

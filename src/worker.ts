@@ -100,7 +100,7 @@ async function syncCanonicalAuth(
     JOIN public.identities i ON i.id = am.identity_id
     JOIN public.participants p ON p.identity_id = i.id
     JOIN public.accounts a ON a.identity_id = i.id
-    WHERE am.kind = 'email' AND am.identifier = ${email} AND am.status = 'active'
+    WHERE am.kind = 'email' AND am.identifier = ${email} AND am.status <> 'revoked'
     LIMIT 1
   `;
 
@@ -193,6 +193,24 @@ async function authMutation(request: Request, env: Env, endpoint: string): Promi
 
     const user = providerUser(payload);
     const session = providerSession(payload);
+
+    if (endpoint === "/sign-in/email" && user && !Boolean(user.emailVerified)) {
+      let verificationRequested = false;
+      try {
+        const verification = await providerRequest(
+          request,
+          env,
+          "/send-verification-email",
+          { email: String(user.email).trim().toLowerCase(), callbackURL: new URL("/", request.url).toString() }
+        );
+        verificationRequested = verification.ok;
+      } catch {}
+      return json(
+        { service: "Zalagren", error: "EMAIL_NOT_VERIFIED", verificationRequested },
+        403
+      );
+    }
+
     const canonical = user
       ? await syncCanonicalAuth(env, user, session, null, setCookies)
       : null;

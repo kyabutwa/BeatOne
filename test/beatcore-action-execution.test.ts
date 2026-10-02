@@ -146,7 +146,7 @@ test("ActionOutcomeTrace cannot cross Action boundaries", async () => {
   );
 });
 
-test("ActionExecution lifecycle requires started before a terminal state", async () => {
+test("ActionExecution lifecycle permits terminal creation but forbids terminal-to-terminal transition", async () => {
   const repository = new InMemoryPersistenceRepository();
   await seed(repository);
 

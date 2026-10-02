@@ -313,14 +313,14 @@ async function saveLegalIdentity(request: Request, env: Env): Promise<Response> 
     validateLegalIdentity(input);
     const sql = requireDatabase(env);
     const participantId = active.canonical.participant_id || active.canonical.participantId;
-    const identityRows = await sql\`SELECT i.id FROM public.identities i JOIN public.participants p ON p.identity_id=i.id WHERE p.id=\${participantId} LIMIT 1\`;
+    const identityRows = await sql`SELECT i.id FROM public.identities i JOIN public.participants p ON p.identity_id=i.id WHERE p.id=\${participantId} LIMIT 1\`;
     if (!identityRows.length) return json({service:"Zalagren",error:"IDENTITY_NOT_FOUND"},404);
     const identity = identityRows[0].id;
     const documentNumber = input.documentNumber.trim();
     const documentHash = await sha256Hex(documentNumber.toUpperCase());
     const encrypted = await encryptSensitive(documentNumber, env);
     const docId = "identity-document-" + crypto.randomUUID();
-    const profile = await sql\`
+    const profile = await sql`
       INSERT INTO public.legal_identity_profiles (
         identity_id, legal_name, given_names, middle_names, family_name, date_of_birth, sex,
         nationality_country_code, birth_country_code, birth_place, residence_country_code,
@@ -343,7 +343,7 @@ async function saveLegalIdentity(request: Request, env: Env): Promise<Response> 
         region=EXCLUDED.region, postal_code=EXCLUDED.postal_code, verification_status='pending', updated_at=now()
       RETURNING identity_id, legal_name, verification_status
     \`;
-    await sql\`
+    await sql`
       INSERT INTO public.identity_documents (
         id, identity_id, document_type, issuing_country_code, issuing_authority,
         document_number_ciphertext, document_number_hash, document_number_last4,
@@ -374,11 +374,11 @@ async function startPhoneVerification(request: Request, env: Env): Promise<Respo
     const payload=await twilioRequest(env,"/Verifications",new URLSearchParams({channel:"sms",to:phone}));
     const sql=requireDatabase(env);
     const participantId=active.canonical.participant_id || active.canonical.participantId;
-    const rows=await sql\`SELECT i.id FROM public.identities i JOIN public.participants p ON p.identity_id=i.id WHERE p.id=\${participantId} LIMIT 1\`;
+    const rows=await sql`SELECT i.id FROM public.identities i JOIN public.participants p ON p.identity_id=i.id WHERE p.id=\${participantId} LIMIT 1\`;
     if(!rows.length) return json({service:"Zalagren",error:"IDENTITY_NOT_FOUND"},404);
     const hash=await sha256Hex(phone);
     const contactId="identity-contact-"+crypto.randomUUID();
-    await sql\`INSERT INTO public.identity_contacts(id,identity_id,kind,value_normalized,value_hash,status,is_primary,updated_at)
+    await sql`INSERT INTO public.identity_contacts(id,identity_id,kind,value_normalized,value_hash,status,is_primary,updated_at)
       VALUES(\${contactId},\${rows[0].id},'phone',\${phone},\${hash},'pending',false,now())
       ON CONFLICT (kind,value_hash) DO UPDATE SET identity_id=EXCLUDED.identity_id,status='pending',updated_at=now()\`;
     return json({service:"Zalagren",status:"phone_verification_sent",phoneLast4:phone.slice(-4),providerStatus:payload?.status||"pending"});
@@ -396,22 +396,22 @@ async function verifyPhone(request: Request, env: Env): Promise<Response> {
     if(payload?.status!=="approved") return json({service:"Zalagren",error:"PHONE_NOT_VERIFIED",status:payload?.status||"pending"},400);
     const sql=requireDatabase(env);
     const participantId=active.canonical.participant_id || active.canonical.participantId;
-    const rows=await sql\`SELECT i.id FROM public.identities i JOIN public.participants p ON p.identity_id=i.id WHERE p.id=\${participantId} LIMIT 1\`;
+    const rows=await sql`SELECT i.id FROM public.identities i JOIN public.participants p ON p.identity_id=i.id WHERE p.id=\${participantId} LIMIT 1\`;
     if(!rows.length) return json({service:"Zalagren",error:"IDENTITY_NOT_FOUND"},404);
     const identity=rows[0].id, hash=await sha256Hex(phone);
     const contactId="identity-contact-"+crypto.randomUUID(), methodId="auth-method-phone-"+crypto.randomUUID(), credentialId="credential-phone-"+crypto.randomUUID();
     await sql.transaction([
-      sql\`UPDATE public.identity_contacts SET status='revoked',is_primary=false,updated_at=now() WHERE identity_id=\${identity} AND kind='phone' AND status='active' AND value_hash<>\${hash}\`,
-      sql\`INSERT INTO public.identity_contacts(id,identity_id,kind,value_normalized,value_hash,status,verified_at,is_primary,updated_at)
+      sql`UPDATE public.identity_contacts SET status='revoked',is_primary=false,updated_at=now() WHERE identity_id=\${identity} AND kind='phone' AND status='active' AND value_hash<>\${hash}\`,
+      sql`INSERT INTO public.identity_contacts(id,identity_id,kind,value_normalized,value_hash,status,verified_at,is_primary,updated_at)
           VALUES(\${contactId},\${identity},'phone',\${phone},\${hash},'active',now(),true,now())
           ON CONFLICT (kind,value_hash) DO UPDATE SET identity_id=EXCLUDED.identity_id,status='active',verified_at=now(),is_primary=true,updated_at=now()\`,
-      sql\`INSERT INTO public.auth_methods(id,identity_id,kind,identifier,status,verified_at)
+      sql`INSERT INTO public.auth_methods(id,identity_id,kind,identifier,status,verified_at)
           VALUES(\${methodId},\${identity},'phone',\${phone},'active',now())
           ON CONFLICT DO NOTHING\`,
-      sql\`INSERT INTO public.credentials(id,kind,status,account_id)
+      sql`INSERT INTO public.credentials(id,kind,status,account_id)
           SELECT \${credentialId},'phone','ACTIVE',a.id FROM public.accounts a WHERE a.identity_id=\${identity}
           ON CONFLICT DO NOTHING\`,
-      sql\`INSERT INTO public.identity_verification_records(id,identity_id,target_type,target_id,method,status,external_reference,completed_at)
+      sql`INSERT INTO public.identity_verification_records(id,identity_id,target_type,target_id,method,status,external_reference,completed_at)
           VALUES('identity-verification-'+crypto.randomUUID(),\${identity},'phone',\${methodId},'twilio-verify','verified',\${payload?.sid||null},now())\`
     ]);
     return json({service:"Zalagren",status:"phone_verified",phoneLast4:phone.slice(-4)});

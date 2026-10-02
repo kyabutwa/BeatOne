@@ -1,5 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { prepareProviderAuthRequest } from "./auth-proxy.js";
+import { renderHome } from "./home-ui.js";
 interface Env {
   DATABASE_URL: string;
   BOOTSTRAP_TOKEN?: string;
@@ -239,39 +240,45 @@ async function me(request: Request, env: Env): Promise<Response> {
   }
 }
 
-const html = (): Response =>
-  new Response(`<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Zalagren</title>
-<style>
-:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#0b1f3a;background:#fff}
-*{box-sizing:border-box}body{margin:0;min-height:100vh}main{max-width:980px;margin:auto;padding:20px 16px 64px}
-header{display:flex;align-items:center;justify-content:space-between;border:1px solid #dbe3ee;border-radius:20px;padding:14px 18px;background:#fff;box-shadow:0 8px 30px #0b1f3a0d;position:sticky;top:12px;z-index:2}
-.brand{font-size:22px;font-weight:750;color:#14833b}.menu{font-size:22px;color:#0b1f3a}
-.hero{padding:48px 4px 28px}.eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#c66b22}
-h1{font-size:clamp(40px,9vw,72px);line-height:.98;margin:12px 0 18px;color:#0b1f3a}p{font-size:17px;line-height:1.55;color:#43536a;max-width:700px}
-.panel{max-width:460px;border:1px solid #dbe3ee;border-radius:20px;padding:20px;background:#fff;box-shadow:0 12px 36px #0b1f3a0b}
-input,button{width:100%;padding:13px 14px;border-radius:12px;border:1px solid #cdd8e6;font:inherit;margin-top:10px}button{background:#0b1f3a;color:#fff;border:0;font-weight:700;cursor:pointer}.secondary{background:#f4f7fb;color:#0b1f3a}
-.switch{font-size:13px;color:#627188;margin-top:12px;text-align:center;cursor:pointer}.error{color:#a33b2b;font-size:13px;margin-top:10px}.hidden{display:none}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:24px}.card{border:1px solid #dbe3ee;border-radius:18px;padding:20px;background:#fff}.card b{display:block;font-size:17px;margin-bottom:7px}.card span{color:#627188;font-size:14px;line-height:1.5}.status{margin-top:24px;padding:15px 17px;border-radius:16px;background:#f4f7fb;border:1px solid #dbe3ee}
-</style></head><body><main>
-<header><div class="brand">Zalagren</div><div class="menu">•••</div></header>
-<section class="hero" id="auth"><div class="eyebrow">Intelligent Living Infrastructure</div><h1>One identity.<br>Connected possibilities.</h1>
-<p>Enter Zalagren through a real participant identity. Authentication is handled by the frozen Neon Managed Better Auth boundary; participant authority remains in BeatCore.</p>
-<div class="panel"><b id="formTitle">Create your identity</b><input id="name" placeholder="Your name"><input id="email" type="email" placeholder="Email"><input id="password" type="password" placeholder="Password (8+ characters)"><button id="submit">Create account</button><button id="demo" class="secondary" type="button">Sign in instead</button><div id="error" class="error"></div></div></section>
-<section class="hero hidden" id="home"><div class="eyebrow">Participant home</div><h1 id="welcome">Welcome.</h1><p id="identity"></p><div class="grid"><div class="card"><b>Identity</b><span>Your persistent participant foundation is active.</span></div><div class="card"><b>Communities</b><span>Context and participation can be connected here.</span></div><div class="card"><b>Services</b><span>Services become actions only through authorized context.</span></div><div class="card"><b>GENESIS</b><span>Intelligence proposes; authorized participants decide.</span></div></div><div class="status"><b>Session:</b> authenticated through the production auth boundary.</div><button id="signout" class="secondary">Sign out</button></section>
-</main>
-<script>
-let signup=true;
-const $=id=>document.getElementById(id);
-function mode(){ $("formTitle").textContent=signup?"Create your identity":"Welcome back"; $("submit").textContent=signup?"Create account":"Sign in"; $("demo").textContent=signup?"Sign in instead":"Create an account"; $("name").classList.toggle("hidden",!signup); $("password").placeholder=signup?"Password (8+ characters)":"Password"; }
-async function check(){ const r=await fetch("/api/me"); if(r.ok){const d=await r.json(); showHome(d)}}
-function showHome(d){$("auth").classList.add("hidden");$("home").classList.remove("hidden");$("welcome").textContent="Welcome, "+(d.identity.name||"participant")+"."; $("identity").textContent=d.identity.email+" · Participant "+d.participant.participantId}
-$("demo").onclick=()=>{signup=!signup;mode();$("error").textContent=""};
-$("submit").onclick=async()=>{ $("error").textContent=""; const body={email:$("email").value.trim(),password:$("password").value}; if(signup)body.name=$("name").value.trim(); const r=await fetch(signup?"/api/auth/sign-up/email":"/api/auth/sign-in/email",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)}); const d=await r.json(); if(!r.ok){$("error").textContent=d.error||"Authentication failed";return} showHome(d.canonical?{identity:d.user,participant:d.canonical}:await (await fetch("/api/me")).json())};
-$("signout").onclick=async()=>{await fetch("/api/auth/sign-out",{method:"POST"}); location.reload()};
-mode(); check();
-</script></body></html>`, {headers: headers({"content-type":"text/html; charset=utf-8"})});
+
+async function homeCommunities(env: Env): Promise<Response> {
+  try {
+    const sql = requireDatabase(env);
+    const items = await sql`SELECT id, name, type, location, verification FROM public.communities ORDER BY created_at DESC LIMIT 50`;
+    return json({ service: "Zalagren", items });
+  } catch (error) {
+    return json({ service: "Zalagren", error: error instanceof Error ? error.message : "COMMUNITIES_LOOKUP_FAILED" }, 500);
+  }
+}
+
+async function homeServices(env: Env): Promise<Response> {
+  try {
+    const sql = requireDatabase(env);
+    const items = await sql`
+      SELECT
+        s.id, s.name, s.domain, s.status,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', c.id,
+              'name', c.name,
+              'action', c.action,
+              'requiresExplicitAuthorization', c.requires_explicit_authorization
+            ) ORDER BY c.name
+          ) FILTER (WHERE c.id IS NOT NULL),
+          '[]'::json
+        ) AS capabilities
+      FROM public.services s
+      LEFT JOIN public.capabilities c ON c.service_id = s.id
+      GROUP BY s.id, s.name, s.domain, s.status
+      ORDER BY s.name
+      LIMIT 50
+    `;
+    return json({ service: "Zalagren", items });
+  } catch (error) {
+    return json({ service: "Zalagren", error: error instanceof Error ? error.message : "SERVICES_LOOKUP_FAILED" }, 500);
+  }
+}
 
 async function health(env: Env): Promise<Response> {
   try {
@@ -331,9 +338,11 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === "OPTIONS") return new Response(null,{status:204,headers:headers({"access-control-allow-origin":"*","access-control-allow-headers":"content-type, authorization","access-control-allow-methods":"GET,POST,OPTIONS"})});
     const url = new URL(request.url);
-    if (request.method === "GET" && url.pathname === "/") return html();
+    if (request.method === "GET" && url.pathname === "/") return renderHome(headers);
     if (request.method === "GET" && url.pathname === "/api/health") return health(env);
     if (request.method === "GET" && url.pathname === "/api/foundation") return foundation(env);
+    if (request.method === "GET" && url.pathname === "/api/home/communities") return homeCommunities(env);
+    if (request.method === "GET" && url.pathname === "/api/home/services") return homeServices(env);
     if (request.method === "GET" && url.pathname === "/api/me") return me(request, env);
     if (request.method === "POST" && url.pathname === "/api/auth/sign-up/email") return authMutation(request, env, "/sign-up/email");
     if (request.method === "POST" && url.pathname === "/api/auth/sign-in/email") return authMutation(request, env, "/sign-in/email");

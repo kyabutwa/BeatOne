@@ -98,7 +98,7 @@ input::placeholder{color:#7a8798}
 @media(max-width:700px){.shell{padding-top:4px}.topbar{top:4px}.account-control span{display:none}.home-intro{display:block}.context-chip{margin-top:12px}.context-grid{grid-template-columns:1fr}.surface-grid{grid-template-columns:1fr}.surface{min-height:128px}.participant-card{grid-template-columns:1fr}.actions{flex-direction:column}.action{width:100%}.menu-grid{grid-template-columns:1fr}}
 @media(min-width:701px){.page{padding-top:18px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.surface{transition:none}.surface:hover{transform:none}}
-/* Owner-provided EarthBeat/Zalagren reference artwork remains intact and is never recolored. Interface blue accents are unified to Tsavo orange. */</style>
+/* Owner-provided Zalagren artwork remains intact and is never recolored. */</style>
 </head>
 <body>
 <div class="overlay" id="menuOverlay" aria-hidden="true">

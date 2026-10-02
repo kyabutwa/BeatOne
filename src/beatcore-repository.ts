@@ -329,9 +329,9 @@ function validateRecord(
       const proposal = tx.get("proposals", value.proposalId);
       const authorization = tx.get("authorizations", value.authorizationId);
       if (!action || !proposal || !authorization) failure("NOT_FOUND");
-      if (action.proposalId !== value.proposalId) failure("VALIDATION_FAILURE");
-      if (action.authorizationId !== value.authorizationId) failure("VALIDATION_FAILURE");
-      if (proposal.actorId !== action.actorId || authorization.actorId !== action.actorId) failure("UNAUTHORIZED");
+      if (action!.proposalId !== value.proposalId) failure("VALIDATION_FAILURE");
+      if (action!.authorizationId !== value.authorizationId) failure("VALIDATION_FAILURE");
+      if (proposal!.actorId !== action!.actorId || authorization!.actorId !== action!.actorId) failure("UNAUTHORIZED");
       if (!["started", "succeeded", "failed", "cancelled"].includes(value.status)) failure("VALIDATION_FAILURE");
       requireText(value.startedAt);
       const startedAt = new Date(value.startedAt);
@@ -359,8 +359,8 @@ function validateRecord(
       const event = tx.get("events", value.eventId);
       const evidence = tx.get("evidences", value.evidenceId);
       if (!execution || !event || !evidence) failure("NOT_FOUND");
-      if (event.actionId !== execution.actionId) failure("VALIDATION_FAILURE");
-      if (evidence.eventId !== event.id) failure("VALIDATION_FAILURE");
+      if (event!.actionId !== execution!.actionId) failure("VALIDATION_FAILURE");
+      if (evidence!.eventId !== event!.id) failure("VALIDATION_FAILURE");
       requireText(value.createdAt);
       if (Number.isNaN(new Date(value.createdAt).getTime())) failure("INVALID_INPUT");
       break;

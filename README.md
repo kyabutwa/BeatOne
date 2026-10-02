@@ -46,6 +46,6 @@ Cloudflare Worker + Neon PostgreSQL are the current production infrastructure.
 
 ## Brand
 
-The canonical uploaded Zalagren artwork in IMG_1383.jpeg is the primary UI logo. IMG_1384.jpeg is a preserved project-owned reference asset.
+The owner-provided IMG_1383.jpeg is the intended canonical UI logo. The binary is currently absent from the repository, so the current interface uses a self-contained temporary Zalagren mark until the owner asset is restored. IMG_1384.jpeg remains a preserved project-owned reference asset.
 
 No EarthBeat or SpeedMe visible branding is permitted.

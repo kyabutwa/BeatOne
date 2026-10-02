@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { prepareProviderAuthRequest } from "../src/worker.ts";
+import { prepareProviderAuthRequest } from "../src/auth-proxy.js";
 
 test("auth proxy forwards Origin and makes relative callbackURL absolute", () => {
   const request = new Request("https://zalagren.kyabutwabis-f.workers.dev/api/auth/sign-up/email", {

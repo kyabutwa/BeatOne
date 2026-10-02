@@ -1,5 +1,5 @@
 import { neon } from "@neondatabase/serverless";
-
+import { prepareProviderAuthRequest } from "./auth-proxy.js";
 interface Env {
   DATABASE_URL: string;
   BOOTSTRAP_TOKEN?: string;
@@ -49,27 +49,6 @@ async function sha256(value: string): Promise<string> {
 function providerCookies(response: Response): string[] {
   const h = response.headers as Headers & { getSetCookie?: () => string[]; getAll?: (name: string) => string[] };
   return h.getSetCookie?.() ?? h.getAll?.("Set-Cookie") ?? (h.get("set-cookie") ? [h.get("set-cookie") as string] : []);
-}
-
-export function prepareProviderAuthRequest(request: Request, body: unknown): { headers: Headers; body: unknown } {
-  const origin = request.headers.get("origin") || new URL(request.url).origin;
-  const input = body && typeof body === "object" ? { ...(body as Record<string, unknown>) } : {};
-  const callbackURL = input.callbackURL;
-  if (typeof callbackURL === "string" && callbackURL.length > 0) {
-    input.callbackURL = new URL(callbackURL, origin).toString();
-  } else {
-    input.callbackURL = new URL("/", origin).toString();
-  }
-
-  const upstream = new Headers({ accept: "application/json", origin });
-  const cookie = request.headers.get("cookie");
-  if (cookie) upstream.set("cookie", cookie);
-  const contentType = request.headers.get("content-type");
-  if (contentType) upstream.set("content-type", contentType);
-  const referer = request.headers.get("referer");
-  if (referer) upstream.set("referer", referer);
-
-  return { headers: upstream, body: input };
 }
 
 async function providerRequest(

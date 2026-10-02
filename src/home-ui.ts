@@ -477,10 +477,21 @@ $("authForm").onsubmit=async event=>{
   setError(d.error||"Authentication failed.");
   return;
  }
+ if(signup){
+   $("verificationBox").classList.remove("hidden");
+   $("phoneVerificationSection").classList.remove("hidden");
+   $("verificationCopy").textContent="Your account was created. Verify your email and phone before continuing.";
+   try{
+    const er=await fetch("/api/auth/email/verification/send",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({email:body.email})});
+    if(!er.ok) $("verificationCopy").textContent+=" Email verification could not be requested yet.";
+   }catch{}
+   try{
+    const pr=await fetch("/api/contact/phone/start",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({phone:body.phone})});
+    if(!pr.ok){const pd=await pr.json().catch(()=>({}));$("verificationCopy").textContent+=" Phone verification: "+(pd.error||"could not be started");}
+   }catch{$("verificationCopy").textContent+=" Phone verification could not be started.";}
+   return;
+ }
  showHome(d.canonical?{identity:d.user,participant:d.canonical,verification:d.verification}:await(await fetch("/api/me")).json());
- $("verificationBox").classList.remove("hidden");
- const md=await fetch("/api/me");const me=md.ok?await md.json():{};const v=me.verification||d.verification||{};
- $("verificationCopy").textContent="Email: "+(v.email?"verified":"verification required")+" · Identity details: available later in Identity Vault when a service or jurisdiction requires them.";if(signup&&body.phone){try{const pr=await fetch("/api/contact/phone/start",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({phone:body.phone})});if(!pr.ok){const pd=await pr.json().catch(()=>({}));$("verificationCopy").textContent+=" · Phone verification: "+(pd.error||"could not be started");}}catch{$("verificationCopy").textContent+=" · Phone verification could not be started.";}}
 };
 async function requestEmailVerification(){
  const email=$("email").value.trim();

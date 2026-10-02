@@ -1,4 +1,4 @@
-name: Deploy Zalagren Worker
+name: Deploy BeatOne Worker
 
 on:
   push:
@@ -44,7 +44,7 @@ jobs:
       - name: Verify production shell
         run: |
           body=$(curl -L -sS https://zalagren.kyabutwabis-f.workers.dev/)
-          printf "%s" "$body" | grep -q "Zalagren"
+          printf "%s" "$body" | grep -q "BeatOne"
           printf "%s" "$body" | grep -q "Participant Home"
           printf "%s" "$body" | grep -q "GENESIS"
-          printf "%s" "$body" | grep -q "Ecosystem domains"
+          printf "%s" "$body" | grep -q "BeatOne · 8 pillars"

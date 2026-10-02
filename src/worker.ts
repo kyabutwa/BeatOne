@@ -420,7 +420,7 @@ async function verifyEmailVerificationCode(request: Request, env: Env): Promise<
     const email=normalizeEmail(body.email || "");
     const otp=String(body.otp || "").trim();
     if(!email) return json({service:"BeatOne",error:"EMAIL_REQUIRED"},400);
-    if(!/^\\d{4,10}$/.test(otp)) return json({service:"BeatOne",error:"INVALID_VERIFICATION_CODE"},400);
+    if(!/^\d{4,10}$/.test(otp)) return json({service:"BeatOne",error:"INVALID_VERIFICATION_CODE"},400);
     const upstream=await providerRequest(request,env,"/email-otp/verify-email",{email,otp});
     const payload=await readJson(upstream);
     if(!upstream.ok) return json({service:"BeatOne",error:payload?.message||payload?.error||"EMAIL_NOT_VERIFIED",provider:payload},upstream.status);

@@ -58,7 +58,6 @@ jobs:
           node-version: 22
       - run: npm install
       - run: npm run typecheck
-      - run: npm run build
       - run: node --import tsx --test test/event-evidence-postgres-runtime.test.ts
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/beatone_test
@@ -72,7 +71,6 @@ jobs:
           node-version: 22
       - run: npm install
       - run: npm run typecheck
-      - run: npm run build
       - run: npm test 2>&1 | tee npm-test.log
         shell: bash
       - name: Upload npm test diagnostics

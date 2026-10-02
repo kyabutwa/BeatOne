@@ -65,3 +65,13 @@ Production architecture remains GitHub → Cloudflare Worker → Neon PostgreSQL
 🟡 SUPPORTED — implementation exists but an external/provider gate remains.
 🔵 PROPOSED — design exists but implementation/evidence is not complete.
 🔴 FAILED — required implementation or evidence is missing.
+
+## Community ↔ BeatOne service boundary
+
+BeatOne remains the owner/operator of the ecosystem service layer. Communities do not own, block, disable or globally suspend BeatPay, BeatRide, BeatFood, BeatHealth, BeatMarket, BeatGenzi, BeatGuardian, BeatUtilities or future BeatOne services.
+
+The community management dashboard is a node-level **integration and coordination surface**. Authorized community representatives may configure local integration settings, places, participation context and contextual capabilities. Those settings describe how BeatOne is coordinated inside the node; they do not transfer service ownership or global control to the community.
+
+**Invariant: BeatOne manages the service. The community coordinates the context.**
+
+Real provider execution remains subject to actual provider connections, authorization, compliance and regulated boundaries.

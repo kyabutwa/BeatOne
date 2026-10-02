@@ -57,9 +57,19 @@ async function providerRequest(
   endpoint: string,
   body?: unknown
 ): Promise<Response> {
+  const isEmailOtp = endpoint === "/email-otp/send-verification-otp" || endpoint === "/email-otp/verify-email";
   const prepared = body === undefined
     ? { headers: new Headers({ accept: "application/json", origin: request.headers.get("origin") || new URL(request.url).origin }), body }
-    : prepareProviderAuthRequest(request, body);
+    : isEmailOtp
+      ? {
+          headers: new Headers({
+            accept: "application/json",
+            "content-type": "application/json",
+            origin: request.headers.get("origin") || new URL(request.url).origin
+          }),
+          body
+        }
+      : prepareProviderAuthRequest(request, body);
 
   return fetch(new Request(authBase(env) + endpoint, {
     method: body === undefined ? request.method : "POST",
@@ -844,13 +854,19 @@ async function me(request: Request, env: Env): Promise<Response> {
     const identityRows = await sql`
       SELECT i.id AS identity_id, lip.legal_name,
              lip.status AS legal_verification_status,
+             a.id AS account_id, a.status AS account_status,
              EXISTS(SELECT 1 FROM public.identity_contacts ic WHERE ic.identity_id=i.id AND ic.kind='email' AND ic.status='active' AND ic.verified_at IS NOT NULL) AS email_verified,
+             EXISTS(SELECT 1 FROM public.identity_contacts ic WHERE ic.identity_id=i.id AND ic.kind='email' AND ic.status='pending') AS email_pending,
              EXISTS(SELECT 1 FROM public.identity_contacts ic WHERE ic.identity_id=i.id AND ic.kind='phone' AND ic.status='active' AND ic.verified_at IS NOT NULL) AS phone_verified,
+             EXISTS(SELECT 1 FROM public.identity_contacts ic WHERE ic.identity_id=i.id AND ic.kind='phone' AND ic.status='pending') AS phone_pending,
              EXISTS(SELECT 1 FROM public.identity_documents d WHERE d.identity_id=i.id AND d.status='verified') AS document_verified,
-             EXISTS(SELECT 1 FROM public.legal_identity_profiles lp2 WHERE lp2.participant_id=p.id AND lp2.status='verified') AS legal_identity_verified
+             EXISTS(SELECT 1 FROM public.identity_documents d WHERE d.identity_id=i.id AND d.status='pending') AS document_pending,
+             EXISTS(SELECT 1 FROM public.legal_identity_profiles lp2 WHERE lp2.participant_id=p.id AND lp2.status='verified') AS legal_identity_verified,
+             EXISTS(SELECT 1 FROM public.legal_identity_profiles lp3 WHERE lp3.participant_id=p.id AND lp3.status='pending') AS legal_identity_pending
       FROM public.identities i
       LEFT JOIN public.legal_identity_profiles lip ON lip.participant_id=p.id
       JOIN public.participants p ON p.identity_id=i.id
+      JOIN public.accounts a ON a.identity_id=i.id
       WHERE p.id=${participantId}
       LIMIT 1
     `;
@@ -859,11 +875,27 @@ async function me(request: Request, env: Env): Promise<Response> {
       authenticated: true,
       participant: active.canonical,
       identity: { provider: "neon-auth", userId: active.user.id, name: active.user.name, email: active.user.email, legalName: identityRows[0]?.legal_name || null },
+      account: {
+        id: identityRows[0]?.account_id || active.canonical.account_id || active.canonical.accountId || null,
+        status: identityRows[0]?.account_status || "unknown"
+      },
       verification: {
-        email: Boolean(identityRows[0]?.email_verified),
-        phone: Boolean(identityRows[0]?.phone_verified),
-        document: Boolean(identityRows[0]?.document_verified),
-        legalIdentity: Boolean(identityRows[0]?.legal_identity_verified)
+        email: {
+          status: identityRows[0]?.email_verified ? "verified" : identityRows[0]?.email_pending ? "pending" : "required",
+          verified: Boolean(identityRows[0]?.email_verified)
+        },
+        phone: {
+          status: identityRows[0]?.phone_verified ? "verified" : identityRows[0]?.phone_pending ? "pending" : "required",
+          verified: Boolean(identityRows[0]?.phone_verified)
+        },
+        document: {
+          status: identityRows[0]?.document_verified ? "verified" : identityRows[0]?.document_pending ? "pending" : "not_started",
+          verified: Boolean(identityRows[0]?.document_verified)
+        },
+        legalIdentity: {
+          status: identityRows[0]?.legal_identity_verified ? "verified" : identityRows[0]?.legal_identity_pending ? "pending" : "not_started",
+          verified: Boolean(identityRows[0]?.legal_identity_verified)
+        }
       },
       home: {
         identity: "Ready",

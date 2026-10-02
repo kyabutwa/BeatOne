@@ -137,7 +137,7 @@ test("ActionOutcomeTrace cannot cross Action boundaries", async () => {
 
   await assert.rejects(
     repository.transaction((tx) => {
-      tx.insert("action_outcome_trace", {
+      tx.replace("action_outcome_trace", {
         ...trace,
         eventId: id("event-2")
       });
@@ -150,20 +150,33 @@ test("ActionExecution lifecycle requires started before a terminal state", async
   const repository = new InMemoryPersistenceRepository();
   await seed(repository);
 
+  await repository.transaction((tx) => {
+    tx.insert("action_executions", {
+      id: id("execution-terminal"),
+      actionId: id("action-1"),
+      proposalId: id("proposal-1"),
+      authorizationId: id("authorization-1"),
+      status: "succeeded",
+      startedAt: "2026-10-01T01:00:00.000Z",
+      finishedAt: "2026-10-01T01:01:00.000Z",
+      idempotencyKey: "execution-terminal"
+    });
+  });
+
   await assert.rejects(
     repository.transaction((tx) => {
-      tx.insert("action_executions", {
+      tx.replace("action_executions", {
         id: id("execution-terminal"),
         actionId: id("action-1"),
         proposalId: id("proposal-1"),
         authorizationId: id("authorization-1"),
-        status: "succeeded",
+        status: "failed",
         startedAt: "2026-10-01T01:00:00.000Z",
-        finishedAt: "2026-10-01T01:01:00.000Z",
+        finishedAt: "2026-10-01T01:02:00.000Z",
         idempotencyKey: "execution-terminal"
       });
     }),
-    /VALIDATION_FAILURE/
+    /CONFLICT/
   );
 
   await repository.transaction((tx) => {

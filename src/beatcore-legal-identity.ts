@@ -25,6 +25,9 @@ export interface LegalIdentityInput {
   issuingCountryCode: string;
   issuingAuthority?: string;
   documentNumber: string;
+  nationalIdentifier?: string;
+  documentSerialNumber?: string;
+  issuePlace?: string;
   issueDate?: string;
   expiryDate?: string;
 }

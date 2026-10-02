@@ -331,45 +331,47 @@ async function saveLegalIdentity(request: Request, env: Env): Promise<Response> 
     validateLegalIdentity(input);
     const sql = requireDatabase(env);
     const participantId = active.canonical.participant_id || active.canonical.participantId;
-    const identityRows = await sql`SELECT i.id FROM public.identities i JOIN public.participants p ON p.identity_id=i.id WHERE p.id=\${participantId} LIMIT 1\`;
+    const identityRows = await sql`SELECT i.id FROM public.identities i JOIN public.participants p ON p.identity_id=i.id WHERE p.id=${participantId} LIMIT 1\`;
     if (!identityRows.length) return json({service:"Zalagren",error:"IDENTITY_NOT_FOUND"},404);
     const identity = identityRows[0].id;
     const documentNumber = input.documentNumber.trim();
     const documentHash = await sha256Hex(documentNumber.toUpperCase());
     const encrypted = await encryptSensitive(documentNumber, env);
     const docId = "identity-document-" + crypto.randomUUID();
+    const profileId = "legal-identity-" + participantId;
     const profile = await sql`
       INSERT INTO public.legal_identity_profiles (
-        identity_id, legal_name, given_names, middle_names, family_name, date_of_birth, sex,
-        nationality_country_code, birth_country_code, birth_place, residence_country_code,
-        address_line1, address_line2, city, region, postal_code, verification_status, updated_at
+        id, participant_id, legal_name, given_names, middle_names, family_name, date_of_birth, sex,
+        nationality, birth_country_code, birth_place, country_of_residence, residence_country_code,
+        address_line1, address_line2, city, region, postal_code, status, updated_at
       ) VALUES (
-        \${identity}, \${input.legalName.trim()}, \${input.givenNames?.trim() || null}, \${input.middleNames?.trim() || null},
-        \${input.familyName?.trim() || null}, \${input.dateOfBirth || null}, \${input.sex?.trim() || null},
-        \${input.nationalityCountryCode ? normalizeCountryCode(input.nationalityCountryCode) : null},
-        \${input.birthCountryCode ? normalizeCountryCode(input.birthCountryCode) : null}, \${input.birthPlace?.trim() || null},
-        \${input.residenceCountryCode ? normalizeCountryCode(input.residenceCountryCode) : null},
-        \${input.addressLine1?.trim() || null}, \${input.addressLine2?.trim() || null}, \${input.city?.trim() || null},
-        \${input.region?.trim() || null}, \${input.postalCode?.trim() || null}, 'pending', now()
+        ${profileId}, ${participantId}, ${input.legalName.trim()}, ${input.givenNames?.trim() || null},
+        ${input.middleNames?.trim() || null}, ${input.familyName?.trim() || null}, ${input.dateOfBirth || null},
+        ${input.sex?.trim() || null}, ${input.nationalityCountryCode ? normalizeCountryCode(input.nationalityCountryCode) : null},
+        ${input.birthCountryCode ? normalizeCountryCode(input.birthCountryCode) : null}, ${input.birthPlace?.trim() || null},
+        ${input.residenceCountryCode ? normalizeCountryCode(input.residenceCountryCode) : null},
+        ${input.residenceCountryCode ? normalizeCountryCode(input.residenceCountryCode) : null},
+        ${input.addressLine1?.trim() || null}, ${input.addressLine2?.trim() || null}, ${input.city?.trim() || null},
+        ${input.region?.trim() || null}, ${input.postalCode?.trim() || null}, 'pending', now()
       )
-      ON CONFLICT (identity_id) DO UPDATE SET
+      ON CONFLICT (participant_id) DO UPDATE SET
         legal_name=EXCLUDED.legal_name, given_names=EXCLUDED.given_names, middle_names=EXCLUDED.middle_names,
         family_name=EXCLUDED.family_name, date_of_birth=EXCLUDED.date_of_birth, sex=EXCLUDED.sex,
-        nationality_country_code=EXCLUDED.nationality_country_code, birth_country_code=EXCLUDED.birth_country_code,
-        birth_place=EXCLUDED.birth_place, residence_country_code=EXCLUDED.residence_country_code,
+        nationality=EXCLUDED.nationality, birth_country_code=EXCLUDED.birth_country_code, birth_place=EXCLUDED.birth_place,
+        country_of_residence=EXCLUDED.country_of_residence, residence_country_code=EXCLUDED.residence_country_code,
         address_line1=EXCLUDED.address_line1, address_line2=EXCLUDED.address_line2, city=EXCLUDED.city,
-        region=EXCLUDED.region, postal_code=EXCLUDED.postal_code, verification_status='pending', updated_at=now()
-      RETURNING identity_id, legal_name, verification_status
-    \`;
+        region=EXCLUDED.region, postal_code=EXCLUDED.postal_code, status='pending', updated_at=now()
+      RETURNING participant_id, legal_name, status
+    `;
     await sql`
       INSERT INTO public.identity_documents (
         id, identity_id, document_type, issuing_country_code, issuing_authority,
         document_number_ciphertext, document_number_hash, document_number_last4,
         issue_date, expiry_date, status, verification_method, updated_at
       ) VALUES (
-        \${docId}, \${identity}, \${input.documentType}, \${normalizeCountryCode(input.issuingCountryCode)},
-        \${input.issuingAuthority?.trim() || null}, \${encrypted}, \${documentHash}, \${documentNumber.slice(-4)},
-        \${input.issueDate || null}, \${input.expiryDate || null}, 'pending', null, now()
+        ${docId}, ${identity}, ${input.documentType}, ${normalizeCountryCode(input.issuingCountryCode)},
+        ${input.issuingAuthority?.trim() || null}, ${encrypted}, ${documentHash}, ${documentNumber.slice(-4)},
+        ${input.issueDate || null}, ${input.expiryDate || null}, 'pending', null, now()
       )
       ON CONFLICT (identity_id, document_number_hash) DO UPDATE SET
         document_number_ciphertext=EXCLUDED.document_number_ciphertext,
@@ -392,12 +394,12 @@ async function startPhoneVerification(request: Request, env: Env): Promise<Respo
     const payload=await twilioRequest(env,"/Verifications",new URLSearchParams({channel:"sms",to:phone}));
     const sql=requireDatabase(env);
     const participantId=active.canonical.participant_id || active.canonical.participantId;
-    const rows=await sql`SELECT i.id FROM public.identities i JOIN public.participants p ON p.identity_id=i.id WHERE p.id=\${participantId} LIMIT 1\`;
+    const rows=await sql`SELECT i.id FROM public.identities i JOIN public.participants p ON p.identity_id=i.id WHERE p.id=${participantId} LIMIT 1\`;
     if(!rows.length) return json({service:"Zalagren",error:"IDENTITY_NOT_FOUND"},404);
     const hash=await sha256Hex(phone);
     const contactId="identity-contact-"+crypto.randomUUID();
     await sql`INSERT INTO public.identity_contacts(id,identity_id,kind,value_normalized,value_hash,status,is_primary,updated_at)
-      VALUES(\${contactId},\${rows[0].id},'phone',\${phone},\${hash},'pending',false,now())
+      VALUES(${contactId},${rows[0].id},'phone',${phone},${hash},'pending',false,now())
       ON CONFLICT (kind,value_hash) DO UPDATE SET identity_id=EXCLUDED.identity_id,status='pending',updated_at=now()\`;
     return json({service:"Zalagren",status:"phone_verification_sent",phoneLast4:phone.slice(-4),providerStatus:payload?.status||"pending"});
   } catch(error){const m=error instanceof Error?error.message:"PHONE_VERIFICATION_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:m==="PHONE_VERIFICATION_NOT_CONFIGURED"?503:400);}
@@ -414,23 +416,23 @@ async function verifyPhone(request: Request, env: Env): Promise<Response> {
     if(payload?.status!=="approved") return json({service:"Zalagren",error:"PHONE_NOT_VERIFIED",status:payload?.status||"pending"},400);
     const sql=requireDatabase(env);
     const participantId=active.canonical.participant_id || active.canonical.participantId;
-    const rows=await sql`SELECT i.id FROM public.identities i JOIN public.participants p ON p.identity_id=i.id WHERE p.id=\${participantId} LIMIT 1\`;
+    const rows=await sql`SELECT i.id FROM public.identities i JOIN public.participants p ON p.identity_id=i.id WHERE p.id=${participantId} LIMIT 1\`;
     if(!rows.length) return json({service:"Zalagren",error:"IDENTITY_NOT_FOUND"},404);
     const identity=rows[0].id, hash=await sha256Hex(phone);
     const contactId="identity-contact-"+crypto.randomUUID(), methodId="auth-method-phone-"+crypto.randomUUID(), credentialId="credential-phone-"+crypto.randomUUID();
     await sql.transaction([
-      sql`UPDATE public.identity_contacts SET status='revoked',is_primary=false,updated_at=now() WHERE identity_id=\${identity} AND kind='phone' AND status='active' AND value_hash<>\${hash}\`,
+      sql`UPDATE public.identity_contacts SET status='revoked',is_primary=false,updated_at=now() WHERE identity_id=${identity} AND kind='phone' AND status='active' AND value_hash<>${hash}\`,
       sql`INSERT INTO public.identity_contacts(id,identity_id,kind,value_normalized,value_hash,status,verified_at,is_primary,updated_at)
-          VALUES(\${contactId},\${identity},'phone',\${phone},\${hash},'active',now(),true,now())
+          VALUES(${contactId},${identity},'phone',${phone},${hash},'active',now(),true,now())
           ON CONFLICT (kind,value_hash) DO UPDATE SET identity_id=EXCLUDED.identity_id,status='active',verified_at=now(),is_primary=true,updated_at=now()\`,
       sql`INSERT INTO public.auth_methods(id,identity_id,kind,identifier,status,verified_at)
-          VALUES(\${methodId},\${identity},'phone',\${phone},'active',now())
+          VALUES(${methodId},${identity},'phone',${phone},'active',now())
           ON CONFLICT DO NOTHING\`,
       sql`INSERT INTO public.credentials(id,kind,status,account_id)
-          SELECT \${credentialId},'phone','ACTIVE',a.id FROM public.accounts a WHERE a.identity_id=\${identity}
+          SELECT ${credentialId},'phone','ACTIVE',a.id FROM public.accounts a WHERE a.identity_id=${identity}
           ON CONFLICT DO NOTHING\`,
       sql`INSERT INTO public.identity_verification_records(id,identity_id,target_type,target_id,method,status,external_reference,completed_at)
-          VALUES('identity-verification-'+crypto.randomUUID(),\${identity},'phone',\${methodId},'twilio-verify','verified',\${payload?.sid||null},now())\`
+          VALUES('identity-verification-'+crypto.randomUUID(),${identity},'phone',${methodId},'twilio-verify','verified',${payload?.sid||null},now())\`
     ]);
     return json({service:"Zalagren",status:"phone_verified",phoneLast4:phone.slice(-4)});
   }catch(error){const m=error instanceof Error?error.message:"PHONE_VERIFICATION_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:m==="PHONE_VERIFICATION_NOT_CONFIGURED"?503:400);}

@@ -466,7 +466,7 @@ $("authForm").onsubmit=async event=>{
  const body={email:$("#email").value.trim(),password:$("#password").value};if(signup){body.name=$("#name").value.trim();body.phone=$("#phone").value.trim();}
  if(!body.email||!body.password||(signup&&!body.name)||(signup&&!body.phone)){setError("Name, email, phone number and password are required to create your account.");return;}
  const authBody={email:body.email,password:body.password};if(signup)authBody.name=body.name;
- const r=await fetch(signup?"/api/auth/sign-up/email":"/api/auth/sign-in/email",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(authBody)});
+ const r=await fetch(signup?"/api/auth/sign-up/email":"/api/auth/sign-in/email",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(authBody)});
  const d=await r.json().catch(()=>({}));
  if(!r.ok){setError(d.error||"Authentication failed.");return;}
  const meResponse=await fetch("/api/me");const meData=meResponse.ok?await meResponse.json():{};

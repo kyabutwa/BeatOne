@@ -99,6 +99,11 @@ const failure = (code: string): never => {
   throw new Error(code);
 };
 
+const recordKey = (table: PersistenceTable, record: StoredRecord): Id =>
+  table === "action_outcome_trace"
+    ? (record as StoredActionOutcomeTrace).executionId
+    : (record as Exclude<StoredRecord, StoredActionOutcomeTrace>).id;
+
 const requireText = (value: string, code = "INVALID_INPUT"): void => {
   if (!value.trim()) failure(code);
 };
@@ -119,9 +124,10 @@ function validateRecord(
   tx: PersistenceTransaction,
   replacing: boolean
 ): void {
-  requireText(record.id);
+  const key = recordKey(table, record);
+  requireText(key);
 
-  if (!replacing && tx.get(table, record.id)) {
+  if (!replacing && tx.get(table, key)) {
     failure("CONFLICT");
   }
 
@@ -530,11 +536,11 @@ function createTransaction(
 
     insert(table, record) {
       validateRecord(table, record as StoredRecord, this, false);
-      store.get(table)?.set(record.id, record as StoredRecord);
+      store.get(table)?.set(recordKey(table, record as StoredRecord), record as StoredRecord);
     },
 
     replace(table, record) {
-      const existing = store.get(table)?.get(record.id);
+      const existing = store.get(table)?.get(recordKey(table, record as StoredRecord));
       if (!existing) {
         failure("NOT_FOUND");
       }
@@ -582,7 +588,7 @@ function createTransaction(
         }
       }
 
-      store.get(table)?.set(record.id, record as StoredRecord);
+      store.get(table)?.set(recordKey(table, record as StoredRecord), record as StoredRecord);
     }
   };
 }

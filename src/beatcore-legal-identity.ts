@@ -50,7 +50,7 @@ export const normalizeEmail = (value: unknown): string => {
 
 export const validateLegalIdentity = (input: LegalIdentityInput): void => {
   if (input.legalName.trim().length < 2) throw new Error("LEGAL_NAME_REQUIRED");
-  if (!input.documentNumber.trim()) throw new Error("DOCUMENT_NUMBER_REQUIRED");
+  if (input.documentType !== "zalagren_identity" && !input.documentNumber.trim()) throw new Error("DOCUMENT_NUMBER_REQUIRED");
   if (!/^[A-Z]{2}$/.test(normalizeCountryCode(input.issuingCountryCode))) {
     throw new Error("INVALID_ISSUING_COUNTRY");
   }

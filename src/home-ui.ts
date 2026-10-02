@@ -268,7 +268,7 @@ function showHome(d){
  loadViews();
 }
 async function apiPost(path,body){const r=await fetch(path,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"REQUEST_FAILED");return d;}
-function showOperation(message){$("operationStatus").classList.remove("hidden");$("operationStatus").innerHTML="<strong>"+escapeHtml(message)+"</strong>";}
+function showOperation(message){$("operationStatus").classList.remove("hidden");$("operationStatus").textContent=String(message);}
 $("createListing").onclick=async()=>{const title=prompt("Listing title");if(!title)return;const description=prompt("Describe the product or service");if(!description)return;const category=prompt("Category")||"general";const price=prompt("Price in minor currency units (optional)");try{await apiPost("/api/marketplace/listing",{title,description,category,priceMinor:price?Number(price):undefined,currency:"KES"});showOperation("Marketplace listing created.");}catch(e){showOperation(e.message);}};
 $("requestRide").onclick=async()=>{const pickup=prompt("Pickup");if(!pickup)return;const destination=prompt("Destination");if(!destination)return;try{await apiPost("/api/beatride/request",{pickup,destination});showOperation("BeatRide request created. No transport provider has been invented.");}catch(e){showOperation(e.message);}};
 $("createFood").onclick=async()=>{const name=prompt("Food merchant name");if(!name)return;try{const d=await apiPost("/api/beatfood/merchant",{name});showOperation("BeatFood merchant created. Merchant ID: "+(d.merchant?.id||"created"));}catch(e){showOperation(e.message);}};

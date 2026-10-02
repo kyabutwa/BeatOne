@@ -1,5 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { prepareProviderAuthRequest } from "./auth-proxy.js";
+import { beginVerificationChallenge, recordVerificationAttempt, recordVerificationProviderResult } from "./beatone-verification.js";
 import { renderHome } from "./home-ui.js";
 import { normalizeCountryCode, normalizeEmail, normalizePhoneE164, validateLegalIdentity, type LegalIdentityInput } from "./beatcore-legal-identity.js";
 interface Env {
@@ -207,13 +208,29 @@ async function authMutation(request: Request, env: Env, endpoint: string): Promi
     if (endpoint === "/sign-in/email" && user && !Boolean(user.emailVerified)) {
       let verificationRequested = false;
       try {
-        const verification = await providerRequest(
-          request,
-          env,
-          "/email-otp/send-verification-otp",
-          { email: String(user.email).trim().toLowerCase(), type: "email-verification" }
-        );
-        verificationRequested = verification.ok;
+        const sql = requireDatabase(env);
+        const email = String(user.email).trim().toLowerCase();
+        const target = await verificationAccountForContact(sql, "email", email);
+        if (target) {
+          const challenge = await beginVerificationChallenge(sql, {
+            accountId: target.accountId,
+            identityId: target.identityId,
+            channel: "email",
+            targetHash: await sha256Hex(email),
+            provider: "neon_auth"
+          });
+          const verification = await providerRequest(
+            request,
+            env,
+            "/email-otp/send-verification-otp",
+            { email, type: "email-verification" }
+          );
+          await recordVerificationProviderResult(sql, challenge.id, {
+            ok: verification.ok,
+            errorCode: verification.ok ? null : "EMAIL_OTP_PROVIDER_FAILED"
+          });
+          verificationRequested = verification.ok;
+        }
       } catch {}
       return json(
         { service: "BeatOne", error: "EMAIL_NOT_VERIFIED", verificationRequested },
@@ -226,15 +243,33 @@ async function authMutation(request: Request, env: Env, endpoint: string): Promi
       : null;
 
     let emailVerificationRequested = false;
-    if (endpoint === "/sign-up/email" && user?.email) {
+    if (endpoint === "/sign-up/email" && user?.email && canonical) {
+      const sql = requireDatabase(env);
+      const email = String(user.email).trim().toLowerCase();
       try {
-        const verification = await providerRequest(
-          request,
-          env,
-          "/email-otp/send-verification-otp",
-          { email: String(user.email).trim().toLowerCase(), type: "email-verification" }
-        );
-        emailVerificationRequested = verification.ok;
+        const challenge = await beginVerificationChallenge(sql, {
+          accountId: canonical.accountId,
+          identityId: await (async () => {
+            const rows = await sql`SELECT identity_id FROM public.accounts WHERE id=${canonical.accountId} LIMIT 1`;
+            return rows[0]?.identity_id || "";
+          })(),
+          channel: "email",
+          targetHash: await sha256Hex(email),
+          provider: "neon_auth"
+        });
+        if (challenge.identityId) {
+          const verification = await providerRequest(
+            request,
+            env,
+            "/email-otp/send-verification-otp",
+            { email, type: "email-verification" }
+          );
+          await recordVerificationProviderResult(sql, challenge.id, {
+            ok: verification.ok,
+            errorCode: verification.ok ? null : "EMAIL_OTP_PROVIDER_FAILED"
+          });
+          emailVerificationRequested = verification.ok;
+        }
       } catch {
         emailVerificationRequested = false;
       }
@@ -284,6 +319,20 @@ async function currentSession(request: Request, env: Env): Promise<{ user: any; 
   `;
   const canonical = rows[0] || await syncCanonicalAuth(env, user, session, cookie, []);
   return { user, session, canonical };
+}
+
+async function verificationAccountForContact(sql: DbSql, kind: "email" | "phone", value: string): Promise<{identityId:string;accountId:string}|null> {
+  const rows = await sql`
+    SELECT i.id AS identity_id, a.id AS account_id
+    FROM public.identities i
+    JOIN public.accounts a ON a.identity_id=i.id
+    JOIN public.identity_contacts c ON c.identity_id=i.id
+    WHERE c.kind=${kind} AND c.value_normalized=${value} AND c.status <> 'revoked'
+    ORDER BY c.is_primary DESC, c.updated_at DESC
+    LIMIT 1
+  `;
+  if (!rows.length) return null;
+  return { identityId: rows[0].identity_id, accountId: rows[0].account_id };
 }
 
 async function sha256Hex(value: string): Promise<string> {
@@ -420,17 +469,39 @@ async function verifyEmailVerificationCode(request: Request, env: Env): Promise<
     const email=normalizeEmail(body.email || "");
     const otp=String(body.otp || "").trim();
     if(!email) return json({service:"BeatOne",error:"EMAIL_REQUIRED"},400);
-    if(!/^\\d{4,10}$/.test(otp)) return json({service:"BeatOne",error:"INVALID_VERIFICATION_CODE"},400);
+    if(!/^\d{4,10}$/.test(otp)) return json({service:"BeatOne",error:"INVALID_VERIFICATION_CODE"},400);
+    const sql=requireDatabase(env);
+    const target=await verificationAccountForContact(sql,"email",email);
+    if(!target) return json({service:"BeatOne",error:"ACCOUNT_NOT_FOUND"},404);
+    const challengeRows=await sql`SELECT id FROM public.verification_challenges
+      WHERE account_id=${target.accountId} AND identity_id=${target.identityId}
+        AND channel='email' AND target_hash=${await sha256Hex(email)} AND status='PENDING'
+        AND expires_at > now()
+      ORDER BY requested_at DESC LIMIT 1`;
+    if(!challengeRows.length) return json({service:"BeatOne",error:"VERIFICATION_CHALLENGE_NOT_FOUND"},409);
+    const challengeId=challengeRows[0].id;
     const upstream=await providerRequest(request,env,"/email-otp/verify-email",{email,otp});
     const payload=await readJson(upstream);
+    await recordVerificationAttempt(sql,challengeId,{ok:upstream.ok,errorCode:upstream.ok?null:(payload?.message||payload?.error||"INVALID_VERIFICATION_CODE")});
     if(!upstream.ok) return json({service:"BeatOne",error:payload?.message||payload?.error||"EMAIL_NOT_VERIFIED",provider:payload},upstream.status);
-    const sql=requireDatabase(env);
-    const rows=await sql`SELECT i.id FROM public.identities i JOIN public.identity_contacts c ON c.identity_id=i.id WHERE c.kind='email' AND c.value_normalized=${email} LIMIT 1`;
+    const rows=await sql`SELECT am.id AS auth_method_id FROM public.identities i
+      JOIN public.identity_contacts c ON c.identity_id=i.id
+      LEFT JOIN public.auth_methods am ON am.identity_id=i.id AND am.kind='email' AND am.identifier=${email}
+      WHERE i.id=${target.identityId} AND c.kind='email' AND c.value_normalized=${email} LIMIT 1`;
     if(rows.length){
-      await sql`UPDATE public.identity_contacts SET status='active',verified_at=now(),updated_at=now() WHERE identity_id=${rows[0].id} AND kind='email' AND value_normalized=${email}`;
-      await sql`UPDATE public.auth_methods SET status='active',verified_at=now() WHERE identity_id=${rows[0].id} AND kind='email' AND identifier=${email}`;
+      await sql.transaction([
+        sql`UPDATE public.identity_contacts SET status='active',verified_at=now(),updated_at=now()
+             WHERE identity_id=${target.identityId} AND kind='email' AND value_normalized=${email}`,
+        sql`UPDATE public.auth_methods SET status='active',verified_at=now() WHERE identity_id=${target.identityId} AND kind='email' AND identifier=${email}`,
+        sql`INSERT INTO public.identity_verification_records(
+              id,identity_id,target_type,target_id,method,status,external_reference,completed_at
+            ) VALUES(
+              'identity-verification-'+crypto.randomUUID(),${target.identityId},'email',
+              ${rows[0].auth_method_id || 'email:'+email},'neon-auth-email-otp','verified',null,now()
+            )`
+      ]);
     }
-    return json({service:"BeatOne",status:"email_verified"});
+    return json({service:"BeatOne",status:"email_verified",challengeId});
   }catch(error){const m=error instanceof Error?error.message:"EMAIL_VERIFICATION_FAILED";return json({service:"BeatOne",error:m},400);}
 }
 async function startPhoneVerification(request: Request, env: Env): Promise<Response> {
@@ -438,12 +509,25 @@ async function startPhoneVerification(request: Request, env: Env): Promise<Respo
     const active = await requireActive(request, env);
     const body=await request.json() as {phone?:string};
     const phone=normalizePhoneE164(body.phone);
-    const payload=await twilioRequest(env,"/Verifications",new URLSearchParams({channel:"sms",to:phone}));
     const sql=requireDatabase(env);
     const participantId=active.canonical.participant_id || active.canonical.participantId;
-    const rows=await sql`SELECT i.id FROM public.identities i JOIN public.participants p ON p.identity_id=i.id WHERE p.id=${participantId} LIMIT 1`;
+    const rows=await sql`SELECT i.id, a.id AS account_id FROM public.identities i
+      JOIN public.participants p ON p.identity_id=i.id
+      JOIN public.accounts a ON a.identity_id=i.id
+      WHERE p.id=${participantId} LIMIT 1`;
     if(!rows.length) return json({service:"BeatOne",error:"IDENTITY_NOT_FOUND"},404);
     const hash=await sha256Hex(phone);
+    const challenge=await beginVerificationChallenge(sql,{
+      accountId:rows[0].account_id,identityId:rows[0].id,channel:"phone",targetHash:hash,provider:"twilio_verify"
+    });
+    let payload:any;
+    try {
+      payload=await twilioRequest(env,"/Verifications",new URLSearchParams({channel:"sms",to:phone}));
+      await recordVerificationProviderResult(sql,challenge.id,{ok:true,providerReference:payload?.sid||null});
+    } catch (error) {
+      await recordVerificationProviderResult(sql,challenge.id,{ok:false,errorCode:error instanceof Error?error.message:"PHONE_VERIFICATION_FAILED"});
+      throw error;
+    }
     const contactId="identity-contact-"+crypto.randomUUID();
     await sql`INSERT INTO public.identity_contacts(id,identity_id,kind,value_normalized,value_hash,status,is_primary,updated_at)
       VALUES(${contactId},${rows[0].id},'phone',${phone},${hash},'pending',false,now())
@@ -459,13 +543,28 @@ async function verifyPhone(request: Request, env: Env): Promise<Response> {
     const phone=normalizePhoneE164(body.phone);
     const code=String(body.code||"").trim();
     if(!/^\d{4,10}$/.test(code)) return json({service:"BeatOne",error:"INVALID_VERIFICATION_CODE"},400);
-    const payload=await twilioRequest(env,"/VerificationCheck",new URLSearchParams({to:phone,code}));
-    if(payload?.status!=="approved") return json({service:"BeatOne",error:"PHONE_NOT_VERIFIED",status:payload?.status||"pending"},400);
     const sql=requireDatabase(env);
     const participantId=active.canonical.participant_id || active.canonical.participantId;
-    const rows=await sql`SELECT i.id FROM public.identities i JOIN public.participants p ON p.identity_id=i.id WHERE p.id=${participantId} LIMIT 1`;
+    const rows=await sql`SELECT i.id, a.id AS account_id FROM public.identities i
+      JOIN public.participants p ON p.identity_id=i.id
+      JOIN public.accounts a ON a.identity_id=i.id
+      WHERE p.id=${participantId} LIMIT 1`;
     if(!rows.length) return json({service:"BeatOne",error:"IDENTITY_NOT_FOUND"},404);
-    const identity=rows[0].id, hash=await sha256Hex(phone);
+    const identity=rows[0].id, accountId=rows[0].account_id, hash=await sha256Hex(phone);
+    const challengeRows=await sql`SELECT id FROM public.verification_challenges
+      WHERE account_id=${accountId} AND identity_id=${identity}
+        AND channel='phone' AND target_hash=${hash} AND status='PENDING'
+        AND expires_at > now()
+      ORDER BY requested_at DESC LIMIT 1`;
+    if(!challengeRows.length) return json({service:"BeatOne",error:"VERIFICATION_CHALLENGE_NOT_FOUND"},409);
+    const challengeId=challengeRows[0].id;
+    const payload=await twilioRequest(env,"/VerificationCheck",new URLSearchParams({to:phone,code}));
+    if(payload?.status!=="approved"){
+      await recordVerificationAttempt(sql,challengeId,{ok:false,errorCode:"PHONE_NOT_VERIFIED"});
+      return json({service:"BeatOne",error:"PHONE_NOT_VERIFIED",status:payload?.status||"pending"},400);
+    }
+    await recordVerificationAttempt(sql,challengeId,{ok:true});
+    
     const contactId="identity-contact-"+crypto.randomUUID(), methodId="auth-method-phone-"+crypto.randomUUID(), credentialId="credential-phone-"+crypto.randomUUID();
     await sql.transaction([
       sql`UPDATE public.identity_contacts SET status='revoked',is_primary=false,updated_at=now() WHERE identity_id=${identity} AND kind='phone' AND status='active' AND value_hash<>${hash}`,
@@ -492,9 +591,24 @@ async function sendEmailVerification(request: Request, env: Env): Promise<Respon
     const requestedEmail=normalizeEmail(body.email || active?.user?.email || "");
     if(!requestedEmail) return json({service:"BeatOne",error:"EMAIL_REQUIRED"},400);
     if(active?.user?.email && normalizeEmail(active.user.email)!==requestedEmail) return json({service:"BeatOne",error:"EMAIL_MISMATCH"},400);
+    const sql=requireDatabase(env);
+    const target=await verificationAccountForContact(sql,"email",requestedEmail);
+    if(!target) return json({service:"BeatOne",error:"ACCOUNT_NOT_FOUND"},404);
+    const challenge=await beginVerificationChallenge(sql,{
+      accountId:target.accountId,identityId:target.identityId,channel:"email",
+      targetHash:await sha256Hex(requestedEmail),provider:"neon_auth"
+    });
     const upstream=await providerRequest(request,env,"/email-otp/send-verification-otp",{email:requestedEmail,type:"email-verification"});
     const payload=await readJson(upstream);
-    return json({service:"BeatOne",status:upstream.ok?"email_verification_requested":"email_verification_failed",provider:payload},upstream.status);
+    await recordVerificationProviderResult(sql,challenge.id,{
+      ok:upstream.ok,errorCode:upstream.ok?null:"EMAIL_OTP_PROVIDER_FAILED"
+    });
+    return json({
+      service:"BeatOne",
+      status:upstream.ok?"email_verification_requested":"email_verification_failed",
+      challengeId:challenge.id,
+      provider:payload
+    },upstream.status);
   }catch(error){const m=error instanceof Error?error.message:"EMAIL_VERIFICATION_FAILED";return json({service:"BeatOne",error:m},400);}
 }
 

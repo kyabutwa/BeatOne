@@ -63,7 +63,7 @@ The canonical persistence representation defines BeatCore-owned accounts, creden
 
 Those canonical public tables are not present.
 
-Separate authentication-related tables exist (auth_methods, auth_sessions, and Neon Auth tables), but they cannot be silently declared equivalent to the canonical BeatCore persistence representations. Authentication and canonical Identity/Account/Credential/Session semantics must be reconciled explicitly.
+Separate authentication-related tables exist (`auth_methods`, `auth_sessions`, and Neon Auth tables), but they cannot be silently declared equivalent to the canonical BeatCore persistence representations. Authentication and canonical Identity/Account/Credential/Session semantics must be reconciled explicitly.
 
 ### Access
 
@@ -165,12 +165,56 @@ No Event/Evidence physical migration is registered.
 
 The Identity/Participant migration is committed in the repository and has been successfully rehearsed on disposable Neon branch `br-blue-glade-b5pdci8h`; it is not present in the production migration ledger.
 
-## 5. What was NOT changed
+## 5. Authentication-provider boundary — FROZEN
+
+The canonical BeatCore boundary is now explicitly frozen as follows:
+
+1. **BeatCore Account is canonical.** `public.accounts` represents the canonical account associated with one canonical Identity.
+2. **BeatCore Credential is canonical.** `public.credentials` represents credentials owned by the canonical Account. Its canonical relationship is `account_id → accounts.id`; provider-specific authentication method records are not substituted for this relationship.
+3. **BeatCore Session is canonical.** `public.sessions` represents canonical authenticated sessions owned by an Account. Provider session/token records are not substituted for this relationship.
+4. **`public.auth_methods` is authentication-provider infrastructure, not canonical Credential truth.** It may retain provider-specific identifier, verification, revocation, and authentication-method details and may reference canonical Identity where required by the existing provider boundary.
+5. **`public.auth_sessions` is authentication-provider infrastructure, not canonical Session truth.** It may retain provider token/hash and provider-session lifecycle data; it must not become the second canonical session store.
+6. **Neon Auth (`neon_auth.*`) remains provider/infrastructure state.** Its account/session/user tables are not declared equivalent to BeatCore Account/Credential/Session and are not copied into the canonical tables by this migration.
+7. **No authentication-provider table is deleted or renamed in this stage.** The migration only creates/reconciles the canonical BeatCore persistence boundary.
+8. **Provider identifiers remain secondary integration references.** They cannot replace canonical BeatCore identifiers or silently carry authorization meaning.
+
+This freezes the semantic boundary without claiming that provider adapters are already fully implemented.
+
+## 6. Canonical zero-data migration boundary
+
+The controlled migration candidate for the current zero-data production state is:
+
+- CREATE `public.accounts` with `id`, `identity_id`, and canonical Account status.
+- RECONCILE the existing empty `public.credentials` table from identity-owned legacy shape to account-owned canonical shape.
+- CREATE `public.sessions` with `id`, `account_id`, `authenticated_at`, and `expires_at`.
+- CREATE `public.accesses` with `id`, `participant_id`, `target_type`, `target_id`, and `mode`.
+- Add only canonical relationship indexes required by these tables.
+- Preserve `auth_methods`, `auth_sessions`, and `neon_auth.*` as provider/infrastructure state.
+
+No row transformation is expected because the affected canonical tables are empty at the migration checkpoint.
+
+## 7. Disposable rehearsal gate
+
+The exact candidate migration must first be applied to a disposable Neon/PostgreSQL branch and verified there.
+
+Rehearsal requirements:
+- migration applies atomically;
+- canonical tables and columns exist exactly as specified;
+- old credential ownership columns/constraints are gone;
+- canonical FKs and checks are present;
+- provider tables remain present and unchanged in role;
+- all affected tables remain zero-row;
+- canonical BeatCore persistence tests/typecheck remain compatible;
+- rollback/recovery path is documented before production approval.
+
+**Production is locked until this rehearsal passes.**
+
+## 8. What was NOT changed
 
 This reconciliation did not:
 - mutate production;
 - rewrite or delete the 22 existing Identity/Participant rows;
-- create a speculative migration;
+- create a speculative production migration;
 - reinterpret Neon Auth as BeatCore Account/Credential/Session truth;
 - alter Action or Payments production schemas;
 - execute Event/Evidence production migration;
@@ -179,7 +223,7 @@ This reconciliation did not:
 - add hardware;
 - give GENESIS authority.
 
-## 6. Required correction
+## 9. Required correction
 
 The correct repair is not to weaken the application contracts to fit the legacy production tables. The current production database has zero rows in the affected Identity/Participant tables, so the prepared narrow physical migration can be applied without a data transformation, subject to the production-change approval gate.
 
@@ -189,7 +233,7 @@ Identity/Participant physical schema → Account/Credential/Session boundary →
 
 Only after the upstream chain is physically canonical should Event/Evidence production migration readiness be reopened.
 
-## 7. Important sequencing correction
+## 10. Important sequencing correction
 
 The previous next-stage assumption of moving directly from green Event/Evidence runtime verification to Event/Evidence production migration is superseded by this fresh finding.
 

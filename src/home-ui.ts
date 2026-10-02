@@ -115,6 +115,10 @@ input::placeholder,.lede,.section-copy,.surface-copy,.control-copy,.row-meta,.de
 .context-chip{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.14);color:#F8FAFC}
 .truth-verified .truth-dot{background:#10B981}.truth-supported .truth-dot{background:#60A5FA}.truth-proposed .truth-dot{background:#A78BFA}.truth-failed .truth-dot{background:#F87171}
 /* Preserve readable dark-on-light controls where necessary. */
+
+/* BeatOne iPhone-class dark system surface: Apple HIG-inspired, not a copy of proprietary Apple UI. */
+:root{--canvas:#050B16;--surface:rgba(255,255,255,.075);--surface-2:rgba(255,255,255,.055);--navy:#F8FAFC;--blue:#1B365D;--orange:#10B981;--muted:#F8FAFC;--line:rgba(255,255,255,.14);--line-soft:rgba(255,255,255,.08);--danger:#FF6B6B;--green:#10B981;--white:#F8FAFC;--shadow:0 22px 70px rgba(0,0,0,.34)}
+html,body{background:var(--canvas)!important;color:var(--white)!important}body,*{color:#F8FAFC}.lede,.section-copy,.surface-copy,.control-copy,.row-meta,.detail-sub,.identity-meta,.verification-copy,.status,.context-label,.life-step span,.overlay-copy,.menu-item span{color:#F8FAFC!important;opacity:.78}.title,.overlay-title,.section-title,.detail-title,.auth-title,.surface-title,.control-title,.row-title,.verification-title,.identity{color:#F8FAFC!important}.eyebrow,.surface-mark,.surface-state,.control-kicker,.link-button{color:#10B981!important}.topbar,.bottom-nav,.context-card,.auth-card,.detail-card,.surface,.control-card,.menu-item,.context-item,.life-step,.verification-box,.status,.participant-card{background:rgba(255,255,255,.075)!important;border-color:rgba(255,255,255,.14)!important;box-shadow:var(--shadow)!important;backdrop-filter:blur(24px) saturate(150%);-webkit-backdrop-filter:blur(24px) saturate(150%)}.topbar,.bottom-nav{background:rgba(5,11,22,.82)!important}.overlay{background:rgba(5,11,22,.985)!important}.account-control,input,select,textarea,.mini-actions button,.secondary{background:rgba(255,255,255,.075)!important;color:#F8FAFC!important;border-color:rgba(255,255,255,.16)!important}input::placeholder,textarea::placeholder{color:#F8FAFC!important;opacity:.55}.primary{background:#10B981!important;color:#06110D!important;border:0!important}.action,.mini-actions button,.secondary,.top-action,.bottom-nav button{color:#F8FAFC!important}.bottom-nav button.active{background:rgba(16,185,129,.17)!important;color:#10B981!important}.account-dot,.context-chip i,.truth-dot,.verification-symbol{background:#10B981!important}.pill{background:rgba(16,185,129,.14)!important;color:#10B981!important;border:1px solid rgba(16,185,129,.22)}.title{font-size:clamp(34px,7vw,50px)!important;font-weight:780!important;letter-spacing:-.035em}.section-title{font-size:22px!important;font-weight:780!important}.detail-title{font-size:26px!important;font-weight:780!important}.surface-title{font-size:20px!important;font-weight:760!important}.account-hero{display:grid;grid-template-columns:auto 1fr;gap:15px;align-items:center;padding:18px;border-radius:22px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.22);margin-bottom:12px}.account-avatar{width:56px;height:56px;border-radius:18px;display:grid;place-items:center;background:rgba(16,185,129,.16);border:1px solid rgba(16,185,129,.35);font-size:22px;font-weight:800;color:#10B981!important}.account-id{font-size:12px;line-height:18px;opacity:.72;overflow-wrap:anywhere}.verification-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}.verification-state{padding:14px;border:1px solid rgba(255,255,255,.13);border-radius:17px;background:rgba(255,255,255,.045)}.verification-state-head{display:flex;align-items:center;gap:8px;font-weight:760}.verification-symbol{width:9px;height:9px;border-radius:50%;flex:0 0 auto}.verification-state.pending .verification-symbol{background:#F59E0B!important}.verification-state.verified .verification-symbol{background:#10B981!important}.verification-state.required .verification-symbol,.verification-state.not_started .verification-symbol{background:#94A3B8!important}.verification-state-label{font-size:13px;font-weight:760}.verification-state-value{font-size:11px;line-height:17px;margin-top:5px;opacity:.72}@media(max-width:700px){.verification-grid{grid-template-columns:1fr}.account-hero{grid-template-columns:auto 1fr}}
 </style>
 </head>
 <body>
@@ -300,7 +304,19 @@ input::placeholder,.lede,.section-copy,.surface-copy,.control-copy,.row-meta,.de
   </form>
  </section>
 
- <section id="identityDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">Identity</h3><div class="detail-sub">Canonical participant foundation</div></div></div><div id="identityBody"></div></section>
+ <section id="identityDetail" class="detail-card">
+  <div class="detail-head"><div><h3 class="detail-title">My BeatOne</h3><div class="detail-sub">Account → identity → participant → verification → authority</div></div></div>
+  <div class="account-hero"><div class="account-avatar" id="accountAvatar">B</div><div><div class="identity" id="accountDisplayName">Participant</div><div class="account-id" id="accountDisplayMeta">BeatOne Account</div></div></div>
+  <div id="identityBody"></div>
+  <div class="section-head" style="margin-top:18px"><div><h4 class="section-title" style="font-size:18px!important">Verification Center</h4><p class="section-copy">Each proof has its own lifecycle. Pending is not verified.</p></div></div>
+  <div class="verification-grid" id="verificationGrid">
+   <div class="verification-state not_started" data-verification="email"><div class="verification-state-head"><i class="verification-symbol"></i><span class="verification-state-label">Email</span></div><div class="verification-state-value">Not started</div></div>
+   <div class="verification-state not_started" data-verification="phone"><div class="verification-state-head"><i class="verification-symbol"></i><span class="verification-state-label">Phone</span></div><div class="verification-state-value">Not started</div></div>
+   <div class="verification-state not_started" data-verification="document"><div class="verification-state-head"><i class="verification-symbol"></i><span class="verification-state-label">Identity document</span></div><div class="verification-state-value">Not started</div></div>
+   <div class="verification-state not_started" data-verification="legalIdentity"><div class="verification-state-head"><i class="verification-symbol"></i><span class="verification-state-label">Legal identity</span></div><div class="verification-state-value">Not started</div></div>
+  </div>
+  <div class="status" style="margin-top:12px"><strong>Lifecycle:</strong> account created → contact pending → contact verified → identity submitted → identity pending review → identity verified → contextual authority.</div>
+ </section>
  <section id="communityDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">Community</h3><div class="detail-sub">Participation and context</div></div></div><div id="communityBody"></div></section>
  <section id="serviceDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">Services</h3><div class="detail-sub">BeatOne-managed services · community-coordinated integrations</div></div></div><div id="serviceBody"></div></section>
  <section id="genesisDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">GENESIS</h3><div class="detail-sub">Intelligence proposes; authorized participants decide</div></div></div><div id="genesisBody"></div></section>
@@ -378,7 +394,11 @@ function showHome(d){
  $("contextParticipant").textContent=participant.participantId||"—";
  $("contextText").textContent="No active community context";
  $("identityBody").innerHTML="<div class='row'><div class='row-title'>Participant</div><div class='row-meta'></div></div><div class='row'><div class='row-title'>Identity provider</div><div class='row-meta'></div></div><div class='row'><div class='row-title'>Account</div><div class='row-meta'></div></div>";
- const rows=$("identityBody").querySelectorAll(".row-meta");rows[0].textContent=participant.participantId||"unavailable";rows[1].textContent=identity.provider||"neon-auth";rows[2].textContent=participant.accountId||"ready";
+ const rows=$("identityBody").querySelectorAll(".row-meta");rows[0].textContent=participant.participantId||"unavailable";rows[1].textContent=identity.provider||"neon-auth";rows[2].textContent=d?.account?.id||participant.accountId||"ready";
+ const displayName=identity.name||identity.legalName||"Participant";$("accountDisplayName").textContent=displayName;$("accountDisplayMeta").textContent=(identity.email||"")+" · "+(d?.account?.id||participant.accountId||"account");
+ $("accountAvatar").textContent=displayName.trim().slice(0,1).toUpperCase()||"B";
+ const verification=d?.verification||{};
+ document.querySelectorAll("[data-verification]").forEach(card=>{const key=card.dataset.verification;const state=verification[key]?.status||"not_started";card.className="verification-state "+state;card.querySelector(".verification-state-value").textContent=state==="verified"?"Verified":state==="pending"?"Pending verification":state==="required"?"Verification required":"Not started";});
  loadViews();
 }
 async function apiPost(path,body){const r=await fetch(path,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"REQUEST_FAILED");return d;}
@@ -492,7 +512,7 @@ $("authForm").onsubmit=async event=>{
    }catch{$("verificationCopy").textContent+=" Phone verification could not be started.";}
    return;
  }
- showHome(d.canonical?{identity:d.user,participant:d.canonical,verification:d.verification}:await(await fetch("/api/me")).json());
+ const meResponse=await fetch("/api/me"); const meData=meResponse.ok?await meResponse.json():{}; showHome(d.canonical?Object.assign({},meData,{identity:d.user,participant:d.canonical,verification:meData.verification||d.verification}):meData);
 };
 async function requestEmailVerification(){
  const email=$("email").value.trim();

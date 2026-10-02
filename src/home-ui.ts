@@ -238,7 +238,7 @@ async function loadViews(){
   const f=foundation.foundation||{};
   $("genesisBody").innerHTML="<div class='row'><div class='row-title'>Proposal-only intelligence</div><div class='row-meta'>GENESIS cannot authorize or execute actions.</div></div><div class='row'><div class='row-title'>Live foundation</div><div class='row-meta'></div></div>";
   $("genesisBody").lastElementChild.querySelector(".row-meta").textContent="Participants: "+(f.participants??"not exposed")+" · Actions: "+(f.actions??"not exposed")+" · Events: "+(f.events??"not exposed")+" · Evidence: "+(f.evidences??"not exposed");
- }catch{["communityBody","serviceBody","genesisBody"].forEach(id=>$(id).innerHTML="<div class='row'><div class='row-title'>Live data is unavailable.</div><div class='row-meta'>The interface is preserving a truthful error state.</div></div>");}
+ }catch{const states={communityBody:"Community context could not be loaded. The interface is preserving the participant shell without inventing community data.",serviceBody:"Services are ready for real context. Verified provider-backed data appears here when a real connection and authorized context exist. No provider connection is being invented or simulated.",genesisBody:"GENESIS context could not be loaded. Proposals remain separate from authority and execution."};Object.entries(states).forEach(([id,msg])=>$(id).innerHTML="<div class='row'><div class='row-title'>"+msg+"</div><div class='row-meta'>Truthful runtime state · no fabricated data</div></div>");}
 }
 document.querySelectorAll("[data-detail]").forEach(el=>el.addEventListener("click",()=>openDetail(el.dataset.detail)));
 document.querySelectorAll("[data-nav]").forEach(el=>el.addEventListener("click",()=>navigate(el.dataset.nav)));

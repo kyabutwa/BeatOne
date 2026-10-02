@@ -5,39 +5,23 @@
 
 BEGIN;
 
-DO $$
-DECLARE
-  v_identity_rows bigint;
-  v_migration_id text := 'person-physical-canonicalization-2026-10-02';
-BEGIN
-  IF to_regclass('public.zalagren_schema_migrations') IS NULL THEN
-    RAISE EXCEPTION 'Migration ledger public.zalagren_schema_migrations is missing';
-  END IF;
-
-  IF EXISTS (
-    SELECT 1
-    FROM public.zalagren_schema_migrations
-    WHERE id = v_migration_id
+-- Guard the exact zero-data/absence preconditions without procedural SQL.
+SELECT CASE
+  WHEN to_regclass('public.zalagren_schema_migrations') IS NULL THEN
+    CAST('migration ledger missing' AS integer)
+  WHEN to_regclass('public.identities') IS NULL THEN
+    CAST('identities table missing' AS integer)
+  WHEN to_regclass('public.persons') IS NOT NULL THEN
+    CAST('persons table already exists' AS integer)
+  WHEN (SELECT count(*) FROM public.identities) <> 0 THEN
+    CAST('identities is not empty' AS integer)
+  WHEN EXISTS (
+    SELECT 1 FROM public.zalagren_schema_migrations
+    WHERE id = 'person-physical-canonicalization-2026-10-02'
   ) THEN
-    RAISE EXCEPTION 'Migration % is already registered', v_migration_id;
-  END IF;
-
-  IF to_regclass('public.persons') IS NOT NULL THEN
-    RAISE EXCEPTION 'Expected public.persons to be absent; refusing to alter an existing table';
-  END IF;
-
-  IF to_regclass('public.identities') IS NULL THEN
-    RAISE EXCEPTION 'Expected public.identities table is missing';
-  END IF;
-
-  SELECT count(*) INTO v_identity_rows FROM public.identities;
-  IF v_identity_rows <> 0 THEN
-    RAISE EXCEPTION
-      'Refusing Person canonicalization: public.identities contains % rows; no data transformation is authorized by this migration',
-      v_identity_rows;
-  END IF;
-END
-$$;
+    CAST('migration already registered' AS integer)
+  ELSE 0
+END;
 
 CREATE TABLE public.persons (
   id text NOT NULL,

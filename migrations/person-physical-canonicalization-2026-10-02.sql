@@ -6,20 +6,16 @@
 BEGIN;
 
 -- Guard the exact zero-data/absence preconditions without procedural SQL.
-SELECT CASE
-  WHEN to_regclass('public.zalagren_schema_migrations') IS NULL THEN
-    CAST('migration ledger missing' AS integer)
-  WHEN to_regclass('public.identities') IS NULL THEN
-    CAST('identities table missing' AS integer)
-  WHEN to_regclass('public.persons') IS NOT NULL THEN
-    CAST('persons table already exists' AS integer)
-  WHEN (SELECT count(*) FROM public.identities) <> 0 THEN
-    CAST('identities is not empty' AS integer)
-  WHEN EXISTS (
-    SELECT 1 FROM public.zalagren_schema_migrations
-    WHERE id = 'person-physical-canonicalization-2026-10-02'
-  ) THEN
-    CAST('migration already registered' AS integer)
+SELECT 1 / CASE
+  WHEN to_regclass('public.zalagren_schema_migrations') IS NOT NULL
+   AND to_regclass('public.identities') IS NOT NULL
+   AND to_regclass('public.persons') IS NULL
+   AND (SELECT count(*) FROM public.identities) = 0
+   AND NOT EXISTS (
+     SELECT 1 FROM public.zalagren_schema_migrations
+     WHERE id = 'person-physical-canonicalization-2026-10-02'
+   )
+  THEN 1
   ELSE 0
 END;
 

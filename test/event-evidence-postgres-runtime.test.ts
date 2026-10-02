@@ -20,8 +20,11 @@ runtimeTest("PostgreSQL Event/Evidence runtime: integrity, CAS, linkage, rollbac
     INSERT INTO participants(id) VALUES ('participant:event-test');
     INSERT INTO contexts(id,participant_id,purpose) VALUES ('context:event-test','participant:event-test','event runtime test');
     INSERT INTO authorizations(id,actor_id) VALUES ('authorization:event-test','identity:event-test');
-    INSERT INTO actions(id,actor_id,authorization_id,state,operation,context_id)
-      VALUES ('action:event-test','identity:event-test','authorization:event-test','AUTHORIZED','event.runtime.test','context:event-test');
+    INSERT INTO proposals(id,actor_id) VALUES ('proposal:event-test','identity:event-test');
+    INSERT INTO actions(id,actor_id,proposal_id,authorization_id,state,operation,context_id)
+      VALUES ('action:event-test','identity:event-test','proposal:event-test','authorization:event-test','AUTHORIZED','event.runtime.test','context:event-test');
+    INSERT INTO action_executions(id,action_id,proposal_id,authorization_id,status,started_at,idempotency_key)
+      VALUES ('execution:event-test','action:event-test','proposal:event-test','authorization:event-test','started',now(),'execution:event-test');
   `);
 
   psql(`
@@ -29,6 +32,8 @@ runtimeTest("PostgreSQL Event/Evidence runtime: integrity, CAS, linkage, rollbac
       VALUES ('event:test','action:event-test','action.authorized',now(),'AUTHORIZED','identity:event-test','context:event-test','system','correlation:event-test','action:event-test',1);
     INSERT INTO evidence(id,event_id,source,verification,recorded_at)
       VALUES ('evidence:test','event:test','controlled-postgres-test','UNVERIFIED',now());
+    INSERT INTO action_outcome_trace(execution_id,event_id,evidence_id)
+      VALUES ('execution:event-test','event:test','evidence:test');
   `);
 
   assert.equal(psql("SELECT count(*) FROM events WHERE id='event:test'"), "1");
@@ -36,6 +41,10 @@ runtimeTest("PostgreSQL Event/Evidence runtime: integrity, CAS, linkage, rollbac
     "action:event-test:identity:event-test:context:event-test");
   assert.equal(psql("SELECT event_id || ':' || verification FROM evidence WHERE id='evidence:test'"),
     "event:test:UNVERIFIED");
+  assert.equal(psql("SELECT action_id || ':' || proposal_id || ':' || authorization_id FROM action_executions WHERE id='execution:event-test'"),
+    "action:event-test:proposal:event-test:authorization:event-test");
+  assert.equal(psql("SELECT execution_id || ':' || event_id || ':' || evidence_id FROM action_outcome_trace WHERE execution_id='execution:event-test'"),
+    "execution:event-test:event:test:evidence:test");
 
   assert.throws(() => psql(`
     INSERT INTO events(id,action_id,type,occurred_at,state,actor_id,context_id,source,version)

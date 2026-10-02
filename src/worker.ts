@@ -209,6 +209,11 @@ async function authMutation(request: Request, env: Env, endpoint: string): Promi
     // Email/phone contact verification is optional and never blocks ordinary access.
     // Legal identity verification and sensitive-action step-up remain separate assurance layers.
 
+    const canonical = user
+      ? await syncCanonicalAuth(env, user, session, null, setCookies)
+      : null;
+    const emailVerificationRequested = false;
+
     const outHeaders = headers({
       "content-type": "application/json; charset=utf-8",
       "access-control-allow-origin": "*"

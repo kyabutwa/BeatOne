@@ -404,6 +404,25 @@ async function saveLegalIdentity(request: Request, env: Env): Promise<Response> 
   }
 }
 
+async function verifyEmailVerificationCode(request: Request, env: Env): Promise<Response> {
+  try {
+    const body=await request.json().catch(()=>({})) as {email?:string;otp?:string};
+    const email=normalizeEmail(body.email || "");
+    const otp=String(body.otp || "").trim();
+    if(!email) return json({service:"BeatOne",error:"EMAIL_REQUIRED"},400);
+    if(!/^\\d{4,10}$/.test(otp)) return json({service:"BeatOne",error:"INVALID_VERIFICATION_CODE"},400);
+    const upstream=await providerRequest(request,env,"/email-otp/verify-email",{email,otp});
+    const payload=await readJson(upstream);
+    if(!upstream.ok) return json({service:"BeatOne",error:payload?.message||payload?.error||"EMAIL_NOT_VERIFIED",provider:payload},upstream.status);
+    const sql=requireDatabase(env);
+    const rows=await sql`SELECT i.id FROM public.identities i JOIN public.identity_contacts c ON c.identity_id=i.id WHERE c.kind='email' AND c.value_normalized=${email} LIMIT 1`;
+    if(rows.length){
+      await sql`UPDATE public.identity_contacts SET status='active',verified_at=now(),updated_at=now() WHERE identity_id=${rows[0].id} AND kind='email' AND value_normalized=${email}`;
+      await sql`UPDATE public.auth_methods SET status='active',verified_at=now() WHERE identity_id=${rows[0].id} AND kind='email' AND identifier=${email}`;
+    }
+    return json({service:"BeatOne",status:"email_verified"});
+  }catch(error){const m=error instanceof Error?error.message:"EMAIL_VERIFICATION_FAILED";return json({service:"BeatOne",error:m},400);}
+}
 async function startPhoneVerification(request: Request, env: Env): Promise<Response> {
   try {
     const active = await requireActive(request, env);
@@ -1019,6 +1038,7 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/auth/sign-up/email") return authMutation(request, env, "/sign-up/email");
     if (request.method === "POST" && url.pathname === "/api/auth/sign-in/email") return authMutation(request, env, "/sign-in/email");
     if (request.method === "POST" && url.pathname === "/api/auth/email/verification/send") return sendEmailVerification(request, env);
+    if (request.method === "POST" && url.pathname === "/api/auth/email/verification/verify") return verifyEmailVerificationCode(request, env);
     if (request.method === "POST" && url.pathname === "/api/identity/legal") return saveLegalIdentity(request, env);
     if (request.method === "POST" && url.pathname === "/api/contact/phone/start") return startPhoneVerification(request, env);
     if (request.method === "POST" && url.pathname === "/api/contact/phone/verify") return verifyPhone(request, env);

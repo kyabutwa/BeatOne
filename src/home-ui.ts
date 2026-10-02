@@ -23,7 +23,7 @@ export const renderHome = (headers: (extra?: HeadersInit) => Headers): Response 
 <title>Zalagren</title>
 <style>
 :root{
- --canvas:#fff;--surface:#fff;--surface-2:#f6f8fb;--navy:#071a33;--blue:#f27a21;
+ --canvas:#fff;--surface:#fff;--surface-2:#f6f8fb;--navy:#071a33;--blue:#245fa8;
  --orange:#f27a21;--muted:#64748b;--line:#dfe5ec;--line-soft:#edf1f5;
  --danger:#a63a2b;--radius-xl:24px;--radius-lg:20px;--radius-md:16px;
  --shadow:0 12px 34px rgba(7,26,51,.07);
@@ -95,10 +95,10 @@ input::placeholder{color:#7a8798}
 .overlay{position:fixed;inset:0;z-index:60;background:rgba(255,255,255,.98);display:none;overflow:auto}.overlay.open{display:block}
 .overlay-shell{width:min(100% - 28px,900px);margin:0 auto;padding:18px 0 50px}.overlay-head{display:flex;align-items:center;justify-content:space-between}.overlay-title{font-size:28px;line-height:34px;font-weight:760;margin:30px 0 6px}.overlay-copy{font-size:14px;line-height:21px;color:var(--muted);max-width:600px}
 .menu-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:22px}.menu-item{text-align:left;padding:16px;border:1px solid var(--line);border-radius:18px;background:#fff}.menu-item strong{font-size:15px;line-height:20px}.menu-item span{display:block;font-size:12px;line-height:18px;color:var(--muted);margin-top:4px}
-.control-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.control-card{padding:15px;border:1px solid var(--line);border-radius:17px;background:var(--surface);box-shadow:0 5px 18px rgba(7,26,51,.04)}.control-kicker{font-size:10px;line-height:15px;font-weight:800;letter-spacing:.09em;color:var(--orange);text-transform:uppercase}.control-title{font-size:15px;line-height:20px;font-weight:760;margin-top:6px}.control-copy{font-size:12px;line-height:18px;color:var(--muted);margin-top:4px}.truth{display:inline-flex;align-items:center;gap:5px;margin-top:10px;font-size:10px;font-weight:800;letter-spacing:.05em}.truth-dot{width:7px;height:7px;border-radius:50%;display:inline-block}.truth-supported .truth-dot{background:#315f9a}.truth-proposed .truth-dot{background:#6b7280}.truth-pending .truth-dot{background:var(--orange)}.lifecycle{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.life-step{padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2)}.life-step strong{display:block;font-size:12px}.life-step span{display:block;font-size:11px;line-height:16px;color:var(--muted);margin-top:3px}@media(max-width:700px){.control-grid,.lifecycle{grid-template-columns:1fr}}@media(max-width:700px){.shell{padding-top:4px}.topbar{top:4px}.account-control span{display:none}.home-intro{display:block}.context-chip{margin-top:12px}.context-grid{grid-template-columns:1fr}.surface-grid{grid-template-columns:1fr}.surface{min-height:128px}.participant-card{grid-template-columns:1fr}.actions{flex-direction:column}.action{width:100%}.menu-grid{grid-template-columns:1fr}}
+.control-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.control-card{padding:15px;border:1px solid var(--line);border-radius:17px;background:var(--surface);box-shadow:0 5px 18px rgba(7,26,51,.04)}.control-kicker{font-size:10px;line-height:15px;font-weight:800;letter-spacing:.09em;color:var(--orange);text-transform:uppercase}.control-title{font-size:15px;line-height:20px;font-weight:760;margin-top:6px}.control-copy{font-size:12px;line-height:18px;color:var(--muted);margin-top:4px}.truth{display:inline-flex;align-items:center;gap:5px;margin-top:10px;font-size:10px;font-weight:800;letter-spacing:.05em}.truth-dot{width:7px;height:7px;border-radius:50%;display:inline-block}.truth-verified .truth-dot{background:#1d7a4d}.truth-supported .truth-dot{background:#315f9a}.truth-proposed .truth-dot{background:#6b7280}.truth-failed .truth-dot{background:#a63a2b}.truth-pending .truth-dot{background:var(--orange)}.lifecycle{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.life-step{padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2)}.life-step strong{display:block;font-size:12px}.life-step span{display:block;font-size:11px;line-height:16px;color:var(--muted);margin-top:3px}@media(max-width:700px){.control-grid,.lifecycle{grid-template-columns:1fr}}@media(max-width:700px){.shell{padding-top:4px}.topbar{top:4px}.account-control span{display:none}.home-intro{display:block}.context-chip{margin-top:12px}.context-grid{grid-template-columns:1fr}.surface-grid{grid-template-columns:1fr}.surface{min-height:128px}.participant-card{grid-template-columns:1fr}.actions{flex-direction:column}.action{width:100%}.menu-grid{grid-template-columns:1fr}}
 @media(min-width:701px){.page{padding-top:18px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.surface{transition:none}.surface:hover{transform:none}}
-/* Owner-provided Zalagren artwork remains intact and is never recolored. */</style>
+/* Temporary self-contained Zalagren mark: the owner-provided IMG_1383 artwork is not present in this repository yet. */</style>
 </head>
 <body>
 <div class="overlay" id="menuOverlay" aria-hidden="true">
@@ -106,7 +106,7 @@ input::placeholder{color:#7a8798}
   <div class="overlay-head"><img class="brand-logo" src="${ZALAGREN_LOGO}" alt="Zalagren"><button class="top-action" id="closeMenu" type="button" aria-label="Close menu">×</button></div>
   <div class="eyebrow" style="margin-top:34px">Zalagren</div>
   <h2 class="overlay-title">Everything connected to participation.</h2>
-  <p class="overlay-copy">Navigate the ecosystem by context, capability and authority. A surface may be ready, modelled, externally pending or Phase 2; the interface never hides that state.</p>
+  <p class="overlay-copy">Navigate the ecosystem by context, capability and authority. A surface may be verified, supported, proposed or failed; empty and provider-dependent states remain explicitly described.</p>
   <div class="menu-grid">
    <button class="menu-item" data-nav="home"><strong>Home</strong><span>Participant context and operating surfaces</span></button>
    <button class="menu-item" data-nav="world"><strong>World</strong><span>Communities, places, phases and context</span></button>
@@ -162,15 +162,15 @@ input::placeholder{color:#7a8798}
  <section class="section">
   <div class="section-head"><div><h2 class="section-title">What do you need to do?</h2><p class="section-copy">Operating surfaces are organized by capability, not by disconnected apps.</p></div></div>
   <div class="surface-grid">
-   <button class="surface" data-detail="identityDetail"><div class="surface-mark">FOUNDATION</div><div class="surface-title">Identity</div><div class="surface-copy">Persistent participant identity, account and session state.</div><div class="surface-state">READY · REAL FOUNDATION</div></button>
-   <button class="surface" data-detail="communityDetail"><div class="surface-mark">PARTICIPATION</div><div class="surface-title">Community</div><div class="surface-copy">Connect to communities, places, relationships and participation context.</div><div class="surface-state">READY · DATA-DEPENDENT</div></button>
-   <button class="surface" data-detail="serviceDetail"><div class="surface-mark">CAPABILITIES</div><div class="surface-title">Services</div><div class="surface-copy">BeatFood, BeatRide, Marketplace, BeatHealth, Genzi and future services share one foundation.</div><div class="surface-state">MODEL READY · PROVIDERS PENDING</div></button>
+   <button class="surface" data-detail="identityDetail"><div class="surface-mark">FOUNDATION</div><div class="surface-title">Identity</div><div class="surface-copy">Persistent participant identity, account and session state.</div><div class="surface-state">SUPPORTED · LIVE FOUNDATION</div></button>
+   <button class="surface" data-detail="communityDetail"><div class="surface-mark">PARTICIPATION</div><div class="surface-title">Community</div><div class="surface-copy">Connect to communities, places, relationships and participation context.</div><div class="surface-state">SUPPORTED · EMPTY UNTIL REAL PARTICIPATION</div></button>
+   <button class="surface" data-detail="serviceDetail"><div class="surface-mark">CAPABILITIES</div><div class="surface-title">Services</div><div class="surface-copy">BeatFood, BeatRide, Marketplace, BeatHealth, Genzi and future services share one foundation.</div><div class="surface-state">SUPPORTED · PROVIDER-DEPENDENT</div></button>
    <button class="surface" data-detail="genesisDetail"><div class="surface-mark">INTELLIGENCE</div><div class="surface-title">GENESIS</div><div class="surface-copy">Knowledge and proposals that never silently become authority or execution.</div><div class="surface-state">PROPOSAL-ONLY</div></button>
   </div>
  </section>
 
  <section class="section">
-  <div class="section-head"><div><h2 class="section-title">Zalagren operating system</h2><p class="section-copy">The ecosystem is now presented as one connected control plane. States below describe implementation boundaries, not regulatory certification.</p></div></div>
+  <div class="section-head"><div><h2 class="section-title">Zalagren operating system</h2><p class="section-copy">The ecosystem is one connected control plane. Every state is implementation truth, not regulatory certification.</p></div></div>
   <div class="control-grid">
    <button class="control-card" data-detail="identityDetail"><div class="control-kicker">01 · Foundation</div><div class="control-title">Identity → Participant</div><div class="control-copy">Account, credential, session and legal-identity boundaries remain separate.</div><div class="truth truth-supported"><i class="truth-dot"></i>SUPPORTED · LIVE FOUNDATION</div></button>
    <button class="control-card" data-detail="communityDetail"><div class="control-kicker">02 · Participation</div><div class="control-title">Community → Place → Relationship</div><div class="control-copy">Participation becomes contextual before capabilities or authority are exposed.</div><div class="truth truth-pending"><i class="truth-dot"></i>DATA-DEPENDENT</div></button>
@@ -195,12 +195,26 @@ input::placeholder{color:#7a8798}
  <section class="section">
   <div class="section-head"><div><h2 class="section-title">Create & participate</h2><p class="section-copy">Your participation gives you the ability to create, request and propose. Provider execution remains a separate verified boundary.</p></div></div>
   <div class="surface-grid">
-   <button class="surface" id="createListing"><div class="surface-mark">MARKETPLACE</div><div class="surface-title">Create a listing</div><div class="surface-copy">Describe the real offer, commercial meaning, fulfillment and compliance state before publication.</div><div class="surface-state">SUBMIT · REVIEWABLE</div></button>
-   <button class="surface" id="requestRide"><div class="surface-mark">BEATRIDE</div><div class="surface-title">Request a ride</div><div class="surface-copy">Create a mobility request tied to your participation context.</div><div class="surface-state">REQUEST · PROVIDER OPTIONAL</div></button>
-   <button class="surface" id="createFood"><div class="surface-mark">BEATFOOD</div><div class="surface-title">Become a food provider</div><div class="surface-copy">Create your merchant identity and build a menu.</div><div class="surface-state">CREATE · REAL PERSISTENCE</div></button>
-   <button class="surface" id="communityJoin"><div class="surface-mark">COMMUNITY</div><div class="surface-title">Join or subscribe</div><div class="surface-copy">Request participation in a community or propose a community node.</div><div class="surface-state">REQUEST · AUTHORITY REQUIRED</div></button>
+   <button class="surface" id="createListing"><div class="surface-mark">MARKETPLACE</div><div class="surface-title">Create a listing</div><div class="surface-copy">Describe the real offer, commercial meaning, fulfillment and compliance state before publication.</div><div class="surface-state">SUPPORTED · REVIEWABLE</div></button>
+   <button class="surface" id="requestRide"><div class="surface-mark">BEATRIDE</div><div class="surface-title">Request a ride</div><div class="surface-copy">Create a mobility request tied to your participation context.</div><div class="surface-state">SUPPORTED · PROVIDER-DEPENDENT</div></button>
+   <button class="surface" id="createFood"><div class="surface-mark">BEATFOOD</div><div class="surface-title">Become a food provider</div><div class="surface-copy">Create your merchant identity and build a menu.</div><div class="surface-state">SUPPORTED · REAL PERSISTENCE</div></button>
+   <button class="surface" id="communityJoin"><div class="surface-mark">COMMUNITY</div><div class="surface-title">Join or subscribe</div><div class="surface-copy">Request participation in a community or propose a community node.</div><div class="surface-state">SUPPORTED · AUTHORITY-GATED</div></button>
   </div>
   <div id="operationStatus" class="status hidden"></div>
+ </section>
+
+ <section class="section">
+  <div class="section-head"><div><h2 class="section-title">Ecosystem domains</h2><p class="section-copy">One participant foundation, many governed capabilities. Availability depends on context, authorization, provider and jurisdiction.</p></div></div>
+  <div class="surface-grid">
+   <button class="surface" data-detail="worldDetail"><div class="surface-mark">ACCESS</div><div class="surface-title">Access & invitations</div><div class="surface-copy">Contextual access built from participant, place, relationship, capability and authorization.</div><div class="surface-state">SUPPORTED · AUTHORITY-GATED</div></button>
+   <button class="surface" data-detail="marketplaceDetail"><div class="surface-mark">COMMERCE</div><div class="surface-title">Marketplace & BnB</div><div class="surface-copy">Offers and accommodation remain reviewable, evidence-driven and provider-bound.</div><div class="surface-state">SUPPORTED · COMPLIANCE-DEPENDENT</div></button>
+   <button class="surface" data-detail="serviceDetail"><div class="surface-mark">PAYMENTS</div><div class="surface-title">BeatPay</div><div class="surface-copy">Payment intent and reconciliation can coordinate regulated external rails without becoming a wallet.</div><div class="surface-state">SUPPORTED · PROVIDER-DEPENDENT</div></button>
+   <button class="surface" data-detail="serviceDetail"><div class="surface-mark">MOBILITY</div><div class="surface-title">BeatRide</div><div class="surface-copy">Mobility requests remain separate from provider execution, licensing and insurance evidence.</div><div class="surface-state">SUPPORTED · PROVIDER-DEPENDENT</div></button>
+   <button class="surface" data-detail="serviceDetail"><div class="surface-mark">FOOD</div><div class="surface-title">BeatFood</div><div class="surface-copy">Merchant, menu, order and fulfillment boundaries use the common Zalagren foundation.</div><div class="surface-state">SUPPORTED · PROVIDER-DEPENDENT</div></button>
+   <button class="surface" data-detail="serviceDetail"><div class="surface-mark">HEALTH</div><div class="surface-title">BeatHealth</div><div class="surface-copy">Health coordination remains isolated from generic commerce with protected sensitive-data boundaries.</div><div class="surface-state">PROPOSED · PROTECTED DOMAIN</div></button>
+   <button class="surface" data-detail="genesisDetail"><div class="surface-mark">INTELLIGENCE</div><div class="surface-title">GENESIS</div><div class="surface-copy">Knowledge, explanation and proposals never become authority or silent execution.</div><div class="surface-state">PROPOSED · NON-AUTHORITATIVE</div></button>
+   <button class="surface" data-detail="serviceDetail"><div class="surface-mark">COMMUNITY</div><div class="surface-title">Genzi · Guardian · Utilities</div><div class="surface-copy">Future service capabilities inherit the same participant, context, authorization and evidence model.</div><div class="surface-state">PROPOSED · CONTEXT-DEPENDENT</div></button>
+  </div>
  </section>
 
  <section class="section">
@@ -233,8 +247,8 @@ input::placeholder{color:#7a8798}
  <section id="communityDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">Community</h3><div class="detail-sub">Participation and context</div></div></div><div id="communityBody"></div></section>
  <section id="serviceDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">Services</h3><div class="detail-sub">Declared capabilities, never invented provider connections</div></div></div><div id="serviceBody"></div></section>
  <section id="genesisDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">GENESIS</h3><div class="detail-sub">Intelligence proposes; authorized participants decide</div></div></div><div id="genesisBody"></div></section>
- <section id="worldDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">World</h3><div class="detail-sub">Community → phase → place → context</div></div></div><div class="row"><div class="row-title">No world context connected yet.</div><div class="row-meta">The platform preserves a truthful empty state.</div></div></section>
- <section id="activityDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">Activity</h3><div class="detail-sub">Action → event → evidence</div></div></div><div class="row"><div class="row-title">No participant activity yet.</div><div class="row-meta">Nothing is fabricated before a real authorized action occurs.</div></div></section>
+ <section id="worldDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">World</h3><div class="detail-sub">Community → phase → place → context</div></div></div><div class="row"><div class="row-title">No world context connected yet.</div><div class="row-meta"><span class="pill">SUPPORTED · EMPTY</span> The platform preserves a truthful empty state.</div></div></section>
+ <section id="activityDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">Activity</h3><div class="detail-sub">Action → event → evidence</div></div></div><div class="row"><div class="row-title">No participant activity yet.</div><div class="row-meta"><span class="pill">SUPPORTED · EMPTY</span> Nothing is fabricated before a real authorized action occurs.</div></div></section>
 
 
  <section id="managementDetail" class="detail-card">
@@ -288,6 +302,7 @@ function openDetail(id){
  document.querySelectorAll(".detail-card").forEach(v=>v.classList.remove("active"));
  const v=$(id); if(v){v.classList.add("active");v.scrollIntoView({behavior:"smooth",block:"nearest"});}
 }
+function setTruth(el,state){if(!el)return;el.classList.remove("truth-verified","truth-supported","truth-proposed","truth-failed","truth-pending");el.classList.add("truth-"+state.toLowerCase());}
 function openMenu(){ $("menuOverlay").classList.add("open");$("menuOverlay").setAttribute("aria-hidden","false"); }
 function closeMenu(){ $("menuOverlay").classList.remove("open");$("menuOverlay").setAttribute("aria-hidden","true"); }
 function navigate(name){

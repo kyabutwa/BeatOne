@@ -200,7 +200,7 @@ input::placeholder{color:#7a8798}
  <section class="section">
   <div class="section-head"><div><h2 class="section-title">Create & participate</h2><p class="section-copy">Your participation gives you the ability to create, request and propose. Provider execution remains a separate verified boundary.</p></div></div>
   <div class="surface-grid">
-   <button class="surface" id="createListing"><div class="surface-mark">MARKETPLACE</div><div class="surface-title">Create a listing</div><div class="surface-copy">Offer a real product or service under your participant identity.</div><div class="surface-state">CREATE · REAL PERSISTENCE</div></button>
+   <button class="surface" id="createListing"><div class="surface-mark">MARKETPLACE</div><div class="surface-title">Create a listing</div><div class="surface-copy">Describe the real offer, commercial meaning, fulfillment and compliance state before publication.</div><div class="surface-state">SUBMIT · REVIEWABLE</div></button>
    <button class="surface" id="requestRide"><div class="surface-mark">BEATRIDE</div><div class="surface-title">Request a ride</div><div class="surface-copy">Create a mobility request tied to your participation context.</div><div class="surface-state">REQUEST · PROVIDER OPTIONAL</div></button>
    <button class="surface" id="createFood"><div class="surface-mark">BEATFOOD</div><div class="surface-title">Become a food provider</div><div class="surface-copy">Create your merchant identity and build a menu.</div><div class="surface-state">CREATE · REAL PERSISTENCE</div></button>
    <button class="surface" id="communityJoin"><div class="surface-mark">COMMUNITY</div><div class="surface-title">Join or subscribe</div><div class="surface-copy">Request participation in a community or propose a community node.</div><div class="surface-state">REQUEST · AUTHORITY REQUIRED</div></button>
@@ -211,6 +211,27 @@ input::placeholder{color:#7a8798}
  <section class="section">
   <div class="section-head"><div><h2 class="section-title">Participant</h2><p class="section-copy">Your persistent Zalagren foundation.</p></div><button class="link-button" id="accountInline">My Zalagren</button></div>
   <div class="context-card participant-card"><div><div class="identity" id="identityName">Participant</div><div class="identity-meta" id="identityMeta"></div></div><span class="pill">AUTHENTICATED</span></div>
+ </section>
+
+ <section id="marketplaceDetail" class="detail-card">
+  <div class="detail-head"><div><h3 class="detail-title">Marketplace</h3><div class="detail-sub">Structured commerce: offer → trust → compliance → fulfillment → transaction</div></div></div>
+  <div class="verification-box">
+   <div class="verification-title">Publication is not verification</div>
+   <div class="verification-copy">Every listing carries separate verification, compliance and tax states. Zalagren does not claim a seller, permit, eTIMS status or regulated provider connection without evidence.</div>
+  </div>
+  <form id="marketplaceForm" class="auth-card" style="margin-top:12px;box-shadow:none">
+   <div class="form-grid">
+    <div><label class="label" for="listingTitle">Title</label><input id="listingTitle" required placeholder="What are you offering?"></div>
+    <div><label class="label" for="listingKind">Type</label><select id="listingKind" style="width:100%;min-height:46px;padding:11px 13px;border:1px solid #cbd5e1;border-radius:13px;background:#fff;color:var(--navy)"><option value="goods">Goods</option><option value="service">Service</option><option value="asset">Asset</option><option value="project">Project</option><option value="opportunity">Opportunity</option><option value="capability">Capability</option><option value="accommodation">Accommodation / BnB</option></select></div>
+    <div><label class="label" for="listingCategory">Category</label><input id="listingCategory" required placeholder="Category"></div>
+    <div><label class="label" for="listingPrice">Price (minor KES units)</label><input id="listingPrice" type="number" min="0" step="1" placeholder="Optional"></div>
+    <div><label class="label" for="listingFulfillment">Fulfillment</label><select id="listingFulfillment" style="width:100%;min-height:46px;padding:11px 13px;border:1px solid #cbd5e1;border-radius:13px;background:#fff;color:var(--navy)"><option value="direct">Direct</option><option value="delivery">Delivery</option><option value="pickup">Pickup</option><option value="digital">Digital</option><option value="appointment">Appointment</option><option value="stay">Stay</option><option value="provider_dispatch">Provider dispatch</option></select></div>
+   </div>
+   <label class="label" for="listingDescription">Description</label><textarea id="listingDescription" required rows="4" placeholder="Describe the offer, important conditions and what the participant receives." style="width:100%;padding:11px 13px;border:1px solid #cbd5e1;border-radius:13px;background:#fff;color:var(--navy);resize:vertical"></textarea>
+   <div class="verification-box"><div class="verification-title">Initial trust state</div><div class="verification-copy">Submitted listings enter reviewable state. Verification, compliance and tax evidence remain separate and are never inferred from the form.</div></div>
+   <div class="actions"><button class="action primary" type="submit">Submit listing</button></div>
+   <div id="marketplaceFormStatus" class="status hidden"></div>
+  </form>
  </section>
 
  <section id="identityDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">Identity</h3><div class="detail-sub">Canonical participant foundation</div></div></div><div id="identityBody"></div></section>
@@ -297,7 +318,8 @@ function showHome(d){
 }
 async function apiPost(path,body){const r=await fetch(path,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"REQUEST_FAILED");return d;}
 function showOperation(message){$("operationStatus").classList.remove("hidden");$("operationStatus").textContent=String(message);}
-$("createListing").onclick=async()=>{const title=prompt("Listing title");if(!title)return;const description=prompt("Describe the product or service");if(!description)return;const category=prompt("Category")||"general";const price=prompt("Price in minor currency units (optional)");try{await apiPost("/api/marketplace/listing",{title,description,category,priceMinor:price?Number(price):undefined,currency:"KES"});showOperation("Marketplace listing created.");}catch(e){showOperation(e.message);}};
+$("createListing").onclick=()=>{document.querySelectorAll(".detail-card").forEach(x=>x.classList.remove("active"));$("marketplaceDetail").classList.add("active");$("marketplaceDetail").scrollIntoView({behavior:"smooth",block:"start"});};
+$("marketplaceForm").onsubmit=async(event)=>{event.preventDefault();const status=$("marketplaceFormStatus");status.classList.remove("hidden");status.textContent="Submitting…";const price=$("listingPrice").value.trim();try{const d=await apiPost("/api/marketplace/listing",{title:$("listingTitle").value.trim(),description:$("listingDescription").value.trim(),category:$("listingCategory").value.trim(),listingKind:$("listingKind").value,fulfillmentMode:$("listingFulfillment").value,priceMinor:price?Number(price):undefined,currency:"KES"});status.textContent="Submitted for marketplace review. Verification, compliance and tax status remain separate and are not claimed.";showOperation("Marketplace listing submitted for review · "+(d.listing?.id||"created"));event.target.reset();}catch(e){status.textContent=e.message;}};
 $("requestRide").onclick=async()=>{const pickup=prompt("Pickup");if(!pickup)return;const destination=prompt("Destination");if(!destination)return;try{await apiPost("/api/beatride/request",{pickup,destination});showOperation("BeatRide request created. No transport provider has been invented.");}catch(e){showOperation(e.message);}};
 $("createFood").onclick=async()=>{const name=prompt("Food merchant name");if(!name)return;try{const d=await apiPost("/api/beatfood/merchant",{name});showOperation("BeatFood merchant created. Merchant ID: "+(d.merchant?.id||"created"));}catch(e){showOperation(e.message);}};
 $("communityJoin").onclick=async()=>{const name=prompt("Community name (for a new node proposal)","TSAVO");if(!name)return;const proposal=prompt("What should Zalagren enable for this community?");if(!proposal)return;try{const d=await apiPost("/api/community/onboarding",{communityName:name,nodeName:name==="TSAVO"?"TSAVO first node":name+" node",proposal});showOperation("Community onboarding proposal submitted.");}catch(e){showOperation(e.message);}};

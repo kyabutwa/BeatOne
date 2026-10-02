@@ -1,72 +1,33 @@
 # Identity + Participant Persistence Reconciliation
 
-**Status:** 🟢 VERIFIED — RECONCILED  
+**Status:** 🟡 PHYSICAL RECONCILIATION REHEARSED — PRODUCTION NOT APPLIED  
 **Scope:** Identity + Participant  
-**Date:** 2026-10-01
+**Date:** 2026-10-02
 
-## 1. Persistence Review
+## 1. Canonical DB-Neutral Representation
 
-The existing canonical persistence representation was reviewed against the Identity + Participant contract.
+The application persistence contract remains:
 
-Existing tables:
-
-- `identities`
-- `participants`
-
-No additional persistence entity is required.
-
-## 2. Identity Representation
-
-Existing representation:
-
-```ts
+~~~ts
 interface StoredIdentity {
   readonly id: Id;
   readonly kind: "human" | "organization" | "service" | "system";
   readonly personId?: Id;
 }
-```
 
-This is sufficient for the current Identity contract.
-
-The repository already enforces:
-
-- non-empty canonical ID;
-- optional `personId` reference must resolve to an existing Person;
-- duplicate Identity IDs are rejected as conflicts;
-- transaction rollback prevents partial publication.
-
-No new column or table is required.
-
-## 3. Participant Representation
-
-Existing representation:
-
-```ts
 interface StoredParticipant {
   readonly id: Id;
   readonly identityId: Id;
   readonly communityId?: Id;
   readonly contextId?: Id;
 }
-```
+~~~
 
-This is sufficient for the current Participant contract.
+No new domain entity is introduced.
 
-The repository already enforces:
+The dependency order remains:
 
-- non-empty canonical ID;
-- required `identityId` reference to an existing Identity;
-- optional `communityId` reference to an existing Community;
-- optional `contextId` reference to an existing Context;
-- duplicate Participant IDs are rejected as conflicts;
-- transaction rollback prevents partial publication.
-
-## 4. Dependency Ordering
-
-The existing repository dependency checks are compatible with the frozen architecture:
-
-```text
+~~~text
 Person
   ↓
 Identity
@@ -74,63 +35,130 @@ Identity
 Participant
   ↓
 Context / Community references
-```
+~~~
 
-Participant does not create Context.
+Identity remains distinct from authentication and authorization. Participant remains distinct from authorization.
 
-This prevents the Identity + Participant layer from prematurely implementing the later Context layer.
+## 2. Production Physical Finding
 
-## 5. No Persistence Redesign
+Before this reconciliation, the production public.identities and public.participants tables were legacy-shaped and empty.
 
-This reconciliation requires:
+Verified production counts at the end of this operation:
+- identities: 0
+- participants: 0
+- actions: 0
+- payments: 0
+- events: 0
+- evidence: 0
 
-- no new table;
-- no table rename;
-- no schema migration;
-- no production database operation;
-- no ORM;
-- no database vendor;
-- no external identity store.
+No production data mapping or transformation is required.
 
-The current DB-neutral persistence representation remains canonical.
+The legacy physical relationship was incorrect for the canonical model:
 
-## 6. Transaction Boundary
+~~~text
+identities.participant_id → participants.id
+~~~
 
-Identity and Participant creation each use the existing repository transaction boundary.
+The canonical direction is:
 
-Therefore:
+~~~text
+participants.identity_id → identities.id
+~~~
 
-```text
-validate
-  ↓
-repository transaction
-  ↓
-reference validation
-  ↓
-persist
-  ↓
-commit
-```
+## 3. Canonical Physical Target
 
-A failed reference or duplicate conflict cannot publish the attempted record.
+### Identity
+~~~text
+identities
+  id         text PRIMARY KEY
+  kind       text NOT NULL
+  person_id  text NULL
+~~~
 
-## 7. Security / Authority
+kind is constrained to human | organization | service | system.
 
-Persistence does not convert Identity or Participant existence into:
+### Participant
+~~~text
+participants
+  id            text PRIMARY KEY
+  identity_id   text NOT NULL → identities.id
+  community_id  text NULL     → communities.id
+  context_id    text NULL     → contexts.id
+~~~
 
-- authentication;
-- Account status;
-- Credential validity;
-- Session validity;
-- Capability;
-- Authorization.
+The participant reference columns receive supporting indexes.
 
-Those remain separate canonical concepts.
+## 4. Controlled Migration
 
-## 8. Result
+The narrow migration is migrations/identity-participant-physical-canonicalization-2026-10-02.sql.
 
-**🟢 VERIFIED — EXISTING PERSISTENCE REPRESENTATION IS SUFFICIENT.**
+It:
+- removes the legacy identities.participant_id foreign key;
+- removes legacy participant_id, status, and created_at columns from identities;
+- adds canonical kind and optional person_id;
+- removes legacy display_name, status, and created_at columns from participants;
+- adds canonical identity_id, community_id, and context_id;
+- establishes the canonical foreign keys;
+- adds supporting participant-reference indexes;
+- performs no data inserts, updates, deletes, table creation, table drops, provider work, or Event/Evidence changes.
 
-The Identity + Participant layer requires no persistence redesign or migration.
+The migration is transactional. Required canonical columns are added as NOT NULL without defaults, so applying it to a non-empty Identity or Participant table fails and rolls back rather than inventing mappings.
 
-Next controlled step: **Tests → CI → Fresh Reconciliation**.
+## 5. Disposable PostgreSQL / Neon Rehearsal
+
+The migration was prepared and executed successfully on a disposable Neon branch:
+- temporary branch: br-blue-glade-b5pdci8h
+- parent production branch: br-frosty-poetry-b5tv56g1
+- migration result: success
+
+Post-rehearsal physical verification confirmed:
+- Identity columns exactly match id, kind, person_id;
+- Participant columns exactly match id, identity_id, community_id, context_id;
+- legacy Identity → Participant foreign key is gone;
+- canonical Participant → Identity foreign key exists;
+- Participant → Community foreign key exists;
+- Participant → Context foreign key exists;
+- supporting participant-reference indexes exist.
+
+Production was not changed by the rehearsal.
+
+## 6. Application Producer Compatibility
+
+The canonical producers remain createIdentity and createParticipant.
+
+Both write through the repository boundary using the canonical DB-neutral representations.
+
+Existing Identity + Participant tests cover human Identity with Person reference, non-human Identity, missing Person rejection, duplicate Identity rejection, Participant with existing Identity, Participant with Community, missing Identity rejection, missing Community rejection, duplicate Participant rejection, and separation from Account, Credential, Session, and Authorization.
+
+The physical migration artifact also has a dedicated contract test.
+
+## 7. CI Gate
+
+GitHub Actions workflow #230 (36995175303) completed successfully on the reconciliation branch.
+
+Verified jobs:
+- beatcore — success
+- postgres-runtime — success
+- event-evidence-postgres-runtime — success
+
+The beatcore job passed npm install, npm run typecheck, and npm test.
+
+## 8. Production Safety Gate
+
+Production remains on the pre-migration physical schema.
+
+No production migration has been applied.
+No Event/Evidence production migration has been applied.
+No Payments change was made.
+
+PR #24 was merged only to retain the migration contract test; the production database remains unchanged.
+
+## 9. Final Gate
+
+**🟡 PHYSICAL RECONCILIATION VERIFIED IN DISPOSABLE ENVIRONMENT — PRODUCTION APPROVAL PENDING.**
+
+The Identity → Participant physical design is now reconciled and rehearsed.
+
+The next operation is no longer architectural discovery. It is a controlled production schema application, which must be separately approved before execution.
+
+No higher layer should be advanced on the assumption that production Identity/Participant physical persistence is already canonical.

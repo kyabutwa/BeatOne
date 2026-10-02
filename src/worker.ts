@@ -60,7 +60,11 @@ async function providerRequest(
 ): Promise<Response> {
   const isEmailOtp = endpoint === "/email-otp/send-verification-otp" || endpoint === "/email-otp/verify-email";
   const prepared = body === undefined
-    ? { headers: new Headers({ accept: "application/json", origin: request.headers.get("origin") || new URL(request.url).origin }), body }
+    ? { headers: new Headers({
+        accept: "application/json",
+        origin: request.headers.get("origin") || new URL(request.url).origin,
+        ...(request.headers.get("cookie") ? { cookie: request.headers.get("cookie") as string } : {})
+      }), body }
     : isEmailOtp
       ? {
           headers: new Headers({

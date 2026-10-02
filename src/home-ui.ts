@@ -463,7 +463,7 @@ $("openMenu").onclick=openMenu;$("closeMenu").onclick=closeMenu;$("account").onc
 $("mode").onclick=()=>{signup=!signup;setError("");mode();};
 $("authForm").onsubmit=async event=>{
  event.preventDefault();setError("");
- const body={email:$("email").value.trim(),password:$("password").value};if(signup){body.name=$("#name").value.trim();body.phone=$("#phone").value.trim();}
+ const body={email:$("email").value.trim(),password:$("password").value};if(signup){body.name=$("name").value.trim();body.phone=$("phone").value.trim();}
  if(!body.email||!body.password||(signup&&!body.name)||(signup&&!body.phone)){setError("Name, email, phone number and password are required to create your account.");return;}
  const authBody={email:body.email,password:body.password};if(signup)authBody.name=body.name;
  try {

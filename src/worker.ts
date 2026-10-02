@@ -164,8 +164,8 @@ async function syncCanonicalAuth(
 
   await sql`
     UPDATE public.auth_methods
-    SET status = CASE WHEN ${Boolean(user.emailVerified)} THEN 'active' ELSE 'pending' END,
-        verified_at = CASE WHEN ${Boolean(user.emailVerified)} THEN now() ELSE NULL END
+    SET status = 'active',
+        verified_at = CASE WHEN ${Boolean(user.emailVerified)} THEN COALESCE(verified_at, now()) ELSE verified_at END
     WHERE identity_id = ${identityId} AND kind = 'email' AND identifier = ${email} AND status <> 'revoked'
   `;
 
@@ -253,7 +253,7 @@ async function currentSession(request: Request, env: Env): Promise<{ user: any; 
     JOIN public.participants p ON p.identity_id = i.id
     JOIN public.accounts a ON a.identity_id = i.id
     LEFT JOIN public.sessions s ON s.account_id = a.id AND s.expires_at > now()
-    WHERE am.kind = 'email' AND am.identifier = ${String(user.email).trim().toLowerCase()} AND am.status = 'active'
+    WHERE am.kind = 'email' AND am.identifier = ${String(user.email).trim().toLowerCase()} AND am.status <> 'revoked' AND a.status = 'ACTIVE'
     LIMIT 1
   `;
   const canonical = rows[0] || await syncCanonicalAuth(env, user, session, cookie, []);
@@ -1141,7 +1141,7 @@ export default {
         if (current?.canonical?.account_id || current?.canonical?.accountId) {
           const sql = requireDatabase(env);
           const accountId = current.canonical.account_id || current.canonical.accountId;
-          await sql`UPDATE public.sessions SET revoked_at=now() WHERE account_id=${accountId} AND revoked_at IS NULL`;
+          await sql`UPDATE public.sessions SET expires_at=now() WHERE account_id=${accountId} AND expires_at > now()`;
         }
         const upstream = await providerRequest(request, env, "/sign-out");
         const setCookies = providerCookies(upstream);

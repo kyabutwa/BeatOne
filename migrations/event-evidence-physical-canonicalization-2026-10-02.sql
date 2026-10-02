@@ -34,7 +34,6 @@ DROP TABLE public.event_evidence;
 
 ALTER TABLE public.events
   DROP CONSTRAINT IF EXISTS events_context_id_not_null,
-  DROP CONSTRAINT IF EXISTS events_id_not_null,
   DROP CONSTRAINT IF EXISTS events_occurred_at_not_null,
   DROP CONSTRAINT IF EXISTS events_participant_id_not_null,
   DROP CONSTRAINT IF EXISTS events_source_check,
@@ -102,7 +101,6 @@ ALTER TABLE public.evidence
   RENAME TO evidences;
 
 ALTER TABLE public.evidences
-  DROP CONSTRAINT IF EXISTS evidence_id_not_null,
   DROP CONSTRAINT IF EXISTS evidence_statement_not_null,
   DROP CONSTRAINT IF EXISTS evidence_status_check,
   DROP CONSTRAINT IF EXISTS evidence_status_not_null;

@@ -44,8 +44,9 @@ test("failed verification attempts explicitly expire a pending challenge when it
   });
 
   assert.equal(calls.length, 1);
-  assert.match(calls[0], /status=CASE WHEN expires_at <= now\(\) THEN 'EXPIRED'/);
-  assert.match(calls[0], /attempt_count=attempt_count\+1/);
+  const log = calls[0] ?? "";
+  assert.match(log, /status=CASE WHEN expires_at <= now\(\) THEN 'EXPIRED'/);
+  assert.match(log, /attempt_count=attempt_count\+1/);
 });
 
 test("provider failure makes the exact challenge FAILED without storing an OTP", async () => {
@@ -56,6 +57,7 @@ test("provider failure makes the exact challenge FAILED without storing an OTP",
   });
 
   assert.equal(calls.length, 1);
-  assert.match(calls[0], /status='FAILED'/);
-  assert.doesNotMatch(calls[0], /otp/i);
+  const log = calls[0] ?? "";
+  assert.match(log, /status='FAILED'/);
+  assert.doesNotMatch(log, /otp/i);
 });

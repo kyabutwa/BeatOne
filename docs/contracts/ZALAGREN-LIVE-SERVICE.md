@@ -1,24 +1,45 @@
-# Zalagren Live Service Boundary
+# Zalagren Live Service
 
-Status: IMPLEMENTED — deployment verification pending.
+Status: IMPLEMENTED — authentication/onboarding/home committed; deployment verification pending.
 
-Browser → Cloudflare Worker → Neon → Zalagren service endpoints.
+## Runtime boundary
 
-## Endpoints
-- GET `/` — Zalagren participant-facing shell.
-- GET `/api/health` — verifies the Worker can reach Neon and reads the migration ledger.
-- GET `/api/foundation` — reads canonical foundation row counts.
-- POST `/api/onboarding/participant` — protected bootstrap provisioning of Person → Identity → Participant → Account.
+Browser → Cloudflare Worker → Neon Managed Better Auth → canonical BeatCore persistence → participant home.
 
-The onboarding endpoint deliberately does not create a Credential or Session. Credential/session authentication remains a separate boundary and must not be faked by a bootstrap endpoint.
+The authentication provider boundary is frozen at Neon Managed Better Auth. It owns password verification and provider sessions. BeatCore remains authoritative for application identity, Participant, Account, Credential metadata, and canonical Session records.
 
-## Required production configuration
-- `DATABASE_URL`: Neon production connection string.
-- `BOOTSTRAP_TOKEN`: protected operator token; never expose it to browser code.
+## Production configuration
+
+- `DATABASE_URL`: Neon production Postgres connection string.
+- `NEON_AUTH_BASE_URL`: optional override; production defaults to the branch-scoped Neon Auth endpoint.
+- `BOOTSTRAP_TOKEN`: temporary operator-only fallback for controlled provisioning. Public onboarding does not depend on it.
+
+## Implemented routes
+
+- `GET /` — Zalagren participant-facing entry/home shell.
+- `POST /api/auth/sign-up/email` — real email/password signup through Neon Managed Better Auth.
+- `POST /api/auth/sign-in/email` — real email/password sign-in through Neon Managed Better Auth.
+- `POST /api/auth/sign-out` — provider session sign-out.
+- `GET /api/me` — provider-session validation plus canonical participant resolution.
+- `GET /api/health` — Neon connectivity and migration ledger health.
+- `GET /api/foundation` — canonical persistence counts.
+- `POST /api/onboarding/participant` — protected operator fallback only.
+
+## Canonical synchronization
+
+A successful provider-authenticated user is reconciled into:
+
+Identity → Person → Participant → Account → Credential metadata → canonical Session.
+
+Provider credentials and provider session machinery remain in the frozen Neon Auth boundary. No provider password/hash is stored in BeatCore.
 
 ## Completion gate
-1. Worker deployment succeeds.
-2. `/api/health` returns `status=ok`.
-3. `/api/foundation` returns canonical production counts.
-4. Protected onboarding creates exactly one Person/Identity/Participant/Account transactionally.
-5. Credential/session authentication is implemented and independently verified.
+
+1. GitHub CI passes the committed Worker/BeatCore source.
+2. Worker is deployed to Cloudflare with production `DATABASE_URL`.
+3. Production Worker health and foundation endpoints succeed.
+4. A disposable test account can sign up/sign in/sign out without leaving test rows.
+5. A controlled real account can complete signup → authenticated `/api/me` → participant home.
+6. Only after that do we move to the first complete Zalagren service lifecycle.
+
+No new persistence migration is required for this slice.

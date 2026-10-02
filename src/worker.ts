@@ -200,8 +200,8 @@ async function authMutation(request: Request, env: Env, endpoint: string): Promi
         const verification = await providerRequest(
           request,
           env,
-          "/send-verification-email",
-          { email: String(user.email).trim().toLowerCase(), callbackURL: new URL("/", request.url).toString() }
+          "/email-otp/send-verification-otp",
+          { email: String(user.email).trim().toLowerCase(), type: "email-verification" }
         );
         verificationRequested = verification.ok;
       } catch {}

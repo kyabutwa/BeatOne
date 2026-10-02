@@ -458,13 +458,15 @@ async function verifyPhone(request: Request, env: Env): Promise<Response> {
 
 async function sendEmailVerification(request: Request, env: Env): Promise<Response> {
   try {
-    const active=await requireActive(request,env);
     const body=await request.json().catch(()=>({}));
-    const email=normalizeEmail(body.email || active.user.email);
-    const upstream=await providerRequest(request,env,"/send-verification-email",{email,callbackURL:new URL("/",request.url).toString()});
+    const active=await currentSession(request,env);
+    const requestedEmail=normalizeEmail(body.email || active?.user?.email || "");
+    if(!requestedEmail) return json({service:"BeatOne",error:"EMAIL_REQUIRED"},400);
+    if(active?.user?.email && normalizeEmail(active.user.email)!==requestedEmail) return json({service:"BeatOne",error:"EMAIL_MISMATCH"},400);
+    const upstream=await providerRequest(request,env,"/send-verification-email",{email:requestedEmail,callbackURL:new URL("/",request.url).toString()});
     const payload=await readJson(upstream);
     return json({service:"BeatOne",status:upstream.ok?"email_verification_requested":"email_verification_failed",provider:payload},upstream.status);
-  }catch(error){const m=error instanceof Error?error.message:"EMAIL_VERIFICATION_FAILED";return json({service:"BeatOne",error:m},m==="UNAUTHORIZED"?401:400);}
+  }catch(error){const m=error instanceof Error?error.message:"EMAIL_VERIFICATION_FAILED";return json({service:"BeatOne",error:m},400);}
 }
 
 

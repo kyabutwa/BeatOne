@@ -1,10 +1,15 @@
 import { neon } from "@neondatabase/serverless";
 import { prepareProviderAuthRequest } from "./auth-proxy.js";
 import { renderHome } from "./home-ui.js";
+import { normalizeCountryCode, normalizeEmail, normalizePhoneE164, validateLegalIdentity, type LegalIdentityInput } from "./beatcore-legal-identity.js";
 interface Env {
   DATABASE_URL: string;
   BOOTSTRAP_TOKEN?: string;
   NEON_AUTH_BASE_URL?: string;
+  IDENTITY_ENCRYPTION_KEY?: string;
+  TWILIO_API_KEY?: string;
+  TWILIO_API_SECRET?: string;
+  TWILIO_VERIFY_SERVICE_SID?: string;
 }
 
 type DbSql = ReturnType<typeof neon>;
@@ -212,15 +217,200 @@ async function currentSession(request: Request, env: Env): Promise<{ user: any; 
   return { user, session, canonical };
 }
 
+async function sha256Hex(value: string): Promise<string> {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function base64FromBytes(bytes: Uint8Array): string {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary);
+}
+
+function bytesFromBase64(value: string): Uint8Array {
+  const binary = atob(value);
+  return Uint8Array.from(binary, (c) => c.charCodeAt(0));
+}
+
+async function encryptSensitive(value: string, env: Env): Promise<string> {
+  if (!env.IDENTITY_ENCRYPTION_KEY) throw new Error("IDENTITY_ENCRYPTION_NOT_CONFIGURED");
+  const keyBytes = bytesFromBase64(env.IDENTITY_ENCRYPTION_KEY);
+  if (keyBytes.length !== 32) throw new Error("IDENTITY_ENCRYPTION_KEY_INVALID");
+  const key = await crypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, ["encrypt"]);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(value));
+  return base64FromBytes(iv) + "." + base64FromBytes(new Uint8Array(ciphertext));
+}
+
+async function requireActive(request: Request, env: Env) {
+  const active = await currentSession(request, env);
+  if (!active) throw new Error("UNAUTHORIZED");
+  return active;
+}
+
+async function twilioRequest(env: Env, path: string, form: URLSearchParams): Promise<any> {
+  if (!env.TWILIO_API_KEY || !env.TWILIO_API_SECRET || !env.TWILIO_VERIFY_SERVICE_SID) {
+    throw new Error("PHONE_VERIFICATION_NOT_CONFIGURED");
+  }
+  const auth = btoa(env.TWILIO_API_KEY + ":" + env.TWILIO_API_SECRET);
+  const response = await fetch("https://verify.twilio.com/v2/Services/" + encodeURIComponent(env.TWILIO_VERIFY_SERVICE_SID) + path, {
+    method: "POST",
+    headers: { authorization: "Basic " + auth, "content-type": "application/x-www-form-urlencoded" },
+    body: form.toString()
+  });
+  const payload = await readJson(response);
+  if (!response.ok) throw new Error(payload?.message || "PHONE_VERIFICATION_FAILED");
+  return payload;
+}
+
+async function saveLegalIdentity(request: Request, env: Env): Promise<Response> {
+  try {
+    const active = await requireActive(request, env);
+    const input = await request.json() as LegalIdentityInput;
+    validateLegalIdentity(input);
+    const sql = requireDatabase(env);
+    const participantId = active.canonical.participant_id || active.canonical.participantId;
+    const identityRows = await sql\`SELECT i.id FROM public.identities i JOIN public.participants p ON p.identity_id=i.id WHERE p.id=\${participantId} LIMIT 1\`;
+    if (!identityRows.length) return json({service:"Zalagren",error:"IDENTITY_NOT_FOUND"},404);
+    const identity = identityRows[0].id;
+    const documentNumber = input.documentNumber.trim();
+    const documentHash = await sha256Hex(documentNumber.toUpperCase());
+    const encrypted = await encryptSensitive(documentNumber, env);
+    const docId = "identity-document-" + crypto.randomUUID();
+    const profile = await sql\`
+      INSERT INTO public.legal_identity_profiles (
+        identity_id, legal_name, given_names, middle_names, family_name, date_of_birth, sex,
+        nationality_country_code, birth_country_code, birth_place, residence_country_code,
+        address_line1, address_line2, city, region, postal_code, verification_status, updated_at
+      ) VALUES (
+        \${identity}, \${input.legalName.trim()}, \${input.givenNames?.trim() || null}, \${input.middleNames?.trim() || null},
+        \${input.familyName?.trim() || null}, \${input.dateOfBirth || null}, \${input.sex?.trim() || null},
+        \${input.nationalityCountryCode ? normalizeCountryCode(input.nationalityCountryCode) : null},
+        \${input.birthCountryCode ? normalizeCountryCode(input.birthCountryCode) : null}, \${input.birthPlace?.trim() || null},
+        \${input.residenceCountryCode ? normalizeCountryCode(input.residenceCountryCode) : null},
+        \${input.addressLine1?.trim() || null}, \${input.addressLine2?.trim() || null}, \${input.city?.trim() || null},
+        \${input.region?.trim() || null}, \${input.postalCode?.trim() || null}, 'pending', now()
+      )
+      ON CONFLICT (identity_id) DO UPDATE SET
+        legal_name=EXCLUDED.legal_name, given_names=EXCLUDED.given_names, middle_names=EXCLUDED.middle_names,
+        family_name=EXCLUDED.family_name, date_of_birth=EXCLUDED.date_of_birth, sex=EXCLUDED.sex,
+        nationality_country_code=EXCLUDED.nationality_country_code, birth_country_code=EXCLUDED.birth_country_code,
+        birth_place=EXCLUDED.birth_place, residence_country_code=EXCLUDED.residence_country_code,
+        address_line1=EXCLUDED.address_line1, address_line2=EXCLUDED.address_line2, city=EXCLUDED.city,
+        region=EXCLUDED.region, postal_code=EXCLUDED.postal_code, verification_status='pending', updated_at=now()
+      RETURNING identity_id, legal_name, verification_status
+    \`;
+    await sql\`
+      INSERT INTO public.identity_documents (
+        id, identity_id, document_type, issuing_country_code, issuing_authority,
+        document_number_ciphertext, document_number_hash, document_number_last4,
+        issue_date, expiry_date, status, verification_method, updated_at
+      ) VALUES (
+        \${docId}, \${identity}, \${input.documentType}, \${normalizeCountryCode(input.issuingCountryCode)},
+        \${input.issuingAuthority?.trim() || null}, \${encrypted}, \${documentHash}, \${documentNumber.slice(-4)},
+        \${input.issueDate || null}, \${input.expiryDate || null}, 'pending', null, now()
+      )
+      ON CONFLICT (identity_id, document_number_hash) DO UPDATE SET
+        document_number_ciphertext=EXCLUDED.document_number_ciphertext,
+        document_number_last4=EXCLUDED.document_number_last4,
+        issue_date=EXCLUDED.issue_date, expiry_date=EXCLUDED.expiry_date,
+        status='pending', updated_at=now()
+    \`;
+    return json({service:"Zalagren",status:"legal_identity_saved",profile:profile[0],document:{type:input.documentType,issuingCountryCode:normalizeCountryCode(input.issuingCountryCode),last4:documentNumber.slice(-4),verificationStatus:"pending"}},201);
+  } catch (error) {
+    const message=error instanceof Error?error.message:"LEGAL_IDENTITY_SAVE_FAILED";
+    return json({service:"Zalagren",error:message},message==="UNAUTHORIZED"?401:message==="IDENTITY_ENCRYPTION_NOT_CONFIGURED"?503:400);
+  }
+}
+
+async function startPhoneVerification(request: Request, env: Env): Promise<Response> {
+  try {
+    const active = await requireActive(request, env);
+    const body=await request.json() as {phone?:string};
+    const phone=normalizePhoneE164(body.phone);
+    const payload=await twilioRequest(env,"/Verifications",new URLSearchParams({channel:"sms",to:phone}));
+    const sql=requireDatabase(env);
+    const participantId=active.canonical.participant_id || active.canonical.participantId;
+    const rows=await sql\`SELECT i.id FROM public.identities i JOIN public.participants p ON p.identity_id=i.id WHERE p.id=\${participantId} LIMIT 1\`;
+    if(!rows.length) return json({service:"Zalagren",error:"IDENTITY_NOT_FOUND"},404);
+    const hash=await sha256Hex(phone);
+    const contactId="identity-contact-"+crypto.randomUUID();
+    await sql\`INSERT INTO public.identity_contacts(id,identity_id,kind,value_normalized,value_hash,status,is_primary,updated_at)
+      VALUES(\${contactId},\${rows[0].id},'phone',\${phone},\${hash},'pending',false,now())
+      ON CONFLICT (kind,value_hash) DO UPDATE SET identity_id=EXCLUDED.identity_id,status='pending',updated_at=now()\`;
+    return json({service:"Zalagren",status:"phone_verification_sent",phoneLast4:phone.slice(-4),providerStatus:payload?.status||"pending"});
+  } catch(error){const m=error instanceof Error?error.message:"PHONE_VERIFICATION_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:m==="PHONE_VERIFICATION_NOT_CONFIGURED"?503:400);}
+}
+
+async function verifyPhone(request: Request, env: Env): Promise<Response> {
+  try {
+    const active=await requireActive(request,env);
+    const body=await request.json() as {phone?:string;code?:string};
+    const phone=normalizePhoneE164(body.phone);
+    const code=String(body.code||"").trim();
+    if(!/^\d{4,10}$/.test(code)) return json({service:"Zalagren",error:"INVALID_VERIFICATION_CODE"},400);
+    const payload=await twilioRequest(env,"/VerificationCheck",new URLSearchParams({to:phone,code}));
+    if(payload?.status!=="approved") return json({service:"Zalagren",error:"PHONE_NOT_VERIFIED",status:payload?.status||"pending"},400);
+    const sql=requireDatabase(env);
+    const participantId=active.canonical.participant_id || active.canonical.participantId;
+    const rows=await sql\`SELECT i.id FROM public.identities i JOIN public.participants p ON p.identity_id=i.id WHERE p.id=\${participantId} LIMIT 1\`;
+    if(!rows.length) return json({service:"Zalagren",error:"IDENTITY_NOT_FOUND"},404);
+    const identity=rows[0].id, hash=await sha256Hex(phone);
+    const contactId="identity-contact-"+crypto.randomUUID(), methodId="auth-method-phone-"+crypto.randomUUID(), credentialId="credential-phone-"+crypto.randomUUID();
+    await sql.transaction([
+      sql\`UPDATE public.identity_contacts SET status='revoked',is_primary=false,updated_at=now() WHERE identity_id=\${identity} AND kind='phone' AND status='active' AND value_hash<>\${hash}\`,
+      sql\`INSERT INTO public.identity_contacts(id,identity_id,kind,value_normalized,value_hash,status,verified_at,is_primary,updated_at)
+          VALUES(\${contactId},\${identity},'phone',\${phone},\${hash},'active',now(),true,now())
+          ON CONFLICT (kind,value_hash) DO UPDATE SET identity_id=EXCLUDED.identity_id,status='active',verified_at=now(),is_primary=true,updated_at=now()\`,
+      sql\`INSERT INTO public.auth_methods(id,identity_id,kind,identifier,status,verified_at)
+          VALUES(\${methodId},\${identity},'phone',\${phone},'active',now())
+          ON CONFLICT DO NOTHING\`,
+      sql\`INSERT INTO public.credentials(id,kind,status,account_id)
+          SELECT \${credentialId},'phone','ACTIVE',a.id FROM public.accounts a WHERE a.identity_id=\${identity}
+          ON CONFLICT DO NOTHING\`,
+      sql\`INSERT INTO public.identity_verification_records(id,identity_id,target_type,target_id,method,status,external_reference,completed_at)
+          VALUES('identity-verification-'+crypto.randomUUID(),\${identity},'phone',\${methodId},'twilio-verify','verified',\${payload?.sid||null},now())\`
+    ]);
+    return json({service:"Zalagren",status:"phone_verified",phoneLast4:phone.slice(-4)});
+  }catch(error){const m=error instanceof Error?error.message:"PHONE_VERIFICATION_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:m==="PHONE_VERIFICATION_NOT_CONFIGURED"?503:400);}
+}
+
+async function sendEmailVerification(request: Request, env: Env): Promise<Response> {
+  try {
+    const active=await requireActive(request,env);
+    const body=await request.json().catch(()=>({}));
+    const email=normalizeEmail(body.email || active.user.email);
+    const upstream=await providerRequest(request,env,"/send-verification-email",{email,callbackURL:new URL("/",request.url).toString()});
+    const payload=await readJson(upstream);
+    return json({service:"Zalagren",status:upstream.ok?"email_verification_requested":"email_verification_failed",provider:payload},upstream.status);
+  }catch(error){const m=error instanceof Error?error.message:"EMAIL_VERIFICATION_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
 async function me(request: Request, env: Env): Promise<Response> {
   try {
     const active = await currentSession(request, env);
     if (!active) return json({ service: "Zalagren", error: "UNAUTHORIZED" }, 401);
+    const sql = requireDatabase(env);
+    const participantId = active.canonical.participant_id || active.canonical.participantId;
+    const identityRows = await sql`
+      SELECT i.id AS identity_id, lip.legal_name,
+             lip.verification_status AS legal_verification_status,
+             EXISTS(SELECT 1 FROM public.identity_contacts ic WHERE ic.identity_id=i.id AND ic.kind='email' AND ic.status='active' AND ic.verified_at IS NOT NULL) AS email_verified,
+             EXISTS(SELECT 1 FROM public.identity_contacts ic WHERE ic.identity_id=i.id AND ic.kind='phone' AND ic.status='active' AND ic.verified_at IS NOT NULL) AS phone_verified,
+             EXISTS(SELECT 1 FROM public.identity_documents d WHERE d.identity_id=i.id AND d.status='verified') AS document_verified
+      FROM public.identities i
+      LEFT JOIN public.legal_identity_profiles lip ON lip.identity_id=i.id
+      JOIN public.participants p ON p.identity_id=i.id
+      WHERE p.id=${participantId}
+      LIMIT 1
+    `;
     return json({
       service: "Zalagren",
       authenticated: true,
       participant: active.canonical,
-      identity: { provider: "neon-auth", userId: active.user.id, name: active.user.name, email: active.user.email },
+      identity: { provider: "neon-auth", userId: active.user.id, name: active.user.name, email: active.user.email, legalName: identityRows[0]?.legal_name || null },
       home: {
         identity: "Ready",
         communities: "Available",
@@ -369,6 +559,10 @@ export default {
     if (request.method === "GET" && url.pathname === "/api/me") return me(request, env);
     if (request.method === "POST" && url.pathname === "/api/auth/sign-up/email") return authMutation(request, env, "/sign-up/email");
     if (request.method === "POST" && url.pathname === "/api/auth/sign-in/email") return authMutation(request, env, "/sign-in/email");
+    if (request.method === "POST" && url.pathname === "/api/auth/email/verification/send") return sendEmailVerification(request, env);
+    if (request.method === "POST" && url.pathname === "/api/identity/legal") return saveLegalIdentity(request, env);
+    if (request.method === "POST" && url.pathname === "/api/contact/phone/start") return startPhoneVerification(request, env);
+    if (request.method === "POST" && url.pathname === "/api/contact/phone/verify") return verifyPhone(request, env);
     if (request.method === "POST" && url.pathname === "/api/auth/sign-out") {
       try {
         const upstream = await providerRequest(request, env, "/sign-out");

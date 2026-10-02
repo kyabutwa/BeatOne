@@ -6,7 +6,7 @@ const escapeHtml = (value: unknown): string =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 
-const ZALAGREN_LOGO = "https://github.com/kyabutwa/BeatOne/raw/70d48e6c9a9b3dd4d913ee559898f590979b0ff3/IMG_1383.jpeg";
+const ZALAGREN_LOGO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzNjAgODgiPjxyZWN0IHdpZHRoPSIzNjAiIGhlaWdodD0iODgiIGZpbGw9IndoaXRlIi8+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoOCA4KSI+PHBhdGggZD0iTTMxIDJjLTcgMTEtMTMgMjItMTMgMzUgMCAxMyA3IDI2IDIxIDM0IDE0LTggMjEtMjEgMjEtMzRDNjAgMjQgNTEgMTEgNDMgMiA0MC0xIDM0LTEgMzEgMloiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzJmOGY1YiIgc3Ryb2tlLXdpZHRoPSI1Ii8+PHBhdGggZD0iTTM5IDEydjQ1TTI0IDI1YzkgMyAxOCAzIDI5IDBNMjIgMzljMTEgMyAyMiAzIDM0IDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzJmOGY1YiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L2c+PHRleHQgeD0iODYiIHk9IjU5IiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNDIiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiMyZjhmNWIiPlphbGFncmVuPC90ZXh0Pjwvc3ZnPg==";
 const ZALAGREN_REFERENCE_IMAGE = "https://github.com/kyabutwa/BeatOne/raw/70d48e6c9a9b3dd4d913ee559898f590979b0ff3/IMG_1384.jpeg";
 
 export const renderHome = (headers: (extra?: HeadersInit) => Headers): Response =>
@@ -87,7 +87,7 @@ button:focus-visible,input:focus-visible{outline:3px solid rgba(242,122,33,.34);
 .label{display:block;font-size:13px;line-height:19px;font-weight:700;margin:15px 0 6px}
 input{width:100%;min-height:46px;padding:11px 13px;border:1px solid #cbd5e1;border-radius:13px;background:#fff;color:var(--navy)}
 input::placeholder{color:#7a8798}
-.actions{display:flex;gap:9px;margin-top:17px}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.form-grid .label{margin-top:10px}.verification-box{margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--surface-2)}.verification-title{font-size:13px;font-weight:750}.verification-copy{font-size:12px;line-height:18px;color:var(--muted);margin-top:3px}.mini-actions{display:flex;gap:8px;margin-top:9px}.mini-actions button{min-height:38px;padding:8px 11px;border:1px solid var(--line);border-radius:11px;background:#fff;color:var(--navy);font-size:12px;font-weight:750}@media(max-width:700px){.form-grid{grid-template-columns:1fr}}.action{min-height:44px;padding:10px 15px;border:0;border-radius:13px;font-weight:750}.primary{background:var(--navy);color:#fff}.secondary{background:var(--surface-2);color:var(--navy);border:1px solid var(--line)}
+.actions{display:flex;gap:9px;margin-top:17px}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.form-grid .label{margin-top:10px}.signup-only-hidden{display:none!important}.verification-box{margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--surface-2)}.verification-title{font-size:13px;font-weight:750}.verification-copy{font-size:12px;line-height:18px;color:var(--muted);margin-top:3px}.mini-actions{display:flex;gap:8px;margin-top:9px}.mini-actions button{min-height:38px;padding:8px 11px;border:1px solid var(--line);border-radius:11px;background:#fff;color:var(--navy);font-size:12px;font-weight:750}@media(max-width:700px){.form-grid{grid-template-columns:1fr}}.action{min-height:44px;padding:10px 15px;border:0;border-radius:13px;font-weight:750}.primary{background:var(--navy);color:#fff}.secondary{background:var(--surface-2);color:var(--navy);border:1px solid var(--line)}
 .error{min-height:20px;margin-top:10px;color:var(--danger);font-size:13px;line-height:19px}.hidden{display:none!important}
 .status{margin-top:14px;padding:14px 15px;border-radius:16px;background:var(--surface-2);border:1px solid var(--line);font-size:13px;line-height:19px;color:var(--muted)}.status strong{color:var(--navy)}
 .bottom-nav{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:35;width:min(calc(100% - 24px),620px);display:grid;grid-template-columns:repeat(5,1fr);padding:6px;border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.96);box-shadow:0 10px 30px rgba(7,26,51,.11);backdrop-filter:saturate(180%) blur(18px)}
@@ -135,7 +135,7 @@ input::placeholder{color:#7a8798}
   <form class="auth-card" id="authForm">
    <div id="formTitle" class="auth-title">Create your identity</div>
    <label class="label" for="name">Name</label><input id="name" autocomplete="name" placeholder="Your name">
-   <label class="label" for="email">Email</label><input id="email" autocomplete="email" inputmode="email" type="email" placeholder="you@example.com">
+   <label class="label" for="email">Email</label><input id="email" autocomplete="email" inputmode="email" type="email" placeholder="you@example.com"><div id="signupPhoneField"><label class="label" for="phone">Phone number</label><input id="phone" autocomplete="tel" inputmode="tel" type="tel" placeholder="+254 7XX XXX XXX"></div>
    <label class="label" for="password">Password</label><input id="password" autocomplete="new-password" type="password" placeholder="Password (8+ characters)">
    <div class="actions"><button id="submit" class="action primary" type="submit">Create account</button><button id="mode" class="action secondary" type="button">Sign in instead</button></div>
    <div id="verificationBox" class="verification-box hidden"><div class="verification-title">Account security</div><div id="verificationCopy" class="verification-copy"></div><div class="mini-actions"><button id="resendEmail" type="button">Send email verification</button></div></div>
@@ -281,10 +281,8 @@ function mode(){
  $("formTitle").textContent=signup?"Create your identity":"Welcome back";
  $("submit").textContent=signup?"Create account":"Sign in";
  $("mode").textContent=signup?"Sign in instead":"Create an account";
- $("name").classList.toggle("hidden",!signup);
- $("legalSignupFields").classList.toggle("hidden",!signup);
- $("password").autocomplete=signup?"new-password":"current-password";
- $("password").placeholder=signup?"Password (8+ characters)":"Password";
+ const phoneField=$("signupPhoneField");
+ if(phoneField)phoneField.classList.toggle("signup-only-hidden",!signup);
 }
 function openDetail(id){
  document.querySelectorAll(".detail-card").forEach(v=>v.classList.remove("active"));
@@ -389,14 +387,14 @@ $("openMenu").onclick=openMenu;$("closeMenu").onclick=closeMenu;$("account").onc
 $("mode").onclick=()=>{signup=!signup;setError("");mode();};
 $("authForm").onsubmit=async event=>{
  event.preventDefault();setError("");
- const body={email:$("email").value.trim(),password:$("password").value};if(signup)body.name=$("name").value.trim();
- if(!body.email||!body.password||(signup&&!body.name)){setError("Complete the required fields.");return;}
- const r=await fetch(signup?"/api/auth/sign-up/email":"/api/auth/sign-in/email",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+ const body={email:$("email").value.trim(),password:$("password").value};if(signup){body.name=$("name").value.trim();body.phone=$("phone").value.trim();}
+ if(!body.email||!body.password||(signup&&!body.name)||(signup&&!body.phone)){setError("Name, email, phone number and password are required to create your account.");return;}
+ const authBody={email:body.email,password:body.password};if(signup)authBody.name=body.name;const r=await fetch(signup?"/api/auth/sign-up/email":"/api/auth/sign-in/email",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(authBody)});
  const d=await r.json().catch(()=>({}));if(!r.ok){setError(d.error||"Authentication failed.");return;}
  showHome(d.canonical?{identity:d.user,participant:d.canonical,verification:d.verification}:await(await fetch("/api/me")).json());
  $("verificationBox").classList.remove("hidden");
  const md=await fetch("/api/me");const me=md.ok?await md.json():{};const v=me.verification||d.verification||{};
- $("verificationCopy").textContent="Email: "+(v.email?"verified":"verification required")+" · Identity details: available later in Identity Vault when a service or jurisdiction requires them.";
+ $("verificationCopy").textContent="Email: "+(v.email?"verified":"verification required")+" · Identity details: available later in Identity Vault when a service or jurisdiction requires them.";if(signup&&body.phone){try{const pr=await fetch("/api/contact/phone/start",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({phone:body.phone})});if(!pr.ok){const pd=await pr.json().catch(()=>({}));$("verificationCopy").textContent+=" · Phone verification: "+(pd.error||"could not be started");}}catch{$("verificationCopy").textContent+=" · Phone verification could not be started.";}}
 };
 $("resendEmail").onclick=async()=>{const r=await fetch("/api/auth/email/verification/send",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({email:$("email").value.trim()})});$("verificationCopy").textContent=r.ok?"Email verification requested. Check your inbox.":"Email verification could not be requested yet.";};
 $("signout").onclick=async()=>{await fetch("/api/auth/sign-out",{method:"POST"});location.reload();};

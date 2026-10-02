@@ -47,11 +47,6 @@ const requireDatabase = (env: Env): DbSql => {
 
 const authBase = (env: Env) => (env.NEON_AUTH_BASE_URL || AUTH_BASE_URL).replace(/\/$/, "");
 
-function providerCookies(response: Response): string[] {
-  const h = response.headers as Headers & { getSetCookie?: () => string[]; getAll?: (name: string) => string[] };
-  return h.getSetCookie?.() ?? h.getAll?.("Set-Cookie") ?? (h.get("set-cookie") ? [h.get("set-cookie") as string] : []);
-}
-
 async function providerRequest(
   request: Request,
   env: Env,
@@ -198,7 +193,6 @@ async function authMutation(request: Request, env: Env, endpoint: string): Promi
     const body = await request.json();
     const upstream = await providerRequest(request, env, endpoint, body);
     const payload = await readJson(upstream);
-    const setCookies = providerCookies(upstream);
 
     if (!upstream.ok) {
       return json({ service: "BeatOne", error: payload?.message || payload?.error || "AUTHENTICATION_FAILED" }, upstream.status);
@@ -219,20 +213,7 @@ async function authMutation(request: Request, env: Env, endpoint: string): Promi
       "access-control-allow-origin": "*"
     });
 
-    // Preserve the provider session as a fallback on the BeatOne origin.
-    // Neon Auth's cookie is scoped to the provider origin, so the browser cannot
-    // accept its original Domain attribute from this Worker response. Strip only
-    // Domain and normalize Path; currentSession will forward this fallback cookie
-    // back to Neon Auth when the canonical BeatOne session is unavailable.
-    for (const cookie of setCookies) {
-      outHeaders.append(
-        "set-cookie",
-        cookie
-          .replace(/;\s*Domain=[^;]+/gi, "")
-          .replace(/;\s*Path=\/[^;]*/i, "; Path=/")
-      );
-    }
-
+    // BeatOne owns the browser session boundary. Issue exactly one canonical cookie.
     if (canonical?.sessionToken && canonical?.expiresAt) {
       const maxAge = Math.max(60, Math.floor((new Date(canonical.expiresAt).getTime() - Date.now()) / 1000));
       outHeaders.append("set-cookie", "__Host-beatone_session=" + encodeURIComponent(canonical.sessionToken) + "; Path=/; Max-Age=" + maxAge + "; HttpOnly; Secure; SameSite=Lax");
@@ -276,19 +257,9 @@ async function currentSession(request: Request, env: Env): Promise<{ user: any; 
       if (userRows.length) return { user:userRows[0], session:null, canonical:rows[0] };
     }
   }
-  if (!cookieHeader) return null;
-  const upstream = await providerRequest(request, env, "/get-session");
-  if (!upstream.ok) return null;
-  const payload = await readJson(upstream);
-  const user = providerUser(payload);
-  const session = providerSession(payload);
-  if (!user?.id || !user?.email) return null;
-  // A valid provider session is the recovery/fallback path for a missing or
-  // rejected canonical cookie. Always rotate a fresh canonical session here so
-  // the next /api/me response can repair the BeatOne cookie instead of leaving
-  // the browser stuck on an unrecoverable stale cookie.
-  const canonical = await syncCanonicalAuth(env, user, session);
-  return { user, session, canonical };
+  // No canonical BeatOne cookie means no authenticated BeatOne session.
+  // Neon Auth authenticates credentials; it is not a second browser-session authority.
+  return null;
 }
 async function verificationAccountForContact(sql: DbSql, kind: "email" | "phone", value: string): Promise<{identityId:string;accountId:string}|null> {
   const rows = await sql`

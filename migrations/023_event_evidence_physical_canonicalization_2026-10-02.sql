@@ -1,0 +1,110 @@
+
+BEGIN;
+
+CREATE TEMP TABLE _event_evidence_migration_guard (
+  ok boolean NOT NULL CHECK (ok)
+);
+INSERT INTO _event_evidence_migration_guard(ok)
+SELECT
+  (NOT EXISTS (SELECT 1 FROM public.events))
+  AND (NOT EXISTS (SELECT 1 FROM public.evidence))
+  AND (
+    to_regclass('public.event_evidence') IS NULL
+    OR NOT EXISTS (SELECT 1 FROM public.event_evidence)
+  );
+DROP TABLE _event_evidence_migration_guard;
+
+DROP TABLE IF EXISTS public.event_evidence;
+
+ALTER TABLE public.events
+  DROP CONSTRAINT IF EXISTS events_source_check,
+  DROP CONSTRAINT IF EXISTS events_status_check,
+  DROP CONSTRAINT IF EXISTS events_context_id_not_null,
+  DROP CONSTRAINT IF EXISTS events_participant_id_not_null,
+  DROP CONSTRAINT IF EXISTS events_title_not_null,
+  DROP CONSTRAINT IF EXISTS events_status_not_null,
+  DROP CONSTRAINT IF EXISTS events_type_not_null,
+  DROP CONSTRAINT IF EXISTS events_occurred_at_not_null;
+
+DROP INDEX IF EXISTS public.idx_events_context_time;
+DROP INDEX IF EXISTS public.idx_events_participant_time;
+
+ALTER TABLE public.events
+  DROP COLUMN IF EXISTS title,
+  DROP COLUMN IF EXISTS participant_id,
+  DROP COLUMN IF EXISTS authorization_id,
+  DROP COLUMN IF EXISTS status,
+  DROP COLUMN IF EXISTS metadata;
+
+ALTER TABLE public.events
+  ADD COLUMN IF NOT EXISTS action_id text,
+  ADD COLUMN IF NOT EXISTS state varchar(16),
+  ADD COLUMN IF NOT EXISTS actor_id text,
+  ADD COLUMN IF NOT EXISTS context_id text,
+  ADD COLUMN IF NOT EXISTS source text,
+  ADD COLUMN IF NOT EXISTS occurred_at timestamptz,
+  ADD COLUMN IF NOT EXISTS correlation_id text,
+  ADD COLUMN IF NOT EXISTS causation_id text,
+  ADD COLUMN IF NOT EXISTS version bigint;
+
+ALTER TABLE public.events
+  ALTER COLUMN type SET NOT NULL,
+  ALTER COLUMN state SET NOT NULL,
+  ALTER COLUMN source SET NOT NULL,
+  ALTER COLUMN occurred_at SET NOT NULL,
+  ALTER COLUMN version SET NOT NULL,
+  ALTER COLUMN version SET DEFAULT 1;
+
+ALTER TABLE public.events
+  ADD CONSTRAINT events_action_id_fkey FOREIGN KEY (action_id) REFERENCES public.actions(id) ON DELETE RESTRICT,
+  ADD CONSTRAINT events_actor_id_fkey FOREIGN KEY (actor_id) REFERENCES public.identities(id) ON DELETE RESTRICT,
+  ADD CONSTRAINT events_context_id_fkey FOREIGN KEY (context_id) REFERENCES public.contexts(id) ON DELETE RESTRICT,
+  ADD CONSTRAINT events_type_not_blank CHECK (btrim(type) <> ''),
+  ADD CONSTRAINT events_source_not_blank CHECK (btrim(source) <> ''),
+  ADD CONSTRAINT events_state_check CHECK (state IN ('REQUESTED','AUTHORIZED','PROCESSING','COMPLETED','DENIED','REJECTED','FAILED','EXPIRED','CANCELLED','PARTIAL','DISPUTED','REVERSED','RECONCILED')),
+  ADD CONSTRAINT events_version_check CHECK (version >= 1),
+  ADD CONSTRAINT events_correlation_id_not_blank CHECK (correlation_id IS NULL OR btrim(correlation_id) <> ''),
+  ADD CONSTRAINT events_causation_id_not_blank CHECK (causation_id IS NULL OR btrim(causation_id) <> '');
+
+CREATE INDEX events_action_id_idx ON public.events(action_id) WHERE action_id IS NOT NULL;
+CREATE INDEX events_context_time_idx ON public.events(context_id, occurred_at DESC) WHERE context_id IS NOT NULL;
+CREATE INDEX events_correlation_id_idx ON public.events(correlation_id) WHERE correlation_id IS NOT NULL;
+
+ALTER TABLE public.evidence
+  DROP CONSTRAINT IF EXISTS evidence_status_check,
+  DROP CONSTRAINT IF EXISTS evidence_statement_not_null,
+  DROP CONSTRAINT IF EXISTS evidence_status_not_null;
+
+ALTER TABLE public.evidence
+  DROP COLUMN IF EXISTS statement,
+  DROP COLUMN IF EXISTS status,
+  DROP COLUMN IF EXISTS observed_at;
+
+ALTER TABLE public.evidence
+  ADD COLUMN IF NOT EXISTS event_id text,
+  ADD COLUMN IF NOT EXISTS source text,
+  ADD COLUMN IF NOT EXISTS verification varchar(16),
+  ADD COLUMN IF NOT EXISTS recorded_at timestamptz,
+  ADD COLUMN IF NOT EXISTS external_provider text,
+  ADD COLUMN IF NOT EXISTS external_reference text;
+
+ALTER TABLE public.evidence
+  ALTER COLUMN source SET NOT NULL,
+  ALTER COLUMN verification SET NOT NULL,
+  ALTER COLUMN recorded_at SET NOT NULL;
+
+ALTER TABLE public.evidence
+  ADD CONSTRAINT evidence_event_id_fkey FOREIGN KEY (event_id) REFERENCES public.events(id) ON DELETE RESTRICT,
+  ADD CONSTRAINT evidence_source_not_blank CHECK (btrim(source) <> ''),
+  ADD CONSTRAINT evidence_verification_check CHECK (verification IN ('UNVERIFIED','VERIFIED','REJECTED')),
+  ADD CONSTRAINT evidence_external_reference_pair_check CHECK ((external_provider IS NULL) = (external_reference IS NULL)),
+  ADD CONSTRAINT evidence_external_provider_not_blank CHECK (external_provider IS NULL OR btrim(external_provider) <> ''),
+  ADD CONSTRAINT evidence_external_reference_not_blank CHECK (external_reference IS NULL OR btrim(external_reference) <> '');
+
+CREATE INDEX evidence_event_id_idx ON public.evidence(event_id) WHERE event_id IS NOT NULL;
+CREATE INDEX evidence_verification_idx ON public.evidence(verification);
+
+INSERT INTO public.zalagren_schema_migrations(id)
+VALUES ('023_event_evidence_physical_canonicalization_2026-10-02');
+
+COMMIT;

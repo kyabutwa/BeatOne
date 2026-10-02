@@ -482,7 +482,7 @@ async function sendEmailVerification(request: Request, env: Env): Promise<Respon
     const requestedEmail=normalizeEmail(body.email || active?.user?.email || "");
     if(!requestedEmail) return json({service:"BeatOne",error:"EMAIL_REQUIRED"},400);
     if(active?.user?.email && normalizeEmail(active.user.email)!==requestedEmail) return json({service:"BeatOne",error:"EMAIL_MISMATCH"},400);
-    const upstream=await providerRequest(request,env,"/send-verification-email",{email:requestedEmail,callbackURL:new URL("/",request.url).toString()});
+    const upstream=await providerRequest(request,env,"/email-otp/send-verification-otp",{email:requestedEmail,type:"email-verification"});
     const payload=await readJson(upstream);
     return json({service:"BeatOne",status:upstream.ok?"email_verification_requested":"email_verification_failed",provider:payload},upstream.status);
   }catch(error){const m=error instanceof Error?error.message:"EMAIL_VERIFICATION_FAILED";return json({service:"BeatOne",error:m},400);}

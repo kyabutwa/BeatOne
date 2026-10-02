@@ -331,7 +331,7 @@ async function saveLegalIdentity(request: Request, env: Env): Promise<Response> 
     validateLegalIdentity(input);
     const sql = requireDatabase(env);
     const participantId = active.canonical.participant_id || active.canonical.participantId;
-    const identityRows = await sql`SELECT i.id FROM public.identities i JOIN public.participants p ON p.identity_id=i.id WHERE p.id=${participantId} LIMIT 1\`;
+    const identityRows = await sql`SELECT i.id FROM public.identities i JOIN public.participants p ON p.identity_id=i.id WHERE p.id=${participantId} LIMIT 1`;
     if (!identityRows.length) return json({service:"Zalagren",error:"IDENTITY_NOT_FOUND"},404);
     const identity = identityRows[0].id;
     const documentNumber = input.documentNumber.trim();
@@ -378,7 +378,7 @@ async function saveLegalIdentity(request: Request, env: Env): Promise<Response> 
         document_number_last4=EXCLUDED.document_number_last4,
         issue_date=EXCLUDED.issue_date, expiry_date=EXCLUDED.expiry_date,
         status='pending', updated_at=now()
-    \`;
+    `;
     return json({service:"Zalagren",status:"legal_identity_saved",profile:profile[0],document:{type:input.documentType,issuingCountryCode:normalizeCountryCode(input.issuingCountryCode),last4:documentNumber.slice(-4),verificationStatus:"pending"}},201);
   } catch (error) {
     const message=error instanceof Error?error.message:"LEGAL_IDENTITY_SAVE_FAILED";
@@ -394,13 +394,13 @@ async function startPhoneVerification(request: Request, env: Env): Promise<Respo
     const payload=await twilioRequest(env,"/Verifications",new URLSearchParams({channel:"sms",to:phone}));
     const sql=requireDatabase(env);
     const participantId=active.canonical.participant_id || active.canonical.participantId;
-    const rows=await sql`SELECT i.id FROM public.identities i JOIN public.participants p ON p.identity_id=i.id WHERE p.id=${participantId} LIMIT 1\`;
+    const rows=await sql`SELECT i.id FROM public.identities i JOIN public.participants p ON p.identity_id=i.id WHERE p.id=${participantId} LIMIT 1`;
     if(!rows.length) return json({service:"Zalagren",error:"IDENTITY_NOT_FOUND"},404);
     const hash=await sha256Hex(phone);
     const contactId="identity-contact-"+crypto.randomUUID();
     await sql`INSERT INTO public.identity_contacts(id,identity_id,kind,value_normalized,value_hash,status,is_primary,updated_at)
       VALUES(${contactId},${rows[0].id},'phone',${phone},${hash},'pending',false,now())
-      ON CONFLICT (kind,value_hash) DO UPDATE SET identity_id=EXCLUDED.identity_id,status='pending',updated_at=now()\`;
+      ON CONFLICT (kind,value_hash) DO UPDATE SET identity_id=EXCLUDED.identity_id,status='pending',updated_at=now()`;
     return json({service:"Zalagren",status:"phone_verification_sent",phoneLast4:phone.slice(-4),providerStatus:payload?.status||"pending"});
   } catch(error){const m=error instanceof Error?error.message:"PHONE_VERIFICATION_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:m==="PHONE_VERIFICATION_NOT_CONFIGURED"?503:400);}
 }
@@ -416,23 +416,23 @@ async function verifyPhone(request: Request, env: Env): Promise<Response> {
     if(payload?.status!=="approved") return json({service:"Zalagren",error:"PHONE_NOT_VERIFIED",status:payload?.status||"pending"},400);
     const sql=requireDatabase(env);
     const participantId=active.canonical.participant_id || active.canonical.participantId;
-    const rows=await sql`SELECT i.id FROM public.identities i JOIN public.participants p ON p.identity_id=i.id WHERE p.id=${participantId} LIMIT 1\`;
+    const rows=await sql`SELECT i.id FROM public.identities i JOIN public.participants p ON p.identity_id=i.id WHERE p.id=${participantId} LIMIT 1`;
     if(!rows.length) return json({service:"Zalagren",error:"IDENTITY_NOT_FOUND"},404);
     const identity=rows[0].id, hash=await sha256Hex(phone);
     const contactId="identity-contact-"+crypto.randomUUID(), methodId="auth-method-phone-"+crypto.randomUUID(), credentialId="credential-phone-"+crypto.randomUUID();
     await sql.transaction([
-      sql`UPDATE public.identity_contacts SET status='revoked',is_primary=false,updated_at=now() WHERE identity_id=${identity} AND kind='phone' AND status='active' AND value_hash<>${hash}\`,
+      sql`UPDATE public.identity_contacts SET status='revoked',is_primary=false,updated_at=now() WHERE identity_id=${identity} AND kind='phone' AND status='active' AND value_hash<>${hash}`,
       sql`INSERT INTO public.identity_contacts(id,identity_id,kind,value_normalized,value_hash,status,verified_at,is_primary,updated_at)
           VALUES(${contactId},${identity},'phone',${phone},${hash},'active',now(),true,now())
-          ON CONFLICT (kind,value_hash) DO UPDATE SET identity_id=EXCLUDED.identity_id,status='active',verified_at=now(),is_primary=true,updated_at=now()\`,
+          ON CONFLICT (kind,value_hash) DO UPDATE SET identity_id=EXCLUDED.identity_id,status='active',verified_at=now(),is_primary=true,updated_at=now()`,
       sql`INSERT INTO public.auth_methods(id,identity_id,kind,identifier,status,verified_at)
           VALUES(${methodId},${identity},'phone',${phone},'active',now())
-          ON CONFLICT DO NOTHING\`,
+          ON CONFLICT DO NOTHING`,
       sql`INSERT INTO public.credentials(id,kind,status,account_id)
           SELECT ${credentialId},'phone','ACTIVE',a.id FROM public.accounts a WHERE a.identity_id=${identity}
-          ON CONFLICT DO NOTHING\`,
+          ON CONFLICT DO NOTHING`,
       sql`INSERT INTO public.identity_verification_records(id,identity_id,target_type,target_id,method,status,external_reference,completed_at)
-          VALUES('identity-verification-'+crypto.randomUUID(),${identity},'phone',${methodId},'twilio-verify','verified',${payload?.sid||null},now())\`
+          VALUES('identity-verification-'+crypto.randomUUID(),${identity},'phone',${methodId},'twilio-verify','verified',${payload?.sid||null},now())`
     ]);
     return json({service:"Zalagren",status:"phone_verified",phoneLast4:phone.slice(-4)});
   }catch(error){const m=error instanceof Error?error.message:"PHONE_VERIFICATION_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:m==="PHONE_VERIFICATION_NOT_CONFIGURED"?503:400);}

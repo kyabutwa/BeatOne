@@ -62,7 +62,7 @@ export const beatLogoSvg = (label:string, service?:string):string => {
     <polygon points="197,174 238,185 238,244 197,270" fill="url(#gemFace)" opacity=".96"/>
     ${symbol}
   </g>
-  <text x="430" y="231" font-family="-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Arial,sans-serif" font-size="72" font-weight="700" letter-spacing="-2.2" fill="#0B2545">${safeLabel}</text>
+  <text x="430" y="231" font-family="-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Arial,sans-serif" font-size="72" font-weight="700" letter-spacing="-2.2" fill="#F8FAFC">${safeLabel}</text>
 </svg>`;
 };
 

@@ -87,7 +87,7 @@ button:focus-visible,input:focus-visible{outline:3px solid rgba(242,122,33,.34);
 .label{display:block;font-size:13px;line-height:19px;font-weight:700;margin:15px 0 6px}
 input{width:100%;min-height:46px;padding:11px 13px;border:1px solid #cbd5e1;border-radius:13px;background:#fff;color:var(--navy)}
 input::placeholder{color:#7a8798}
-.actions{display:flex;gap:9px;margin-top:17px}.action{min-height:44px;padding:10px 15px;border:0;border-radius:13px;font-weight:750}.primary{background:var(--navy);color:#fff}.secondary{background:var(--surface-2);color:var(--navy);border:1px solid var(--line)}
+.actions{display:flex;gap:9px;margin-top:17px}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.form-grid .label{margin-top:10px}.verification-box{margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--surface-2)}.verification-title{font-size:13px;font-weight:750}.verification-copy{font-size:12px;line-height:18px;color:var(--muted);margin-top:3px}.mini-actions{display:flex;gap:8px;margin-top:9px}.mini-actions button{min-height:38px;padding:8px 11px;border:1px solid var(--line);border-radius:11px;background:#fff;color:var(--navy);font-size:12px;font-weight:750}@media(max-width:700px){.form-grid{grid-template-columns:1fr}}.action{min-height:44px;padding:10px 15px;border:0;border-radius:13px;font-weight:750}.primary{background:var(--navy);color:#fff}.secondary{background:var(--surface-2);color:var(--navy);border:1px solid var(--line)}
 .error{min-height:20px;margin-top:10px;color:var(--danger);font-size:13px;line-height:19px}.hidden{display:none!important}
 .status{margin-top:14px;padding:14px 15px;border-radius:16px;background:var(--surface-2);border:1px solid var(--line);font-size:13px;line-height:19px;color:var(--muted)}.status strong{color:var(--navy)}
 .bottom-nav{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:35;width:min(calc(100% - 24px),620px);display:grid;grid-template-columns:repeat(5,1fr);padding:6px;border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.96);box-shadow:0 10px 30px rgba(7,26,51,.11);backdrop-filter:saturate(180%) blur(18px)}
@@ -134,10 +134,36 @@ input::placeholder{color:#7a8798}
  <div class="auth-wrap">
   <form class="auth-card" id="authForm">
    <div id="formTitle" class="auth-title">Create your identity</div>
-   <label class="label" for="name">Name</label><input id="name" autocomplete="name" placeholder="Your name">
+   <label class="label" for="name">Legal name</label><input id="name" autocomplete="name" placeholder="Your full legal name">
    <label class="label" for="email">Email</label><input id="email" autocomplete="email" inputmode="email" type="email" placeholder="you@example.com">
    <label class="label" for="password">Password</label><input id="password" autocomplete="new-password" type="password" placeholder="Password (8+ characters)">
+   <div id="legalSignupFields" class="hidden">
+    <div class="verification-box"><div class="verification-title">Legal identity details</div><div class="verification-copy">Your Zalagren identity uses one legal name. Document information is encrypted before persistence and remains unverified until a real verification process proves it.</div></div>
+    <div class="form-grid">
+      <div><label class="label" for="givenNames">Given names</label><input id="givenNames" autocomplete="given-name" placeholder="Given names"></div>
+      <div><label class="label" for="middleNames">Middle names</label><input id="middleNames" autocomplete="additional-name" placeholder="Middle names"></div>
+      <div><label class="label" for="familyName">Family name</label><input id="familyName" autocomplete="family-name" placeholder="Family name"></div>
+      <div><label class="label" for="dateOfBirth">Date of birth</label><input id="dateOfBirth" type="date" autocomplete="bday"></div>
+      <div><label class="label" for="sex">Sex as recorded</label><input id="sex" placeholder="As recorded on document"></div>
+      <div><label class="label" for="nationality">Nationality</label><input id="nationality" placeholder="ISO country code, e.g. CD"></div>
+      <div><label class="label" for="birthCountry">Birth country</label><input id="birthCountry" placeholder="ISO country code"></div>
+      <div><label class="label" for="birthPlace">Place of birth</label><input id="birthPlace" placeholder="City / place"></div>
+      <div><label class="label" for="residenceCountry">Residence country</label><input id="residenceCountry" placeholder="ISO country code"></div>
+      <div><label class="label" for="phone">Phone number</label><input id="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+243..."></div>
+      <div><label class="label" for="documentType">Identity document</label><select id="documentType" style="width:100%;min-height:46px;padding:11px 13px;border:1px solid #cbd5e1;border-radius:13px;background:#fff;color:var(--navy)"><option value="national_id">National ID</option><option value="passport">Passport</option><option value="residence_permit">Residence permit</option><option value="refugee_document">Refugee document</option><option value="other">Other</option></select></div>
+      <div><label class="label" for="issuingCountry">Issuing country</label><input id="issuingCountry" placeholder="ISO country code"></div>
+      <div><label class="label" for="issuingAuthority">Issuing authority</label><input id="issuingAuthority" placeholder="Authority name"></div>
+      <div><label class="label" for="documentNumber">Document number</label><input id="documentNumber" autocomplete="off" placeholder="Document number"></div>
+      <div><label class="label" for="issueDate">Issue date</label><input id="issueDate" type="date"></div>
+      <div><label class="label" for="expiryDate">Expiry date</label><input id="expiryDate" type="date"></div>
+      <div><label class="label" for="addressLine1">Address</label><input id="addressLine1" autocomplete="street-address" placeholder="Address line"></div>
+      <div><label class="label" for="city">City</label><input id="city" autocomplete="address-level2" placeholder="City"></div>
+      <div><label class="label" for="region">Region / province</label><input id="region" autocomplete="address-level1" placeholder="Region"></div>
+      <div><label class="label" for="postalCode">Postal code</label><input id="postalCode" autocomplete="postal-code" placeholder="Postal code"></div>
+    </div>
+   </div>
    <div class="actions"><button id="submit" class="action primary" type="submit">Create account</button><button id="mode" class="action secondary" type="button">Sign in instead</button></div>
+   <div id="verificationBox" class="verification-box hidden"><div class="verification-title">Verification</div><div id="verificationCopy" class="verification-copy"></div><div class="mini-actions"><button id="resendEmail" type="button">Send email verification</button><button id="startPhone" type="button">Send phone code</button></div><div class="mini-actions hidden" id="phoneCodeBox"><input id="phoneCode" inputmode="numeric" placeholder="Verification code"><button id="verifyPhone" type="button">Verify phone</button></div></div>
    <div id="error" class="error" role="alert" aria-live="polite"></div>
   </form>
  </div>
@@ -198,6 +224,7 @@ function mode(){
  $("submit").textContent=signup?"Create account":"Sign in";
  $("mode").textContent=signup?"Sign in instead":"Create an account";
  $("name").classList.toggle("hidden",!signup);
+ $("legalSignupFields").classList.toggle("hidden",!signup);
  $("password").autocomplete=signup?"new-password":"current-password";
  $("password").placeholder=signup?"Password (8+ characters)":"Password";
 }
@@ -250,8 +277,32 @@ $("authForm").onsubmit=async event=>{
  if(!body.email||!body.password||(signup&&!body.name)){setError("Complete the required fields.");return;}
  const r=await fetch(signup?"/api/auth/sign-up/email":"/api/auth/sign-in/email",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
  const d=await r.json().catch(()=>({}));if(!r.ok){setError(d.error||"Authentication failed.");return;}
- showHome(d.canonical?{identity:d.user,participant:d.canonical}:await(await fetch("/api/me")).json());
+ if(signup){
+   const legal={
+     legalName:$("name").value.trim(),givenNames:$("givenNames").value.trim(),middleNames:$("middleNames").value.trim(),familyName:$("familyName").value.trim(),
+     dateOfBirth:$("dateOfBirth").value,sex:$("sex").value.trim(),nationalityCountryCode:$("nationality").value.trim(),
+     birthCountryCode:$("birthCountry").value.trim(),birthPlace:$("birthPlace").value.trim(),residenceCountryCode:$("residenceCountry").value.trim(),
+     addressLine1:$("addressLine1").value.trim(),city:$("city").value.trim(),region:$("region").value.trim(),postalCode:$("postalCode").value.trim(),
+     documentType:$("documentType").value,issuingCountryCode:$("issuingCountry").value.trim(),issuingAuthority:$("issuingAuthority").value.trim(),
+     documentNumber:$("documentNumber").value.trim(),issueDate:$("issueDate").value,expiryDate:$("expiryDate").value
+   };
+   if(legal.documentNumber&&legal.issuingCountryCode){
+     const lr=await fetch("/api/identity/legal",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(legal)});
+     if(!lr.ok){const ld=await lr.json().catch(()=>({}));setError(ld.error||"Account created, but legal identity details need completion.");}
+   }
+   if($("phone").value.trim()){
+     const pr=await fetch("/api/contact/phone/start",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({phone:$("phone").value.trim()})});
+     if(pr.ok){$("phoneCodeBox").classList.remove("hidden");}
+   }
+ }
+ showHome(d.canonical?{identity:d.user,participant:d.canonical,verification:d.verification}:await(await fetch("/api/me")).json());
+ $("verificationBox").classList.remove("hidden");
+ const md=await fetch("/api/me");const me=md.ok?await md.json():{};const v=me.verification||d.verification||{};
+ $("verificationCopy").textContent="Email: "+(v.email?"verified":"verification required")+" · Phone: "+(v.phone?"verified":"not verified")+" · Legal identity: "+(v.legalIdentity?"verified":"pending review")+" · Document: "+(v.document?"verified":"pending");
 };
+$("resendEmail").onclick=async()=>{const r=await fetch("/api/auth/email/verification/send",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({email:$("email").value.trim()})});$("verificationCopy").textContent=r.ok?"Email verification requested. Check your inbox.":"Email verification could not be requested yet.";};
+$("startPhone").onclick=async()=>{const r=await fetch("/api/contact/phone/start",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({phone:$("phone").value.trim()})});$("phoneCodeBox").classList.toggle("hidden",!r.ok);$("verificationCopy").textContent=r.ok?"Phone verification code sent.":"Phone verification is not configured yet.";};
+$("verifyPhone").onclick=async()=>{const r=await fetch("/api/contact/phone/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({phone:$("phone").value.trim(),code:$("phoneCode").value.trim()})});$("verificationCopy").textContent=r.ok?"Phone verified.":"Phone verification failed.";};
 $("signout").onclick=async()=>{await fetch("/api/auth/sign-out",{method:"POST"});location.reload();};
 async function check(){const r=await fetch("/api/me");if(r.ok)showHome(await r.json());}
 mode();check();

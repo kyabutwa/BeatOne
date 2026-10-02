@@ -463,14 +463,19 @@ $("openMenu").onclick=openMenu;$("closeMenu").onclick=closeMenu;$("account").onc
 $("mode").onclick=()=>{signup=!signup;setError("");mode();};
 $("authForm").onsubmit=async event=>{
  event.preventDefault();setError("");
- const body={email:$("#email").value.trim(),password:$("#password").value};if(signup){body.name=$("#name").value.trim();body.phone=$("#phone").value.trim();}
+ const body={email:$("email").value.trim(),password:$("password").value};if(signup){body.name=$("#name").value.trim();body.phone=$("#phone").value.trim();}
  if(!body.email||!body.password||(signup&&!body.name)||(signup&&!body.phone)){setError("Name, email, phone number and password are required to create your account.");return;}
  const authBody={email:body.email,password:body.password};if(signup)authBody.name=body.name;
- const r=await fetch(signup?"/api/auth/sign-up/email":"/api/auth/sign-in/email",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(authBody)});
- const d=await r.json().catch(()=>({}));
- if(!r.ok){setError(d.error||"Authentication failed.");return;}
- const meResponse=await fetch("/api/me");const meData=meResponse.ok?await meResponse.json():{};
- showHome(d.canonical?Object.assign({},meData,{identity:d.user,participant:d.canonical}):meData);
+ try {
+  const r=await fetch(signup?"/api/auth/sign-up/email":"/api/auth/sign-in/email",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(authBody)});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok){setError(d.error||"Authentication failed.");return;}
+  const meResponse=await fetch("/api/me",{credentials:"same-origin"});const meData=meResponse.ok?await meResponse.json():{};
+  if(!meResponse.ok){setError(meData.error||"Account was created, but the session could not be opened.");return;}
+  showHome(d.canonical?Object.assign({},meData,{identity:d.user,participant:d.canonical}):meData);
+ } catch (error) {
+  setError(error instanceof Error ? error.message : "Authentication failed. Please try again.");
+ }
 };
 $("signout").onclick=async()=>{await fetch("/api/auth/sign-out",{method:"POST"});location.reload();};
 async function check(){const r=await fetch("/api/me");if(r.ok)showHome(await r.json());}

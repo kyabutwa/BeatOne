@@ -38,6 +38,8 @@ function command(overrides: Partial<Parameters<typeof createAuthorizedAction>[1]
   return {
     actionId: id("action-1"),
     eventId: id("event-1"),
+    executionId: id("execution-1"),
+    evidenceId: id("evidence-1"),
     actorId: id("identity-action"),
     operation: "perform-test-operation",
     authorization: {
@@ -48,6 +50,7 @@ function command(overrides: Partial<Parameters<typeof createAuthorizedAction>[1]
       validFrom: "2026-01-01T00:00:00Z"
     },
     proposalId: id("proposal-action"),
+    idempotencyKey: "execution-1",
     eventType: "ACTION_AUTHORIZED",
     eventSource: "beatcore-test",
     occurredAt: "2026-06-01T00:00:00Z",
@@ -161,6 +164,8 @@ test("caller-supplied Authorization cannot override persisted authorization", as
     createAuthorizedAction(repository, {
       actionId: id("action-authority"),
       eventId: id("event-authority"),
+      executionId: id("execution-authority"),
+      evidenceId: id("evidence-authority"),
       actorId: id("identity-authority"),
       operation: "must-not-execute",
       authorization: {
@@ -170,6 +175,8 @@ test("caller-supplied Authorization cannot override persisted authorization", as
         capabilityId: id("capability-authority"),
         validFrom: "2026-01-01T00:00:00Z"
       },
+      proposalId: id("proposal-action"),
+      idempotencyKey: "execution-authority",
       eventType: "ACTION_AUTHORIZED",
       eventSource: "beatcore-test",
       occurredAt: "2026-06-01T00:00:00Z",

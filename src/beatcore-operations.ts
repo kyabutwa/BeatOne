@@ -18,10 +18,10 @@ export interface AuthorizedActionCommand {
   readonly actorId: Id;
   readonly operation: string;
   readonly authorization: Authorization;
-  readonly proposalId?: Id;
+  readonly proposalId: Id;
   readonly contextId?: Id;
   readonly correlationId?: Id;
-  readonly idempotencyKey?: string;
+  readonly idempotencyKey: string;
   readonly eventType: string;
   readonly eventSource: string;
   readonly occurredAt: string;
@@ -56,14 +56,12 @@ export async function executeAuthorizedAction(
       actorId: command.actorId,
       operation: command.operation,
       authorization: canonicalAuthorization,
-      ...(command.proposalId ? { proposalId: command.proposalId } : {}),
+      proposalId: command.proposalId,
       ...(command.contextId ? { contextId: command.contextId } : {}),
       ...(command.correlationId ? { correlationId: command.correlationId } : {}),
-      ...(command.idempotencyKey ? { idempotencyKey: command.idempotencyKey } : {}),
+      idempotencyKey: command.idempotencyKey,
       ...(command.now ? { now: command.now } : {})
     });
-
-    if (!command.proposalId || !command.idempotencyKey) throw new Error("VALIDATION_FAILURE");
 
     const execution = createActionExecution({
       id: command.executionId,

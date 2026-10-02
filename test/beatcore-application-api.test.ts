@@ -27,6 +27,17 @@ async function seedAuthorization(repository: InMemoryPersistenceRepository) {
       id: id("identity-1"),
       kind: "human"
     });
+    tx.insert("intents", {
+      id: id("intent-1"),
+      actorId: id("identity-1"),
+      purpose: "operate"
+    });
+    tx.insert("proposals", {
+      id: id("proposal-1"),
+      actorId: id("identity-1"),
+      intentId: id("intent-1"),
+      summary: "operate"
+    });
     tx.insert("capabilities", {
       id: id("capability-1"),
       name: "operate"
@@ -42,8 +53,12 @@ function command(
     requestId: id("request-1"),
     actionId: id("action-1"),
     eventId: id("event-1"),
+    executionId: id("execution-1"),
+    evidenceId: id("evidence-1"),
     actorId: id("identity-1"),
     operation: "operate",
+    proposalId: id("proposal-1"),
+    idempotencyKey: "execution-1",
     authorization: authorization(),
     eventType: "ACTION_AUTHORIZED",
     eventSource: "BeatCore.Application",
@@ -61,7 +76,9 @@ test("application command delegates to canonical domain operation and returns Ac
 
   assert.equal(result.requestId, id("request-1"));
   assert.equal(result.action.state, "AUTHORIZED");
+  assert.equal(result.execution.actionId, result.action.id);
   assert.equal(result.event.actionId, result.action.id);
+  assert.equal(result.evidence.eventId, result.event.id);
   assert.notEqual(result.action.id, result.event.id);
   assert.deepEqual(getCommittedAction(repository, result.action.id).action, result.action);
 });

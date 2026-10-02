@@ -1,23 +1,27 @@
 import {
   createAction,
   createEvent,
+  createEvidence,
   type Action,
   type Authorization,
   type Event,
   type Id
 } from "./beatcore.js";
+import { createActionExecution, createActionOutcomeTrace, type ActionExecution, type ActionOutcomeTrace } from "./beatcore-action-execution.js";
 import type { PersistenceRepository } from "./beatcore-repository.js";
 
 export interface AuthorizedActionCommand {
   readonly actionId: Id;
   readonly eventId: Id;
+  readonly executionId: Id;
+  readonly evidenceId: Id;
   readonly actorId: Id;
   readonly operation: string;
   readonly authorization: Authorization;
-  readonly proposalId?: Id;
+  readonly proposalId: Id;
   readonly contextId?: Id;
   readonly correlationId?: Id;
-  readonly idempotencyKey?: string;
+  readonly idempotencyKey: string;
   readonly eventType: string;
   readonly eventSource: string;
   readonly occurredAt: string;
@@ -27,7 +31,10 @@ export interface AuthorizedActionCommand {
 
 export interface AuthorizedActionResult {
   readonly action: Action;
+  readonly execution: ActionExecution;
   readonly event: Event;
+  readonly evidence: ReturnType<typeof createEvidence>;
+  readonly outcomeTrace: ActionOutcomeTrace;
 }
 
 /**
@@ -49,11 +56,20 @@ export async function executeAuthorizedAction(
       actorId: command.actorId,
       operation: command.operation,
       authorization: canonicalAuthorization,
-      ...(command.proposalId ? { proposalId: command.proposalId } : {}),
+      proposalId: command.proposalId,
       ...(command.contextId ? { contextId: command.contextId } : {}),
       ...(command.correlationId ? { correlationId: command.correlationId } : {}),
-      ...(command.idempotencyKey ? { idempotencyKey: command.idempotencyKey } : {}),
+      idempotencyKey: command.idempotencyKey,
       ...(command.now ? { now: command.now } : {})
+    });
+
+    const execution = createActionExecution({
+      id: command.executionId,
+      actionId: action.id,
+      proposalId: command.proposalId,
+      authorizationId: canonicalAuthorization.id,
+      startedAt: command.occurredAt,
+      idempotencyKey: command.idempotencyKey
     });
 
     const event = createEvent({
@@ -70,8 +86,35 @@ export async function executeAuthorizedAction(
       ...(command.eventVersion !== undefined ? { version: command.eventVersion } : {})
     });
 
+    const evidence = createEvidence({
+      id: command.evidenceId,
+      event,
+      source: command.eventSource,
+      recordedAt: command.occurredAt,
+      verification: "UNVERIFIED"
+    });
+    const outcomeTrace = createActionOutcomeTrace({
+      execution,
+      eventId: event.id,
+      evidenceId: evidence.id,
+      createdAt: command.occurredAt
+    });
+
     tx.insert("actions", action);
+    tx.insert("action_executions", execution);
     tx.insert("events", event);
-    return { action, event };
+    tx.insert("evidences", {
+      id: evidence.id,
+      ...(evidence.eventId ? { eventId: evidence.eventId } : {}),
+      source: evidence.source,
+      verification: evidence.verification,
+      recordedAt: evidence.recordedAt,
+      ...(evidence.externalReference ? {
+        externalProvider: evidence.externalReference.provider,
+        externalReference: evidence.externalReference.reference
+      } : {})
+    });
+    tx.insert("action_outcome_trace", outcomeTrace);
+    return { action, execution, event, evidence, outcomeTrace };
   });
 }

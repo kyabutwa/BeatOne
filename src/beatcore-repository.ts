@@ -22,6 +22,8 @@ import type {
   StoredIntent,
   StoredProposal,
   StoredAction,
+  StoredActionExecution,
+  StoredActionOutcomeTrace,
   StoredEvent,
   StoredEvidence,
   StoredPayment
@@ -44,8 +46,10 @@ export interface PersistenceRecordMap {
   intents: StoredIntent;
   proposals: StoredProposal;
   actions: StoredAction;
+  action_executions: StoredActionExecution;
   events: StoredEvent;
   evidences: StoredEvidence;
+  action_outcome_trace: StoredActionOutcomeTrace;
   payments: StoredPayment;
 }
 
@@ -62,6 +66,10 @@ export interface PersistenceTransaction {
   findPaymentByIdempotencyKey(
     idempotencyKey: string
   ): StoredPayment | undefined;
+
+  findActionExecutionByIdempotencyKey(
+    idempotencyKey: string
+  ): StoredActionExecution | undefined;
 
   insert<T extends PersistenceTable>(
     table: T,
@@ -91,6 +99,11 @@ const failure = (code: string): never => {
   throw new Error(code);
 };
 
+const recordKey = (table: PersistenceTable, record: StoredRecord): Id =>
+  table === "action_outcome_trace"
+    ? (record as StoredActionOutcomeTrace).executionId
+    : (record as Exclude<StoredRecord, StoredActionOutcomeTrace>).id;
+
 const requireText = (value: string, code = "INVALID_INPUT"): void => {
   if (!value.trim()) failure(code);
 };
@@ -111,9 +124,10 @@ function validateRecord(
   tx: PersistenceTransaction,
   replacing: boolean
 ): void {
-  requireText(record.id);
+  const key = recordKey(table, record);
+  requireText(key);
 
-  if (!replacing && tx.get(table, record.id)) {
+  if (!replacing && tx.get(table, key)) {
     failure("CONFLICT");
   }
 
@@ -306,6 +320,52 @@ function validateRecord(
       break;
     }
 
+    case "action_executions": {
+      const value = record as StoredActionExecution;
+      requireReference("actions", value.actionId);
+      requireReference("proposals", value.proposalId);
+      requireReference("authorizations", value.authorizationId);
+      const action = tx.get("actions", value.actionId);
+      const proposal = tx.get("proposals", value.proposalId);
+      const authorization = tx.get("authorizations", value.authorizationId);
+      if (!action || !proposal || !authorization) failure("NOT_FOUND");
+      if (action!.proposalId !== value.proposalId) failure("VALIDATION_FAILURE");
+      if (action!.authorizationId !== value.authorizationId) failure("VALIDATION_FAILURE");
+      if (proposal!.actorId !== action!.actorId || authorization!.actorId !== action!.actorId) failure("UNAUTHORIZED");
+      if (!["started", "succeeded", "failed", "cancelled"].includes(value.status)) failure("VALIDATION_FAILURE");
+      requireText(value.startedAt);
+      const startedAt = new Date(value.startedAt);
+      if (Number.isNaN(startedAt.getTime())) failure("INVALID_INPUT");
+      if (value.finishedAt !== undefined) {
+        const finishedAt = new Date(value.finishedAt);
+        if (Number.isNaN(finishedAt.getTime())) failure("INVALID_INPUT");
+        if (finishedAt < startedAt) failure("VALIDATION_FAILURE");
+      }
+      if (value.status === "started" && value.finishedAt !== undefined) failure("VALIDATION_FAILURE");
+      if (value.status !== "started" && value.finishedAt === undefined) failure("VALIDATION_FAILURE");
+      if (value.providerReference !== undefined) requireText(value.providerReference);
+      requireText(value.idempotencyKey);
+      const existing = tx.findActionExecutionByIdempotencyKey(value.idempotencyKey);
+      if (existing && existing.id !== value.id) failure("CONFLICT");
+      break;
+    }
+
+    case "action_outcome_trace": {
+      const value = record as StoredActionOutcomeTrace;
+      requireReference("action_executions", value.executionId);
+      requireReference("events", value.eventId);
+      requireReference("evidences", value.evidenceId);
+      const execution = tx.get("action_executions", value.executionId);
+      const event = tx.get("events", value.eventId);
+      const evidence = tx.get("evidences", value.evidenceId);
+      if (!execution || !event || !evidence) failure("NOT_FOUND");
+      if (event!.actionId !== execution!.actionId) failure("VALIDATION_FAILURE");
+      if (evidence!.eventId !== event!.id) failure("VALIDATION_FAILURE");
+      requireText(value.createdAt);
+      if (Number.isNaN(new Date(value.createdAt).getTime())) failure("INVALID_INPUT");
+      break;
+    }
+
     case "events": {
       const value = record as StoredEvent;
       requireText(value.type);
@@ -452,6 +512,17 @@ function createTransaction(
       return undefined;
     },
 
+    findActionExecutionByIdempotencyKey(idempotencyKey: string): StoredActionExecution | undefined {
+      requireText(idempotencyKey);
+      const executions = store.get("action_executions");
+      if (!executions) return undefined;
+      for (const record of executions.values()) {
+        const execution = record as StoredActionExecution;
+        if (execution.idempotencyKey === idempotencyKey) return execution;
+      }
+      return undefined;
+    },
+
     findPaymentByIdempotencyKey(idempotencyKey: string): StoredPayment | undefined {
       requireText(idempotencyKey);
       const payments = store.get("payments");
@@ -465,15 +536,28 @@ function createTransaction(
 
     insert(table, record) {
       validateRecord(table, record as StoredRecord, this, false);
-      store.get(table)?.set(record.id, record as StoredRecord);
+      store.get(table)?.set(recordKey(table, record as StoredRecord), record as StoredRecord);
     },
 
     replace(table, record) {
-      const existing = store.get(table)?.get(record.id);
+      const existing = store.get(table)?.get(recordKey(table, record as StoredRecord));
       if (!existing) {
         failure("NOT_FOUND");
       }
       validateRecord(table, record as StoredRecord, this, true);
+
+      if (table === "action_executions") {
+        const existingExecution = existing as StoredActionExecution;
+        const replacementExecution = record as StoredActionExecution;
+        const allowed: Record<StoredActionExecution["status"], StoredActionExecution["status"][]> = {
+          started: ["succeeded", "failed", "cancelled"],
+          succeeded: [],
+          failed: [],
+          cancelled: []
+        };
+        if (!allowed[existingExecution.status].includes(replacementExecution.status)) failure("CONFLICT");
+        if (replacementExecution.status === "started" || replacementExecution.finishedAt === undefined) failure("CONFLICT");
+      }
 
       if (table === "events") {
         const existingEvent = existing as StoredEvent;
@@ -504,7 +588,7 @@ function createTransaction(
         }
       }
 
-      store.get(table)?.set(record.id, record as StoredRecord);
+      store.get(table)?.set(recordKey(table, record as StoredRecord), record as StoredRecord);
     }
   };
 }
@@ -527,8 +611,10 @@ export class InMemoryPersistenceRepository implements PersistenceRepository {
     ["intents", new Map()],
     ["proposals", new Map()],
     ["actions", new Map()],
+    ["action_executions", new Map()],
     ["events", new Map()],
     ["evidences", new Map()],
+    ["action_outcome_trace", new Map()],
     ["payments", new Map()]
   ]);
 

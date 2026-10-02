@@ -20,8 +20,12 @@ function command(): AuthorizedApplicationCommand {
     requestId: id("request-1"),
     actionId: id("action-1"),
     eventId: id("event-1"),
+    executionId: id("execution-1"),
+    evidenceId: id("evidence-1"),
     actorId: id("identity-1"),
     operation: "operate",
+    proposalId: id("proposal-1"),
+    idempotencyKey: "execution-1",
     authorization: {
       id: id("authorization-1"),
       decision: "ALLOW",
@@ -51,6 +55,11 @@ function response(): ApplicationActionResponse {
   return {
     requestId: id("request-1"),
     action,
+    execution: {
+      id: id("execution-1"), actionId: id("action-1"), proposalId: id("proposal-1"), authorizationId: id("authorization-1"), status: "started", startedAt: now.toISOString(), idempotencyKey: "execution-1"
+    },
+    evidence: { id: id("evidence-1"), eventId: id("event-1"), source: "BeatCore.Application", verification: "UNVERIFIED", recordedAt: now.toISOString() },
+    outcomeTrace: { executionId: id("execution-1"), eventId: id("event-1"), evidenceId: id("evidence-1"), createdAt: now.toISOString() },
     event: {
       id: id("event-1"),
       type: "ACTION_AUTHORIZED",

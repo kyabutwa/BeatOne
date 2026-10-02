@@ -12,9 +12,14 @@ CREATE TABLE authorizations (
   id text PRIMARY KEY,
   actor_id text NOT NULL REFERENCES identities(id)
 );
+CREATE TABLE proposals (
+  id text PRIMARY KEY,
+  actor_id text NOT NULL REFERENCES identities(id)
+);
 CREATE TABLE actions (
   id text PRIMARY KEY,
   actor_id text NOT NULL REFERENCES identities(id),
+  proposal_id text REFERENCES proposals(id),
   authorization_id text NOT NULL REFERENCES authorizations(id),
   state varchar(32) NOT NULL,
   operation text NOT NULL,
@@ -25,6 +30,21 @@ CREATE TABLE actions (
     'FAILED','EXPIRED','CANCELLED','PARTIAL','DISPUTED','REVERSED','RECONCILED'
   )),
   CONSTRAINT actions_version_check CHECK (version >= 1)
+);
+
+CREATE TABLE action_executions (
+  id text PRIMARY KEY,
+  action_id text NOT NULL REFERENCES actions(id),
+  proposal_id text NOT NULL REFERENCES proposals(id),
+  authorization_id text NOT NULL REFERENCES authorizations(id),
+  status text NOT NULL,
+  provider_reference text,
+  started_at timestamptz NOT NULL,
+  finished_at timestamptz,
+  result jsonb,
+  idempotency_key text NOT NULL UNIQUE,
+  CONSTRAINT action_executions_status_check CHECK (status IN ('started','succeeded','failed','cancelled')),
+  CONSTRAINT action_executions_finished_state_check CHECK ((status = 'started' AND finished_at IS NULL) OR (status <> 'started' AND finished_at IS NOT NULL))
 );
 
 CREATE TABLE events (
@@ -66,6 +86,14 @@ CREATE TABLE evidence (
   )
 );
 
+CREATE TABLE action_outcome_trace (
+  execution_id text PRIMARY KEY REFERENCES action_executions(id),
+  event_id text NOT NULL REFERENCES events(id),
+  evidence_id text NOT NULL REFERENCES evidence(id),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE(event_id, evidence_id)
+);
+
 CREATE INDEX events_action_id_idx ON events(action_id) WHERE action_id IS NOT NULL;
 CREATE INDEX events_actor_id_idx ON events(actor_id) WHERE actor_id IS NOT NULL;
 CREATE INDEX events_context_id_idx ON events(context_id) WHERE context_id IS NOT NULL;
@@ -73,3 +101,4 @@ CREATE INDEX events_correlation_id_idx ON events(correlation_id) WHERE correlati
 CREATE INDEX events_occurred_at_idx ON events(occurred_at);
 CREATE INDEX evidence_event_id_idx ON evidence(event_id) WHERE event_id IS NOT NULL;
 CREATE INDEX evidence_verification_idx ON evidence(verification);
+CREATE INDEX action_outcome_trace_event_idx ON action_outcome_trace(event_id);

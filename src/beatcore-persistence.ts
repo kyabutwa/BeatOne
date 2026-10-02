@@ -9,12 +9,12 @@ export type PersistenceTable =
   | "persons" | "communities" | "identities" | "accounts" | "credentials"
   | "sessions" | "participants" | "accesses" | "places" | "contexts" | "relationships"
   | "capabilities" | "authorizations" | "intents" | "proposals" | "actions"
-  | "events" | "evidences" | "payments";
+  | "events" | "evidences" | "action_executions" | "action_outcome_trace" | "payments";
 
 export interface PersistenceTableDefinition {
   readonly table: PersistenceTable;
   readonly owner: string;
-  readonly primaryKey: "id";
+  readonly primaryKey: "id" | "execution_id";
 }
 
 export const persistenceTables: readonly PersistenceTableDefinition[] = [
@@ -36,6 +36,8 @@ export const persistenceTables: readonly PersistenceTableDefinition[] = [
   { table: "actions", owner: "Action", primaryKey: "id" },
   { table: "events", owner: "Event", primaryKey: "id" },
   { table: "evidences", owner: "Evidence", primaryKey: "id" },
+  { table: "action_executions", owner: "ActionExecution", primaryKey: "id" },
+  { table: "action_outcome_trace", owner: "ActionOutcomeTrace", primaryKey: "execution_id" },
   { table: "payments", owner: "Payment", primaryKey: "id" }
 ];
 
@@ -148,6 +150,28 @@ export interface StoredAction {
   readonly correlationId?: Id;
   readonly idempotencyKey?: string;
 }
+export type ActionExecutionStatus = "started" | "succeeded" | "failed" | "cancelled";
+
+export interface StoredActionExecution {
+  readonly id: Id;
+  readonly actionId: Id;
+  readonly proposalId: Id;
+  readonly authorizationId: Id;
+  readonly status: ActionExecutionStatus;
+  readonly providerReference?: string;
+  readonly startedAt: string;
+  readonly finishedAt?: string;
+  readonly result?: unknown;
+  readonly idempotencyKey: string;
+}
+
+export interface StoredActionOutcomeTrace {
+  readonly executionId: Id;
+  readonly eventId: Id;
+  readonly evidenceId: Id;
+  readonly createdAt: string;
+}
+
 export interface StoredEvent {
   readonly id: Id;
   readonly actionId?: Id;
@@ -201,7 +225,7 @@ export type BeatCorePersistenceRecord =
   | StoredCredential | StoredSession | StoredParticipant | StoredAccess | StoredPlace
   | StoredContext | StoredRelationship | StoredCapability
   | StoredAuthorization | StoredIntent | StoredProposal | StoredAction
-  | StoredEvent | StoredEvidence | StoredPayment;
+  | StoredEvent | StoredEvidence | StoredActionExecution | StoredActionOutcomeTrace | StoredPayment;
 
 export const canonicalPersistenceTableNames: readonly PersistenceTable[] =
   persistenceTables.map((definition) => definition.table);

@@ -33,7 +33,19 @@ CREATE TABLE actions (
   action text,
   created_at timestamptz NOT NULL DEFAULT now()
 );
-CREATE TABLE action_executions (id text PRIMARY KEY, action_id text NOT NULL REFERENCES actions(id));
+CREATE TABLE action_executions (
+  id text PRIMARY KEY,
+  action_id text NOT NULL REFERENCES actions(id),
+  proposal_id text NOT NULL REFERENCES proposals(id),
+  authorization_id text NOT NULL REFERENCES authorizations(id),
+  status text NOT NULL CHECK (status IN ('started','succeeded','failed','cancelled')),
+  provider_reference text,
+  started_at timestamptz NOT NULL,
+  finished_at timestamptz,
+  result jsonb,
+  idempotency_key text NOT NULL UNIQUE,
+  CHECK ((status = 'started' AND finished_at IS NULL) OR (status <> 'started' AND finished_at IS NOT NULL))
+);
 CREATE TABLE events (
   id text PRIMARY KEY,
   action_id text,

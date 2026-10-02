@@ -24,9 +24,10 @@ runtimeTest("PostgreSQL Payment runtime: chain, idempotency, CAS, status, atomic
       VALUES ('context:test','participant:test','payment runtime test',now(),'{}'::jsonb);
     INSERT INTO authorizations(id,participant_id,context_id,capability_id,action,source,created_at,status,issued_by_participant_id)
       VALUES ('authorization:test','participant:test','context:test','capability:test','initiate_payment','role-derived',now(),'active','participant:test');
+    INSERT INTO proposals(id,context_id,required_capability_id,summary) VALUES ('proposal:test','context:test','capability:test','payment test');
     INSERT INTO actions(id,actor_id,authorization_id,state,operation,context_id,idempotency_key,created_at,updated_at,version)
       VALUES ('action:test','identity:test','authorization:test','AUTHORIZED','initiate_payment','context:test','action-idem-test',now(),now(),1);
-    INSERT INTO action_executions(id,action_id) VALUES ('execution:test','action:test');
+    INSERT INTO action_executions(id,action_id,proposal_id,authorization_id,status,started_at,idempotency_key) VALUES ('execution:test','action:test','proposal:test','authorization:test','started',now(),'execution-idem-test');
     INSERT INTO events(id,action_id,type,state,actor_id,context_id,source,occurred_at)
       VALUES ('event:test','action:test','payment.authorized','AUTHORIZED','identity:test','context:test','system',now());
     INSERT INTO evidence(id,event_id,source,verification,recorded_at)

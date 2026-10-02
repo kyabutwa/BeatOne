@@ -14,6 +14,8 @@ export interface AuthorizedApplicationCommand {
   readonly requestId: Id;
   readonly actionId: Id;
   readonly eventId: Id;
+  readonly executionId: Id;
+  readonly evidenceId: Id;
   readonly actorId: Id;
   readonly operation: string;
   /**
@@ -21,10 +23,10 @@ export interface AuthorizedApplicationCommand {
    * A future transport must not accept arbitrary client authority as truth.
    */
   readonly authorization: Authorization;
-  readonly proposalId?: Id;
+  readonly proposalId: Id;
   readonly contextId?: Id;
   readonly correlationId?: Id;
-  readonly idempotencyKey?: string;
+  readonly idempotencyKey: string;
   readonly eventType: string;
   readonly eventSource: string;
   readonly occurredAt: string;
@@ -36,6 +38,9 @@ export interface ApplicationActionResponse {
   readonly requestId: Id;
   readonly action: Action;
   readonly event: Event;
+  readonly execution: AuthorizedActionResult["execution"];
+  readonly evidence: AuthorizedActionResult["evidence"];
+  readonly outcomeTrace: AuthorizedActionResult["outcomeTrace"];
 }
 
 export interface ActionQueryResponse {
@@ -53,13 +58,15 @@ export async function executeAuthorizedApplicationCommand(
     {
       actionId: command.actionId,
       eventId: command.eventId,
+      executionId: command.executionId,
+      evidenceId: command.evidenceId,
       actorId: command.actorId,
       operation: command.operation,
       authorization: command.authorization,
-      ...(command.proposalId ? { proposalId: command.proposalId } : {}),
+      proposalId: command.proposalId,
       ...(command.contextId ? { contextId: command.contextId } : {}),
       ...(command.correlationId ? { correlationId: command.correlationId } : {}),
-      ...(command.idempotencyKey ? { idempotencyKey: command.idempotencyKey } : {}),
+      idempotencyKey: command.idempotencyKey,
       eventType: command.eventType,
       eventSource: command.eventSource,
       occurredAt: command.occurredAt,
@@ -71,7 +78,10 @@ export async function executeAuthorizedApplicationCommand(
   return {
     requestId: command.requestId,
     action: result.action,
-    event: result.event
+    execution: result.execution,
+    event: result.event,
+    evidence: result.evidence,
+    outcomeTrace: result.outcomeTrace
   };
 }
 

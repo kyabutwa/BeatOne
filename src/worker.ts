@@ -236,16 +236,38 @@ async function authMutation(request: Request, env: Env, endpoint: string): Promi
 }
 
 async function currentSession(request: Request, env: Env): Promise<{ user: any; session: any; canonical: any } | null> {
-  const cookie = request.headers.get("cookie");
-  if (!cookie) return null;
+  const cookieHeader = request.headers.get("cookie") || "";
+  const tokenMatch = cookieHeader.match(/(?:^|;\s*)__Host-beatone_session=([^;]+)/);
+  const sql = requireDatabase(env);
+  if (tokenMatch?.[1]) {
+    const tokenHash = await sha256Hex(decodeURIComponent(tokenMatch[1]));
+    const rows = await sql`
+      SELECT p.id AS participant_id, a.id AS account_id, s.id AS session_id
+      FROM public.sessions s
+      JOIN public.accounts a ON a.id=s.account_id AND a.status='ACTIVE'
+      JOIN public.identities i ON i.id=a.identity_id
+      JOIN public.participants p ON p.identity_id=i.id
+      JOIN public.auth_methods am ON am.identity_id=i.id AND am.kind='email' AND am.status <> 'revoked'
+      WHERE s.session_token_hash=${tokenHash} AND s.expires_at > now()
+      LIMIT 1
+    `;
+    if (rows.length) {
+      const userRows = await sql`
+        SELECT u.id,u.name,u.email,u."emailVerified"
+        FROM neon_auth."user" u
+        JOIN public.auth_methods am ON am.kind='email' AND lower(am.identifier)=lower(u.email) AND am.identity_id=(SELECT a.identity_id FROM public.accounts a WHERE a.id=${rows[0].account_id} LIMIT 1)
+        LIMIT 1
+      `;
+      if (userRows.length) return { user:userRows[0], session:null, canonical:rows[0] };
+    }
+  }
+  if (!cookieHeader) return null;
   const upstream = await providerRequest(request, env, "/get-session");
   if (!upstream.ok) return null;
   const payload = await readJson(upstream);
   const user = providerUser(payload);
   const session = providerSession(payload);
   if (!user?.id || !user?.email) return null;
-
-  const sql = requireDatabase(env);
   const rows = await sql`
     SELECT p.id AS participant_id, a.id AS account_id, s.id AS session_id
     FROM public.auth_methods am
@@ -256,10 +278,9 @@ async function currentSession(request: Request, env: Env): Promise<{ user: any; 
     WHERE am.kind = 'email' AND am.identifier = ${String(user.email).trim().toLowerCase()} AND am.status <> 'revoked' AND a.status = 'ACTIVE'
     LIMIT 1
   `;
-  const canonical = rows[0] || await syncCanonicalAuth(env, user, session, cookie, []);
+  const canonical = rows[0] || await syncCanonicalAuth(env, user, session);
   return { user, session, canonical };
 }
-
 async function verificationAccountForContact(sql: DbSql, kind: "email" | "phone", value: string): Promise<{identityId:string;accountId:string}|null> {
   const rows = await sql`
     SELECT i.id AS identity_id, a.id AS account_id
@@ -1141,17 +1162,20 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/contact/phone/verify") return verifyPhone(request, env);
     if (request.method === "POST" && url.pathname === "/api/auth/sign-out") {
       try {
-        const current = await currentSession(request, env);
-        if (current?.canonical?.account_id || current?.canonical?.accountId) {
-          const sql = requireDatabase(env);
-          const accountId = current.canonical.account_id || current.canonical.accountId;
-          await sql`UPDATE public.sessions SET expires_at=now() WHERE account_id=${accountId} AND expires_at > now()`;
-        }
-        const upstream = await providerRequest(request, env, "/sign-out");
-        const setCookies = providerCookies(upstream);
         const outHeaders = headers({"content-type":"application/json; charset=utf-8"});
-        for (const cookie of setCookies) outHeaders.append("set-cookie", cookie.replace(/;\s*Domain=[^;]+/gi,"").replace(/;\s*Path=\/[^;]*/i,"; Path=/"));
-        return new Response(JSON.stringify({service:"BeatOne",status:"signed_out",sessionRevoked:true}),{status:upstream.status,headers:outHeaders});
+        const tokenMatch = (request.headers.get("cookie") || "").match(/(?:^|;\s*)__Host-beatone_session=([^;]+)/);
+        if (tokenMatch?.[1]) {
+          const tokenHash = await sha256Hex(decodeURIComponent(tokenMatch[1]));
+          const sql = requireDatabase(env);
+          await sql`UPDATE public.sessions SET expires_at=now() WHERE session_token_hash=${tokenHash} AND expires_at > now()`;
+        }
+        try {
+          const upstream = await providerRequest(request, env, "/sign-out");
+          const setCookies = providerCookies(upstream);
+          for (const cookie of setCookies) outHeaders.append("set-cookie", cookie.replace(/;\s*Domain=[^;]+/gi,"").replace(/;\s*Path=\/[^;]*/i,"; Path=/"));
+        } catch {}
+        outHeaders.append("set-cookie", "__Host-beatone_session=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax");
+        return new Response(JSON.stringify({service:"BeatOne",status:"signed_out",sessionRevoked:true}),{status:200,headers:outHeaders});
       } catch (error) {
         return json({error:error instanceof Error?error.message:"SIGN_OUT_FAILED"},500);
       }

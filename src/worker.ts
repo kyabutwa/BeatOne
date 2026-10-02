@@ -469,7 +469,7 @@ async function verifyEmailVerificationCode(request: Request, env: Env): Promise<
     const email=normalizeEmail(body.email || "");
     const otp=String(body.otp || "").trim();
     if(!email) return json({service:"BeatOne",error:"EMAIL_REQUIRED"},400);
-    if(!/^\\d{4,10}$/.test(otp)) return json({service:"BeatOne",error:"INVALID_VERIFICATION_CODE"},400);
+    if(!/^\d{4,10}$/.test(otp)) return json({service:"BeatOne",error:"INVALID_VERIFICATION_CODE"},400);
     const sql=requireDatabase(env);
     const target=await verificationAccountForContact(sql,"email",email);
     if(!target) return json({service:"BeatOne",error:"ACCOUNT_NOT_FOUND"},404);

@@ -41,12 +41,6 @@ const requireDatabase = (env: Env): DbSql => {
 
 const authBase = (env: Env) => (env.NEON_AUTH_BASE_URL || AUTH_BASE_URL).replace(/\/$/, "");
 
-async function sha256(value: string): Promise<string> {
-  const bytes = new TextEncoder().encode(value);
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
 function providerCookies(response: Response): string[] {
   const h = response.headers as Headers & { getSetCookie?: () => string[]; getAll?: (name: string) => string[] };
   return h.getSetCookie?.() ?? h.getAll?.("Set-Cookie") ?? (h.get("set-cookie") ? [h.get("set-cookie") as string] : []);
@@ -136,7 +130,6 @@ async function syncCanonicalAuth(
 
   const cookieMaterial = cookieHeader || setCookies.join("; ");
   if (!cookieMaterial) throw new Error("AUTH_SESSION_COOKIE_MISSING");
-  const tokenHash = await sha256(cookieMaterial);
   const sessionId = "session-neon-" + crypto.randomUUID();
   const expiresAt =
     providerSessionValue?.expiresAt ||
@@ -241,8 +234,10 @@ async function me(request: Request, env: Env): Promise<Response> {
 }
 
 
-async function homeCommunities(env: Env): Promise<Response> {
+async function homeCommunities(request: Request, env: Env): Promise<Response> {
   try {
+    const active = await currentSession(request, env);
+    if (!active) return json({ service: "Zalagren", error: "UNAUTHORIZED" }, 401);
     const sql = requireDatabase(env);
     const items = await sql`SELECT id, name, type, location, verification FROM public.communities ORDER BY created_at DESC LIMIT 50`;
     return json({ service: "Zalagren", items });
@@ -251,8 +246,10 @@ async function homeCommunities(env: Env): Promise<Response> {
   }
 }
 
-async function homeServices(env: Env): Promise<Response> {
+async function homeServices(request: Request, env: Env): Promise<Response> {
   try {
+    const active = await currentSession(request, env);
+    if (!active) return json({ service: "Zalagren", error: "UNAUTHORIZED" }, 401);
     const sql = requireDatabase(env);
     const items = await sql`
       SELECT
@@ -277,6 +274,31 @@ async function homeServices(env: Env): Promise<Response> {
     return json({ service: "Zalagren", items });
   } catch (error) {
     return json({ service: "Zalagren", error: error instanceof Error ? error.message : "SERVICES_LOOKUP_FAILED" }, 500);
+  }
+}
+
+async function homeFoundation(request: Request, env: Env): Promise<Response> {
+  try {
+    const active = await currentSession(request, env);
+    if (!active) return json({ service: "Zalagren", error: "UNAUTHORIZED" }, 401);
+    const sql = requireDatabase(env);
+    const [row] = await sql`
+      SELECT
+        (SELECT count(*)::int FROM public.persons) AS persons,
+        (SELECT count(*)::int FROM public.identities) AS identities,
+        (SELECT count(*)::int FROM public.participants) AS participants,
+        (SELECT count(*)::int FROM public.accounts) AS accounts,
+        (SELECT count(*)::int FROM public.credentials) AS credentials,
+        (SELECT count(*)::int FROM public.sessions) AS sessions,
+        (SELECT count(*)::int FROM public.accesses) AS accesses,
+        (SELECT count(*)::int FROM public.actions) AS actions,
+        (SELECT count(*)::int FROM public.action_executions) AS action_executions,
+        (SELECT count(*)::int FROM public.events) AS events,
+        (SELECT count(*)::int FROM public.evidences) AS evidences
+    `;
+    return json({ service: "Zalagren", foundation: row, participant: active.canonical });
+  } catch (error) {
+    return json({ service: "Zalagren", status: "database_unavailable", error: error instanceof Error ? error.message : "FOUNDATION_LOOKUP_FAILED" }, 503);
   }
 }
 
@@ -341,8 +363,9 @@ export default {
     if (request.method === "GET" && url.pathname === "/") return renderHome(headers);
     if (request.method === "GET" && url.pathname === "/api/health") return health(env);
     if (request.method === "GET" && url.pathname === "/api/foundation") return foundation(env);
-    if (request.method === "GET" && url.pathname === "/api/home/communities") return homeCommunities(env);
-    if (request.method === "GET" && url.pathname === "/api/home/services") return homeServices(env);
+    if (request.method === "GET" && url.pathname === "/api/home/communities") return homeCommunities(request, env);
+    if (request.method === "GET" && url.pathname === "/api/home/services") return homeServices(request, env);
+    if (request.method === "GET" && url.pathname === "/api/home/foundation") return homeFoundation(request, env);
     if (request.method === "GET" && url.pathname === "/api/me") return me(request, env);
     if (request.method === "POST" && url.pathname === "/api/auth/sign-up/email") return authMutation(request, env, "/sign-up/email");
     if (request.method === "POST" && url.pathname === "/api/auth/sign-in/email") return authMutation(request, env, "/sign-in/email");

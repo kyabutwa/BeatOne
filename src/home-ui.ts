@@ -6,8 +6,8 @@ const escapeHtml = (value: unknown): string =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 
-const ZALAGREN_LOGO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzNjAgODgiPjxyZWN0IHdpZHRoPSIzNjAiIGhlaWdodD0iODgiIGZpbGw9IndoaXRlIi8+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoOCA4KSI+PHBhdGggZD0iTTMxIDJjLTcgMTEtMTMgMjItMTMgMzUgMCAxMyA3IDI2IDIxIDM0IDE0LTggMjEtMjEgMjEtMzRDNjAgMjQgNTEgMTEgNDMgMiA0MC0xIDM0LTEgMzEgMloiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzJmOGY1YiIgc3Ryb2tlLXdpZHRoPSI1Ii8+PHBhdGggZD0iTTM5IDEydjQ1TTI0IDI1YzkgMyAxOCAzIDI5IDBNMjIgMzljMTEgMyAyMiAzIDM0IDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzJmOGY1YiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L2c+PHRleHQgeD0iODYiIHk9IjU5IiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNDIiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiMyZjhmNWIiPlphbGFncmVuPC90ZXh0Pjwvc3ZnPg==";
-const ZALAGREN_REFERENCE_IMAGE = "https://github.com/kyabutwa/BeatOne/raw/70d48e6c9a9b3dd4d913ee559898f590979b0ff3/IMG_1384.jpeg";
+const BEATONE_LOGO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzNjAgODgiPjxyZWN0IHdpZHRoPSIzNjAiIGhlaWdodD0iODgiIGZpbGw9IiMwNjBCMTQiLz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg4IDgpIj48cGF0aCBkPSJNMzEgMmMtNyAxMS0xMyAyMi0xMyAzNSAwIDEzIDcgMjYgMjEgMzQgMTQtOC0yMS0yMS0zNC0yMS0zNEM2MCAyNCA1MSAxMSA0MyAyIDQwLTEgMzQtMSAzMSAyWiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMTBCOTgxIiBzdHJva2Utd2lkdGg9IjUiLz48cGF0aCBkPSJNMzk gMTJ2NDUiIGZpbGw9Im5vbmUiLz48L2c+PHRleHQgeD0iODYiIHk9IjU5IiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNDIiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNGOEZBRkMiPkJlYXRPbmU8L3RleHQ+PC9zdmc+";
+const BEATONE_REFERENCE_IMAGE = "https://github.com/kyabutwa/BeatOne/raw/70d48e6c9a9b3dd4d913ee559898f590979b0ff3/IMG_1384.jpeg";
 
 export const renderHome = (headers: (extra?: HeadersInit) => Headers): Response =>
   new Response(`<!doctype html>
@@ -18,9 +18,9 @@ export const renderHome = (headers: (extra?: HeadersInit) => Headers): Response 
 <meta name="theme-color" content="#ffffff">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="preload" as="image" href="${ZALAGREN_LOGO}">
-<link rel="icon" href="${ZALAGREN_LOGO}">
-<title>Zalagren</title>
+<link rel="preload" as="image" href="${BEATONE_LOGO}">
+<link rel="icon" href="${BEATONE_LOGO}">
+<title>BeatOne</title>
 <style>
 :root{
  --canvas:#fff;--surface:#fff;--surface-2:#f6f8fb;--navy:#071a33;--blue:#245fa8;
@@ -98,13 +98,31 @@ input::placeholder{color:#7a8798}
 .control-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.control-card{padding:15px;border:1px solid var(--line);border-radius:17px;background:var(--surface);box-shadow:0 5px 18px rgba(7,26,51,.04)}.control-kicker{font-size:10px;line-height:15px;font-weight:800;letter-spacing:.09em;color:var(--orange);text-transform:uppercase}.control-title{font-size:15px;line-height:20px;font-weight:760;margin-top:6px}.control-copy{font-size:12px;line-height:18px;color:var(--muted);margin-top:4px}.truth{display:inline-flex;align-items:center;gap:5px;margin-top:10px;font-size:10px;font-weight:800;letter-spacing:.05em}.truth-dot{width:7px;height:7px;border-radius:50%;display:inline-block}.truth-verified .truth-dot{background:#1d7a4d}.truth-supported .truth-dot{background:#315f9a}.truth-proposed .truth-dot{background:#6b7280}.truth-failed .truth-dot{background:#a63a2b}.truth-pending .truth-dot{background:var(--orange)}.lifecycle{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.life-step{padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2)}.life-step strong{display:block;font-size:12px}.life-step span{display:block;font-size:11px;line-height:16px;color:var(--muted);margin-top:3px}@media(max-width:700px){.control-grid,.lifecycle{grid-template-columns:1fr}}@media(max-width:700px){.shell{padding-top:4px}.topbar{top:4px}.account-control span{display:none}.home-intro{display:block}.context-chip{margin-top:12px}.context-grid{grid-template-columns:1fr}.surface-grid{grid-template-columns:1fr}.surface{min-height:128px}.participant-card{grid-template-columns:1fr}.actions{flex-direction:column}.action{width:100%}.menu-grid{grid-template-columns:1fr}}
 @media(min-width:701px){.page{padding-top:18px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.surface{transition:none}.surface:hover{transform:none}}
-/* Temporary self-contained Zalagren mark: the owner-provided IMG_1383 artwork is not present in this repository yet. */</style>
+/* Temporary self-contained BeatOne mark: the owner-provided IMG_1383 artwork is not present in this repository yet. */
+/* BeatOne interface integration — iPhone-class spatial shell. */
+:root{
+ --canvas:#060B14;--surface:rgba(255,255,255,.08);--surface-2:rgba(255,255,255,.055);
+ --navy:#F8FAFC;--blue:#1B365D;--orange:#F27A21;--muted:#94A3B8;--line:rgba(255,255,255,.14);--line-soft:rgba(255,255,255,.08);
+ --danger:#f87171;--shadow:0 18px 55px rgba(0,0,0,.28);
+}
+html,body{background:var(--canvas);color:var(--navy)}
+.topbar,.bottom-nav,.context-card,.auth-card,.detail-card,.surface,.control-card,.menu-item,.context-item,.life-step,.verification-box,.status{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);box-shadow:0 18px 55px rgba(0,0,0,.20);backdrop-filter:blur(20px) saturate(145%);-webkit-backdrop-filter:blur(20px) saturate(145%)}
+.topbar,.bottom-nav{background:rgba(6,11,20,.78)}
+.overlay{background:rgba(6,11,20,.97)}
+.account-control,input,.mini-actions button,.secondary{background:rgba(255,255,255,.08);color:#F8FAFC;border-color:rgba(255,255,255,.14)}
+input::placeholder,.lede,.section-copy,.surface-copy,.control-copy,.row-meta,.detail-sub,.identity-meta,.verification-copy,.status{color:#94A3B8}
+.primary{background:#F8FAFC;color:#060B14}.surface:hover{border-color:rgba(255,255,255,.28)}
+.bottom-nav button.active{background:rgba(16,185,129,.16);color:#10B981}.pill{background:rgba(16,185,129,.14);color:#10B981}
+.context-chip{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.14);color:#F8FAFC}
+.truth-verified .truth-dot{background:#10B981}.truth-supported .truth-dot{background:#60A5FA}.truth-proposed .truth-dot{background:#A78BFA}.truth-failed .truth-dot{background:#F87171}
+/* Preserve readable dark-on-light controls where necessary. */
+</style>
 </head>
 <body>
 <div class="overlay" id="menuOverlay" aria-hidden="true">
  <div class="overlay-shell">
-  <div class="overlay-head"><img class="brand-logo" src="${ZALAGREN_LOGO}" alt="Zalagren"><button class="top-action" id="closeMenu" type="button" aria-label="Close menu">×</button></div>
-  <div class="eyebrow" style="margin-top:34px">Zalagren</div>
+  <div class="overlay-head"><img class="brand-logo" src="${BEATONE_LOGO}" alt="BeatOne"><button class="top-action" id="closeMenu" type="button" aria-label="Close menu">×</button></div>
+  <div class="eyebrow" style="margin-top:34px">BeatOne</div>
   <h2 class="overlay-title">Everything connected to participation.</h2>
   <p class="overlay-copy">Navigate the ecosystem by context, capability and authority. A surface may be verified, supported, proposed or failed; empty and provider-dependent states remain explicitly described.</p>
   <div class="menu-grid">
@@ -114,7 +132,7 @@ input::placeholder{color:#7a8798}
    <button class="menu-item" data-nav="community"><strong>Community</strong><span>People, relationships and participation</span></button>
    <button class="menu-item" data-nav="genesis"><strong>GENESIS</strong><span>Knowledge and proposal-only intelligence</span></button>
    <button class="menu-item" data-nav="activity"><strong>Activity</strong><span>Actions, events and evidence</span></button>
-   <button class="menu-item" data-nav="account"><strong>My Zalagren</strong><span>Identity, authority, requests and settings</span></button>
+   <button class="menu-item" data-nav="account"><strong>My BeatOne</strong><span>Identity, authority, requests and settings</span></button>
    <button class="menu-item" data-nav="management"><strong>Team Workspace</strong><span>Management and provider operations</span></button>
   </div>
  </div>
@@ -122,15 +140,15 @@ input::placeholder{color:#7a8798}
 
 <main class="shell">
 <header class="topbar">
- <button class="top-action" id="openMenu" type="button" aria-label="Open Zalagren menu"><span class="menu-lines"><span></span><span></span><span></span></span></button>
- <div class="brand-lockup"><img class="brand-logo" src="${ZALAGREN_LOGO}" alt="Zalagren"></div>
- <button class="account-control" id="account" type="button"><i class="account-dot"></i><span>My Zalagren</span></button>
+ <button class="top-action" id="openMenu" type="button" aria-label="Open BeatOne menu"><span class="menu-lines"><span></span><span></span><span></span></span></button>
+ <div class="brand-lockup"><img class="brand-logo" src="${BEATONE_LOGO}" alt="BeatOne"></div>
+ <button class="account-control" id="account" type="button"><i class="account-dot"></i><span>My BeatOne</span></button>
 </header>
 
 <section class="page" id="auth">
  <div class="eyebrow">Intelligent Living Infrastructure</div>
  <h1 class="title">One identity. Connected possibilities.</h1>
- <p class="lede">Zalagren coordinates people, places, needs, capabilities, authority and resources without pretending to be the regulated provider underneath them.</p>
+ <p class="lede">BeatOne coordinates people, places, needs, capabilities, authority and resources without pretending to be the regulated provider underneath them.</p>
  <div class="auth-wrap">
   <form class="auth-card" id="authForm">
    <div id="formTitle" class="auth-title">Create your identity</div>
@@ -146,7 +164,7 @@ input::placeholder{color:#7a8798}
 
 <section class="page hidden" id="home">
  <div class="home-intro">
-  <div><div class="eyebrow">Participant Home</div><h1 id="welcome" class="title">Welcome.</h1><p class="lede">Your Zalagren starts from identity, then becomes useful through real context and explicit authority.</p></div>
+  <div><div class="eyebrow">Participant Home</div><h1 id="welcome" class="title">Welcome.</h1><p class="lede">Your BeatOne starts from identity, then becomes useful through real context and explicit authority.</p></div>
   <div class="context-chip"><i></i><span id="contextText">No active community context</span></div>
  </div>
 
@@ -157,6 +175,14 @@ input::placeholder{color:#7a8798}
    <div class="context-item"><div class="context-label">Community</div><div class="context-value">Not connected</div></div>
    <div class="context-item"><div class="context-label">Authority</div><div class="context-value">Context required</div></div>
   </div></div>
+ </section>
+
+ <section class="section beatone-search">
+  <div class="section-head"><div><h2 class="section-title">Ask BeatOne</h2><p class="section-copy">Describe what you need. BeatOne routes the request to the relevant ecosystem surface; authorization still governs consequential actions.</p></div></div>
+  <div class="context-card" style="padding:16px">
+   <input id="beatoneIntent" aria-label="Ask BeatOne" placeholder="Ask BeatOne or describe what you need…" autocomplete="off">
+   <div id="beatoneIntentHint" class="status">Examples: access, community, ride, food, payment, marketplace, health, GENESIS.</div>
+  </div>
  </section>
 
  <section class="section">
@@ -170,13 +196,13 @@ input::placeholder{color:#7a8798}
  </section>
 
  <section class="section">
-  <div class="section-head"><div><h2 class="section-title">Zalagren operating system</h2><p class="section-copy">The ecosystem is one connected control plane. Every state is implementation truth, not regulatory certification.</p></div></div>
+  <div class="section-head"><div><h2 class="section-title">BeatOne operating system</h2><p class="section-copy">The ecosystem is one connected control plane. Every state is implementation truth, not regulatory certification.</p></div></div>
   <div class="control-grid">
    <button class="control-card" data-detail="identityDetail"><div class="control-kicker">01 · Foundation</div><div class="control-title">Identity → Participant</div><div class="control-copy">Account, credential, session and legal-identity boundaries remain separate.</div><div class="truth truth-supported"><i class="truth-dot"></i>SUPPORTED · LIVE FOUNDATION</div></button>
    <button class="control-card" data-detail="communityDetail"><div class="control-kicker">02 · Participation</div><div class="control-title">Community → Place → Relationship</div><div class="control-copy">Participation becomes contextual before capabilities or authority are exposed.</div><div class="truth truth-pending"><i class="truth-dot"></i>DATA-DEPENDENT</div></button>
    <button class="control-card" data-detail="managementDetail"><div class="control-kicker">03 · Governance</div><div class="control-title">Capability → Authorization</div><div class="control-copy">Community authority must be explicit and evidenced; login never grants it.</div><div class="truth truth-pending"><i class="truth-dot"></i>AUTHORITY-GATED</div></button>
    <button class="control-card" data-detail="marketplaceDetail"><div class="control-kicker">04 · Commerce</div><div class="control-title">Offer → Compliance → Fulfillment</div><div class="control-copy">Marketplace and accommodation share structured commercial boundaries.</div><div class="truth truth-supported"><i class="truth-dot"></i>SUPPORTED · RECONCILIATION ACTIVE</div></button>
-   <button class="control-card" data-detail="serviceDetail"><div class="control-kicker">05 · Services</div><div class="control-title">Food · Ride · Pay · Health</div><div class="control-copy">Provider execution remains outside Zalagren unless a real integration exists.</div><div class="truth truth-pending"><i class="truth-dot"></i>PROVIDER-DEPENDENT</div></button>
+   <button class="control-card" data-detail="serviceDetail"><div class="control-kicker">05 · Services</div><div class="control-title">Food · Ride · Pay · Health</div><div class="control-copy">Provider execution remains outside BeatOne unless a real integration exists.</div><div class="truth truth-pending"><i class="truth-dot"></i>PROVIDER-DEPENDENT</div></button>
    <button class="control-card" data-detail="genesisDetail"><div class="control-kicker">06 · Intelligence</div><div class="control-title">Knowledge → GENESIS Proposal</div><div class="control-copy">GENESIS can explain and propose; authorization and execution remain human/provider boundaries.</div><div class="truth truth-proposed"><i class="truth-dot"></i>PROPOSAL-ONLY</div></button>
   </div>
   <div class="context-card" style="margin-top:12px;padding:16px">
@@ -204,21 +230,35 @@ input::placeholder{color:#7a8798}
  </section>
 
  <section class="section">
-  <div class="section-head"><div><h2 class="section-title">Ecosystem domains</h2><p class="section-copy">One participant foundation, many governed capabilities. Availability depends on context, authorization, provider and jurisdiction.</p></div></div>
+  <div class="section-head"><div><h2 class="section-title">BeatOne · 8 pillars</h2><p class="section-copy">One contextual authorization layer across identity, spaces, economy, services, mobility, commerce and knowledge.</p></div></div>
   <div class="surface-grid">
-   <button class="surface" data-detail="worldDetail"><div class="surface-mark">ACCESS</div><div class="surface-title">Access & invitations</div><div class="surface-copy">Contextual access built from participant, place, relationship, capability and authorization.</div><div class="surface-state">SUPPORTED · AUTHORITY-GATED</div></button>
-   <button class="surface" data-detail="marketplaceDetail"><div class="surface-mark">COMMERCE</div><div class="surface-title">Marketplace & BnB</div><div class="surface-copy">Offers and accommodation remain reviewable, evidence-driven and provider-bound.</div><div class="surface-state">SUPPORTED · COMPLIANCE-DEPENDENT</div></button>
-   <button class="surface" data-detail="serviceDetail"><div class="surface-mark">PAYMENTS</div><div class="surface-title">BeatPay</div><div class="surface-copy">Payment intent and reconciliation can coordinate regulated external rails without becoming a wallet.</div><div class="surface-state">SUPPORTED · PROVIDER-DEPENDENT</div></button>
-   <button class="surface" data-detail="serviceDetail"><div class="surface-mark">MOBILITY</div><div class="surface-title">BeatRide</div><div class="surface-copy">Mobility requests remain separate from provider execution, licensing and insurance evidence.</div><div class="surface-state">SUPPORTED · PROVIDER-DEPENDENT</div></button>
-   <button class="surface" data-detail="serviceDetail"><div class="surface-mark">FOOD</div><div class="surface-title">BeatFood</div><div class="surface-copy">Merchant, menu, order and fulfillment boundaries use the common Zalagren foundation.</div><div class="surface-state">SUPPORTED · PROVIDER-DEPENDENT</div></button>
-   <button class="surface" data-detail="serviceDetail"><div class="surface-mark">HEALTH</div><div class="surface-title">BeatHealth</div><div class="surface-copy">Health coordination remains isolated from generic commerce with protected sensitive-data boundaries.</div><div class="surface-state">PROPOSED · PROTECTED DOMAIN</div></button>
-   <button class="surface" data-detail="genesisDetail"><div class="surface-mark">INTELLIGENCE</div><div class="surface-title">GENESIS</div><div class="surface-copy">Knowledge, explanation and proposals never become authority or silent execution.</div><div class="surface-state">PROPOSED · NON-AUTHORITATIVE</div></button>
-   <button class="surface" data-detail="serviceDetail"><div class="surface-mark">COMMUNITY</div><div class="surface-title">Genzi · Guardian · Utilities</div><div class="surface-copy">Future service capabilities inherit the same participant, context, authorization and evidence model.</div><div class="surface-state">PROPOSED · CONTEXT-DEPENDENT</div></button>
+   <button class="surface" data-detail="identityDetail"><div class="surface-mark">01 · IDENTITY</div><div class="surface-title">Identity</div><div class="surface-copy">Participant identity, credentials, verification boundaries and account security.</div><div class="surface-state">SUPPORTED · FOUNDATION</div></button>
+   <button class="surface" data-detail="worldDetail"><div class="surface-mark">02 · ACCESS</div><div class="surface-title">Access</div><div class="surface-copy">Contextual permissions for places, units, gates and secure digital surfaces.</div><div class="surface-state">SUPPORTED · AUTHORITY-GATED</div></button>
+   <button class="surface" data-detail="worldDetail"><div class="surface-mark">03 · SPATIAL</div><div class="surface-title">Buildings & Units</div><div class="surface-copy">Phase → building → floor → unit and other canonical place relationships.</div><div class="surface-state">SUPPORTED · CONTEXT-DEPENDENT</div></button>
+   <button class="surface" data-detail="serviceDetail"><div class="surface-mark">04 · ECONOMY</div><div class="surface-title">Payments & Economy</div><div class="surface-copy">Payment intents, external regulated rails, settlement and reconciliation evidence.</div><div class="surface-state">SUPPORTED · PROVIDER-DEPENDENT</div></button>
+   <button class="surface" data-detail="serviceDetail"><div class="surface-mark">05 · SERVICES</div><div class="surface-title">Services</div><div class="surface-copy">Utilities, maintenance, concierge and future governed service capabilities.</div><div class="surface-state">PROPOSED · PROVIDER/CONTEXT-DEPENDENT</div></button>
+   <button class="surface" data-detail="serviceDetail"><div class="surface-mark">06 · MOBILITY</div><div class="surface-title">Mobility</div><div class="surface-copy">BeatRide and other mobility flows remain bounded by provider, licence and insurance evidence.</div><div class="surface-state">SUPPORTED · PROVIDER-DEPENDENT</div></button>
+   <button class="surface" data-detail="marketplaceDetail"><div class="surface-mark">07 · COMMERCE</div><div class="surface-title">Commerce</div><div class="surface-copy">BeatMarket/Marketplace, BeatFood and accommodation share one participant foundation.</div><div class="surface-state">SUPPORTED · COMPLIANCE-DEPENDENT</div></button>
+   <button class="surface" data-detail="genesisDetail"><div class="surface-mark">08 · KNOWLEDGE</div><div class="surface-title">Education & Environment</div><div class="surface-copy">Knowledge, sustainability and future sensor/edge inputs feed context without granting hidden authority.</div><div class="surface-state">PROPOSED · CONTEXT-DEPENDENT</div></button>
   </div>
  </section>
 
  <section class="section">
-  <div class="section-head"><div><h2 class="section-title">Participant</h2><p class="section-copy">Your persistent Zalagren foundation.</p></div><button class="link-button" id="accountInline">My Zalagren</button></div>
+  <div class="section-head"><div><h2 class="section-title">Ecosystem domains</h2><p class="section-copy">One participant foundation, many governed capabilities. Availability depends on context, authorization, provider and jurisdiction.</p></div></div>
+  <div class="surface-grid">
+   <button class="surface" data-detail="worldDetail"><div class="surface-mark">ACCESS</div><div class="surface-title">Access & invitations</div><div class="surface-copy">Contextual access built from participant, place, relationship, capability and authorization.</div><div class="surface-state">SUPPORTED · AUTHORITY-GATED</div></button>
+   <button class="surface" data-detail="marketplaceDetail"><div class="surface-mark">COMMERCE</div><div class="surface-title">BeatMarket & BnB</div><div class="surface-copy">Offers and accommodation remain reviewable, evidence-driven and provider-bound.</div><div class="surface-state">SUPPORTED · COMPLIANCE-DEPENDENT</div></button>
+   <button class="surface" data-detail="serviceDetail"><div class="surface-mark">PAYMENTS</div><div class="surface-title">BeatPay</div><div class="surface-copy">Payment intent and reconciliation can coordinate regulated external rails without becoming a wallet.</div><div class="surface-state">SUPPORTED · PROVIDER-DEPENDENT</div></button>
+   <button class="surface" data-detail="serviceDetail"><div class="surface-mark">MOBILITY</div><div class="surface-title">BeatRide</div><div class="surface-copy">Mobility requests remain separate from provider execution, licensing and insurance evidence.</div><div class="surface-state">SUPPORTED · PROVIDER-DEPENDENT</div></button>
+   <button class="surface" data-detail="serviceDetail"><div class="surface-mark">FOOD</div><div class="surface-title">BeatFood</div><div class="surface-copy">Merchant, menu, order and fulfillment boundaries use the common BeatOne foundation.</div><div class="surface-state">SUPPORTED · PROVIDER-DEPENDENT</div></button>
+   <button class="surface" data-detail="serviceDetail"><div class="surface-mark">HEALTH</div><div class="surface-title">BeatHealth</div><div class="surface-copy">Health coordination remains isolated from generic commerce with protected sensitive-data boundaries.</div><div class="surface-state">PROPOSED · PROTECTED DOMAIN</div></button>
+   <button class="surface" data-detail="genesisDetail"><div class="surface-mark">INTELLIGENCE</div><div class="surface-title">GENESIS</div><div class="surface-copy">Knowledge, explanation and proposals never become authority or silent execution.</div><div class="surface-state">PROPOSED · NON-AUTHORITATIVE</div></button>
+   <button class="surface" data-detail="serviceDetail"><div class="surface-mark">COMMUNITY</div><div class="surface-title">BeatGenzi · BeatGuardian · BeatUtilities</div><div class="surface-copy">Future service capabilities inherit the same participant, context, authorization and evidence model.</div><div class="surface-state">PROPOSED · CONTEXT-DEPENDENT</div></button>
+  </div>
+ </section>
+
+ <section class="section">
+  <div class="section-head"><div><h2 class="section-title">Participant</h2><p class="section-copy">Your persistent BeatOne foundation.</p></div><button class="link-button" id="accountInline">My BeatOne</button></div>
   <div class="context-card participant-card"><div><div class="identity" id="identityName">Participant</div><div class="identity-meta" id="identityMeta"></div></div><span class="pill">AUTHENTICATED</span></div>
  </section>
 
@@ -226,7 +266,7 @@ input::placeholder{color:#7a8798}
   <div class="detail-head"><div><h3 class="detail-title">Marketplace</h3><div class="detail-sub">Structured commerce: offer → trust → compliance → fulfillment → transaction</div></div></div>
   <div class="verification-box">
    <div class="verification-title">Publication is not verification</div>
-   <div class="verification-copy">Every listing carries separate verification, compliance and tax states. Zalagren does not claim a seller, permit, eTIMS status or regulated provider connection without evidence.</div>
+   <div class="verification-copy">Every listing carries separate verification, compliance and tax states. BeatOne does not claim a seller, permit, eTIMS status or regulated provider connection without evidence.</div>
   </div>
   <form id="marketplaceForm" class="auth-card" style="margin-top:12px;box-shadow:none">
    <div class="form-grid">
@@ -263,9 +303,9 @@ input::placeholder{color:#7a8798}
    <div id="managementStatus" class="status hidden"></div>
    <div class="surface-grid">
     <div class="surface"><div class="surface-mark">NODE</div><div class="surface-title">Onboarding & proposals</div><div class="surface-copy">Review participant proposals and community onboarding requests.</div><div id="managementRequests" class="rows"></div></div>
-    <div class="surface"><div class="surface-mark">SUBSCRIPTION</div><div class="surface-title">Zalagren subscription</div><div class="surface-copy">Approve or reject the community subscription request. Billing remains a separate provider boundary.</div><div id="managementSubscriptions" class="rows"></div></div>
+    <div class="surface"><div class="surface-mark">SUBSCRIPTION</div><div class="surface-title">BeatOne subscription</div><div class="surface-copy">Approve or reject the community subscription request. Billing remains a separate provider boundary.</div><div id="managementSubscriptions" class="rows"></div></div>
     <div class="surface"><div class="surface-mark">PARTICIPATION</div><div class="surface-title">Participation requests</div><div class="surface-copy">Approve a participant only with an explicit role, enabled capability and optional place.</div><div id="managementParticipations" class="rows"></div></div>
-    <div class="surface"><div class="surface-mark">SERVICES</div><div class="surface-title">Define services</div><div class="surface-copy">Enable real Zalagren service definitions for this community node.</div><div id="managementServices" class="rows"></div></div>
+    <div class="surface"><div class="surface-mark">SERVICES</div><div class="surface-title">Define services</div><div class="surface-copy">Enable real BeatOne service definitions for this community node.</div><div id="managementServices" class="rows"></div></div>
     <div class="surface"><div class="surface-mark">CAPABILITIES</div><div class="surface-title">Define capabilities</div><div class="surface-copy">Enable only the capabilities this community actually authorizes.</div><div id="managementCapabilities" class="rows"></div></div>
     <div class="surface"><div class="surface-mark">PLACES</div><div class="surface-title">Define places</div><div class="surface-copy">Create the node's real places without inventing geometry verification.</div>
       <div class="form-grid">
@@ -284,7 +324,7 @@ input::placeholder{color:#7a8798}
 </main>
 
 <nav class="bottom-nav hidden" id="bottomNav" aria-label="Primary navigation">
- <button class="active" data-nav="home">Home</button><button data-nav="world">World</button><button data-nav="services">Services</button><button data-nav="activity">Activity</button><button data-nav="account">Account</button>
+ <button class="active" data-nav="home">Home</button><button data-nav="community">Communities</button><button data-nav="services">Services</button><button data-nav="genesis">GENESIS</button><button data-nav="activity">Activity</button>
 </nav>
 
 <script>
@@ -330,7 +370,7 @@ $("createListing").onclick=()=>{document.querySelectorAll(".detail-card").forEac
 $("marketplaceForm").onsubmit=async(event)=>{event.preventDefault();const status=$("marketplaceFormStatus");status.classList.remove("hidden");status.textContent="Submitting…";const price=$("listingPrice").value.trim();try{const d=await apiPost("/api/marketplace/listing",{title:$("listingTitle").value.trim(),description:$("listingDescription").value.trim(),category:$("listingCategory").value.trim(),listingKind:$("listingKind").value,fulfillmentMode:$("listingFulfillment").value,priceMinor:price?Number(price):undefined,currency:"KES"});status.textContent="Submitted for marketplace review. Verification, compliance and tax status remain separate and are not claimed.";showOperation("Marketplace listing submitted for review · "+(d.listing?.id||"created"));event.target.reset();}catch(e){status.textContent=e.message;}};
 $("requestRide").onclick=async()=>{const pickup=prompt("Pickup");if(!pickup)return;const destination=prompt("Destination");if(!destination)return;try{await apiPost("/api/beatride/request",{pickup,destination});showOperation("BeatRide request created. No transport provider has been invented.");}catch(e){showOperation(e.message);}};
 $("createFood").onclick=async()=>{const name=prompt("Food merchant name");if(!name)return;try{const d=await apiPost("/api/beatfood/merchant",{name});showOperation("BeatFood merchant created. Merchant ID: "+(d.merchant?.id||"created"));}catch(e){showOperation(e.message);}};
-$("communityJoin").onclick=async()=>{const name=prompt("Community name (for a new node proposal)","TSAVO");if(!name)return;const proposal=prompt("What should Zalagren enable for this community?");if(!proposal)return;try{const d=await apiPost("/api/community/onboarding",{communityName:name,nodeName:name==="TSAVO"?"TSAVO first node":name+" node",proposal});showOperation("Community onboarding proposal submitted.");}catch(e){showOperation(e.message);}};
+$("communityJoin").onclick=async()=>{const name=prompt("Community name (for a new node proposal)","TSAVO");if(!name)return;const proposal=prompt("What should BeatOne enable for this community?");if(!proposal)return;try{const d=await apiPost("/api/community/onboarding",{communityName:name,nodeName:name==="TSAVO"?"TSAVO first node":name+" node",proposal});showOperation("Community onboarding proposal submitted.");}catch(e){showOperation(e.message);}};
 async function loadManagementDirectory(){
  try{
   const r=await fetch("/api/community/management");const d=await r.json().catch(()=>({}));
@@ -389,7 +429,7 @@ async function loadViews(){
   if(responses.some(r=>!r.ok))throw new Error("HOME_DATA_UNAVAILABLE");
   $("communityBody").innerHTML=communities.items?.length?communities.items.map(()=>"<div class='row'><div class='row-title'></div><div class='row-meta'></div></div>").join(""):"<div class='row'><div class='row-title'>No communities connected yet.</div><div class='row-meta'>No participation has been invented.</div></div>";
   communities.items?.forEach((x,i)=>{const row=$("communityBody").children[i];row.querySelector(".row-title").textContent=x.name||"";row.querySelector(".row-meta").textContent=(x.type||"")+" · "+(x.location||"")+" · "+(x.verification||"");});
-  $("serviceBody").innerHTML=services.items?.length?services.items.map(()=>"<div class='row'><div class='row-title'></div><div class='row-meta'></div></div>").join(""):"<div class='row'><div class='row-title'>No services are registered yet.</div><div class='row-meta'>Zalagren will not pretend a provider is connected.</div></div>";
+  $("serviceBody").innerHTML=services.items?.length?services.items.map(()=>"<div class='row'><div class='row-title'></div><div class='row-meta'></div></div>").join(""):"<div class='row'><div class='row-title'>No services are registered yet.</div><div class='row-meta'>BeatOne will not pretend a provider is connected.</div></div>";
   services.items?.forEach((x,i)=>{const row=$("serviceBody").children[i];row.querySelector(".row-title").textContent=x.name||"";row.querySelector(".row-meta").textContent=(x.domain||"")+" · "+(x.status||"")+" · Capabilities: "+((x.capabilities||[]).map(c=>c.name).join(", ")||"none");});
   const f=foundation.foundation||{};
   $("genesisBody").innerHTML="<div class='row'><div class='row-title'>Proposal-only intelligence</div><div class='row-meta'>GENESIS cannot authorize or execute actions.</div></div><div class='row'><div class='row-title'>Live foundation</div><div class='row-meta'></div></div>";
@@ -398,6 +438,8 @@ async function loadViews(){
 }
 document.querySelectorAll("[data-detail]").forEach(el=>el.addEventListener("click",()=>openDetail(el.dataset.detail)));
 document.querySelectorAll("[data-nav]").forEach(el=>el.addEventListener("click",()=>navigate(el.dataset.nav)));
+const beatoneIntent=$("beatoneIntent"),beatoneIntentHint=$("beatoneIntentHint");
+if(beatoneIntent){beatoneIntent.oninput=()=>{const q=beatoneIntent.value.trim().toLowerCase();if(!q){beatoneIntentHint.textContent="Examples: access, community, ride, food, payment, marketplace, health, GENESIS.";return;}const routes=[["access","worldDetail","Access"],["community","communityDetail","Communities"],["ride","serviceDetail","BeatRide"],["mobility","serviceDetail","BeatRide"],["food","serviceDetail","BeatFood"],["payment","serviceDetail","BeatPay"],["pay","serviceDetail","BeatPay"],["market","marketplaceDetail","BeatMarket"],["bnb","marketplaceDetail","BeatMarket & BnB"],["health","serviceDetail","BeatHealth"],["genesis","genesisDetail","GENESIS"],["education","genesisDetail","Knowledge"],["environment","genesisDetail","Knowledge"]];const hit=routes.find(([k])=>q.includes(k));beatoneIntentHint.textContent=hit?"Open "+hit[2]+" to continue. Consequential actions remain authorization-gated.":"No direct surface matched yet. BeatOne will not invent a provider, authority or action.";if(hit)beatoneIntentHint.onclick=()=>openDetail(hit[1]);beatoneIntentHint.style.cursor=hit?"pointer":"default";};}
 $("openMenu").onclick=openMenu;$("closeMenu").onclick=closeMenu;$("account").onclick=()=>navigate("account");$("accountInline").onclick=()=>navigate("account");
 $("mode").onclick=()=>{signup=!signup;setError("");mode();};
 $("authForm").onsubmit=async event=>{

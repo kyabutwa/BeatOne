@@ -150,7 +150,7 @@ input::placeholder{color:#7a8798}
       <div><label class="label" for="birthPlace">Place of birth</label><input id="birthPlace" placeholder="City / place"></div>
       <div><label class="label" for="residenceCountry">Residence country</label><input id="residenceCountry" placeholder="ISO country code"></div>
       <div><label class="label" for="phone">Phone number</label><input id="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+243..."></div>
-      <div><label class="label" for="documentType">Identity document</label><select id="documentType" style="width:100%;min-height:46px;padding:11px 13px;border:1px solid #cbd5e1;border-radius:13px;background:#fff;color:var(--navy)"><option value="national_id">National ID</option><option value="passport">Passport</option><option value="residence_permit">Residence permit</option><option value="refugee_document">Refugee document</option><option value="other">Other</option></select></div>
+      <div><label class="label" for="documentType">Identity document</label><select id="documentType" style="width:100%;min-height:46px;padding:11px 13px;border:1px solid #cbd5e1;border-radius:13px;background:#fff;color:var(--navy)"><option value="national_id">National ID</option><option value="passport">Passport</option><option value="driving_license">Driving licence</option><option value="residence_permit">Residence permit</option><option value="refugee_document">Refugee / foreigner document</option><option value="zalagren_identity">Zalagren Identity</option><option value="other">Other</option></select></div>
       <div><label class="label" for="issuingCountry">Issuing country</label><input id="issuingCountry" placeholder="ISO country code"></div>
       <div><label class="label" for="issuingAuthority">Issuing authority</label><input id="issuingAuthority" placeholder="Authority name"></div>
       <div><label class="label" for="documentNumber">Document / card number</label><input id="documentNumber" autocomplete="off" placeholder="Document number"></div>
@@ -195,6 +195,17 @@ input::placeholder{color:#7a8798}
    <button class="surface" data-detail="serviceDetail"><div class="surface-mark">CAPABILITIES</div><div class="surface-title">Services</div><div class="surface-copy">BeatFood, BeatRide, Marketplace, BeatHealth, Genzi and future services share one foundation.</div><div class="surface-state">MODEL READY · PROVIDERS PENDING</div></button>
    <button class="surface" data-detail="genesisDetail"><div class="surface-mark">INTELLIGENCE</div><div class="surface-title">GENESIS</div><div class="surface-copy">Knowledge and proposals that never silently become authority or execution.</div><div class="surface-state">PROPOSAL-ONLY</div></button>
   </div>
+ </section>
+
+ <section class="section">
+  <div class="section-head"><div><h2 class="section-title">Create & participate</h2><p class="section-copy">Your participation gives you the ability to create, request and propose. Provider execution remains a separate verified boundary.</p></div></div>
+  <div class="surface-grid">
+   <button class="surface" id="createListing"><div class="surface-mark">MARKETPLACE</div><div class="surface-title">Create a listing</div><div class="surface-copy">Offer a real product or service under your participant identity.</div><div class="surface-state">CREATE · REAL PERSISTENCE</div></button>
+   <button class="surface" id="requestRide"><div class="surface-mark">BEATRIDE</div><div class="surface-title">Request a ride</div><div class="surface-copy">Create a mobility request tied to your participation context.</div><div class="surface-state">REQUEST · PROVIDER OPTIONAL</div></button>
+   <button class="surface" id="createFood"><div class="surface-mark">BEATFOOD</div><div class="surface-title">Become a food provider</div><div class="surface-copy">Create your merchant identity and build a menu.</div><div class="surface-state">CREATE · REAL PERSISTENCE</div></button>
+   <button class="surface" id="communityJoin"><div class="surface-mark">COMMUNITY</div><div class="surface-title">Join or subscribe</div><div class="surface-copy">Request participation in a community or propose a community node.</div><div class="surface-state">REQUEST · AUTHORITY REQUIRED</div></button>
+  </div>
+  <div id="operationStatus" class="status hidden"></div>
  </section>
 
  <section class="section">
@@ -256,6 +267,12 @@ function showHome(d){
  const rows=$("identityBody").querySelectorAll(".row-meta");rows[0].textContent=participant.participantId||"unavailable";rows[1].textContent=identity.provider||"neon-auth";rows[2].textContent=participant.accountId||"ready";
  loadViews();
 }
+async function apiPost(path,body){const r=await fetch(path,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"REQUEST_FAILED");return d;}
+function showOperation(message){$("operationStatus").classList.remove("hidden");$("operationStatus").innerHTML="<strong>"+escapeHtml(message)+"</strong>";}
+$("createListing").onclick=async()=>{const title=prompt("Listing title");if(!title)return;const description=prompt("Describe the product or service");if(!description)return;const category=prompt("Category")||"general";const price=prompt("Price in minor currency units (optional)");try{await apiPost("/api/marketplace/listing",{title,description,category,priceMinor:price?Number(price):undefined,currency:"KES"});showOperation("Marketplace listing created.");}catch(e){showOperation(e.message);}};
+$("requestRide").onclick=async()=>{const pickup=prompt("Pickup");if(!pickup)return;const destination=prompt("Destination");if(!destination)return;try{await apiPost("/api/beatride/request",{pickup,destination});showOperation("BeatRide request created. No transport provider has been invented.");}catch(e){showOperation(e.message);}};
+$("createFood").onclick=async()=>{const name=prompt("Food merchant name");if(!name)return;try{const d=await apiPost("/api/beatfood/merchant",{name});showOperation("BeatFood merchant created. Merchant ID: "+(d.merchant?.id||"created"));}catch(e){showOperation(e.message);}};
+$("communityJoin").onclick=async()=>{const name=prompt("Community name (for a new node proposal)","TSAVO");if(!name)return;const proposal=prompt("What should Zalagren enable for this community?");if(!proposal)return;try{const d=await apiPost("/api/community/onboarding",{communityName:name,nodeName:name==="TSAVO"?"TSAVO first node":name+" node",proposal});showOperation("Community onboarding proposal submitted.");}catch(e){showOperation(e.message);}};
 async function loadViews(){
  try{
   const responses=await Promise.all([fetch("/api/home/communities"),fetch("/api/home/services"),fetch("/api/home/foundation")]);

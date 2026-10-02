@@ -23,7 +23,7 @@ export const renderHome = (headers: (extra?: HeadersInit) => Headers): Response 
 <title>Zalagren</title>
 <style>
 :root{
- --canvas:#fff;--surface:#fff;--surface-2:#f6f8fb;--navy:#071a33;--blue:#1554a6;
+ --canvas:#fff;--surface:#fff;--surface-2:#f6f8fb;--navy:#071a33;--blue:#f27a21;
  --orange:#f27a21;--muted:#64748b;--line:#dfe5ec;--line-soft:#edf1f5;
  --danger:#a63a2b;--radius-xl:24px;--radius-lg:20px;--radius-md:16px;
  --shadow:0 12px 34px rgba(7,26,51,.07);
@@ -33,10 +33,10 @@ export const renderHome = (headers: (extra?: HeadersInit) => Headers): Response 
 html{background:var(--canvas);scroll-behavior:smooth}
 body{margin:0;background:var(--canvas);color:var(--navy);min-height:100vh;-webkit-font-smoothing:antialiased}
 button,input{font:inherit}button{cursor:pointer}
-button:focus-visible,input:focus-visible{outline:3px solid rgba(21,84,166,.28);outline-offset:2px}
-.shell{width:min(100% - 24px,1080px);margin:0 auto;padding:10px 0 94px}
+button:focus-visible,input:focus-visible{outline:3px solid rgba(242,122,33,.34);outline-offset:2px}
+.shell{width:min(100% - 24px,1080px);margin:0 auto;padding:6px 0 94px}
 .topbar{
- position:sticky;top:10px;z-index:40;display:grid;grid-template-columns:44px 1fr auto;align-items:center;
+ position:sticky;top:6px;z-index:40;display:grid;grid-template-columns:44px 1fr auto;align-items:center;
  min-height:58px;padding:7px 8px;border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.96);
  box-shadow:0 8px 28px rgba(7,26,51,.07);backdrop-filter:saturate(180%) blur(18px)
 }
@@ -45,8 +45,8 @@ button:focus-visible,input:focus-visible{outline:3px solid rgba(21,84,166,.28);o
 .brand-lockup{display:flex;justify-content:center;align-items:center;height:44px;min-width:0}
 .brand-logo{display:block;width:auto;height:34px;max-width:min(190px,46vw);object-fit:contain;object-position:center}
 .account-control{display:flex;align-items:center;gap:8px;min-height:42px;padding:0 11px;border:1px solid var(--line);border-radius:13px;background:var(--surface);color:var(--navy);font-size:13px;font-weight:700;white-space:nowrap}
-.account-dot{width:7px;height:7px;border-radius:50%;background:var(--blue)}
-.page{padding:26px 0}
+.account-dot{width:7px;height:7px;border-radius:50%;background:var(--orange)}
+.page{padding:14px 0}
 .eyebrow{font-size:11px;line-height:16px;font-weight:750;letter-spacing:.105em;text-transform:uppercase;color:var(--orange)}
 .title{font-size:clamp(29px,6vw,42px);line-height:1.08;letter-spacing:-.025em;font-weight:760;margin:7px 0 9px;max-width:720px}
 .lede{font-size:15px;line-height:23px;color:var(--muted);max-width:700px;margin:0}
@@ -57,7 +57,7 @@ button:focus-visible,input:focus-visible{outline:3px solid rgba(21,84,166,.28);o
 .section-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:12px}
 .section-title{font-size:20px;line-height:26px;letter-spacing:-.01em;font-weight:760;margin:0}
 .section-copy{font-size:13px;line-height:19px;color:var(--muted);margin:3px 0 0}
-.link-button{border:0;background:none;color:var(--blue);font-size:13px;font-weight:750;padding:5px 0}
+.link-button{border:0;background:none;color:var(--orange);font-size:13px;font-weight:750;padding:5px 0}
 .context-card,.auth-card,.detail-card{
  border:1px solid var(--line);border-radius:var(--radius-xl);background:var(--surface);box-shadow:var(--shadow)
 }
@@ -75,10 +75,10 @@ button:focus-visible,input:focus-visible{outline:3px solid rgba(21,84,166,.28);o
 .surface-mark{font-size:11px;line-height:16px;color:var(--orange);font-weight:750;letter-spacing:.08em}
 .surface-title{font-size:18px;line-height:23px;font-weight:750;margin-top:10px}
 .surface-copy{font-size:13px;line-height:19px;color:var(--muted);margin-top:5px;max-width:390px}
-.surface-state{margin-top:14px;font-size:12px;line-height:17px;color:var(--blue);font-weight:700}
+.surface-state{margin-top:14px;font-size:12px;line-height:17px;color:var(--orange);font-weight:700}
 .participant-card{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;padding:18px}
 .identity{font-size:16px;line-height:22px;font-weight:730}.identity-meta{font-size:13px;line-height:20px;color:var(--muted);margin-top:3px;overflow-wrap:anywhere}
-.pill{display:inline-flex;align-items:center;min-height:25px;padding:4px 9px;border-radius:999px;background:#edf3fb;color:var(--blue);font-size:11px;line-height:16px;font-weight:750}
+.pill{display:inline-flex;align-items:center;min-height:25px;padding:4px 9px;border-radius:999px;background:#fff1e8;color:var(--orange);font-size:11px;line-height:16px;font-weight:750}
 .detail-card{display:none;margin-top:12px;padding:18px}.detail-card.active{display:block}
 .detail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
 .detail-title{font-size:20px;line-height:26px;font-weight:760;margin:0}.detail-sub{font-size:13px;line-height:19px;color:var(--muted);margin-top:3px}
@@ -91,14 +91,14 @@ input::placeholder{color:#7a8798}
 .error{min-height:20px;margin-top:10px;color:var(--danger);font-size:13px;line-height:19px}.hidden{display:none!important}
 .status{margin-top:14px;padding:14px 15px;border-radius:16px;background:var(--surface-2);border:1px solid var(--line);font-size:13px;line-height:19px;color:var(--muted)}.status strong{color:var(--navy)}
 .bottom-nav{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:35;width:min(calc(100% - 24px),620px);display:grid;grid-template-columns:repeat(5,1fr);padding:6px;border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.96);box-shadow:0 10px 30px rgba(7,26,51,.11);backdrop-filter:saturate(180%) blur(18px)}
-.bottom-nav button{min-height:42px;border:0;border-radius:14px;background:transparent;color:var(--muted);font-size:11px;font-weight:750}.bottom-nav button.active{background:#eef3f9;color:var(--blue)}
+.bottom-nav button{min-height:42px;border:0;border-radius:14px;background:transparent;color:var(--muted);font-size:11px;font-weight:750}.bottom-nav button.active{background:#fff1e8;color:var(--orange)}
 .overlay{position:fixed;inset:0;z-index:60;background:rgba(255,255,255,.98);display:none;overflow:auto}.overlay.open{display:block}
 .overlay-shell{width:min(100% - 28px,900px);margin:0 auto;padding:18px 0 50px}.overlay-head{display:flex;align-items:center;justify-content:space-between}.overlay-title{font-size:28px;line-height:34px;font-weight:760;margin:30px 0 6px}.overlay-copy{font-size:14px;line-height:21px;color:var(--muted);max-width:600px}
 .menu-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:22px}.menu-item{text-align:left;padding:16px;border:1px solid var(--line);border-radius:18px;background:#fff}.menu-item strong{font-size:15px;line-height:20px}.menu-item span{display:block;font-size:12px;line-height:18px;color:var(--muted);margin-top:4px}
-@media(max-width:700px){.shell{padding-top:8px}.topbar{top:8px}.account-control span{display:none}.home-intro{display:block}.context-chip{margin-top:12px}.context-grid{grid-template-columns:1fr}.surface-grid{grid-template-columns:1fr}.surface{min-height:128px}.participant-card{grid-template-columns:1fr}.actions{flex-direction:column}.action{width:100%}.menu-grid{grid-template-columns:1fr}}
-@media(min-width:701px){.page{padding-top:34px}}
+@media(max-width:700px){.shell{padding-top:4px}.topbar{top:4px}.account-control span{display:none}.home-intro{display:block}.context-chip{margin-top:12px}.context-grid{grid-template-columns:1fr}.surface-grid{grid-template-columns:1fr}.surface{min-height:128px}.participant-card{grid-template-columns:1fr}.actions{flex-direction:column}.action{width:100%}.menu-grid{grid-template-columns:1fr}}
+@media(min-width:701px){.page{padding-top:18px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.surface{transition:none}.surface:hover{transform:none}}
-</style>
+/* Owner-provided EarthBeat/Zalagren reference artwork remains intact and is never recolored. Interface blue accents are unified to Tsavo orange. */</style>
 </head>
 <body>
 <div class="overlay" id="menuOverlay" aria-hidden="true">

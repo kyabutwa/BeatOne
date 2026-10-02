@@ -1,6 +1,7 @@
 # Full System Bottom-Up Reconciliation — 2026-10-02
 
 **Status:** 🟡 SUPPORTED — APPLICATION/TEST FOUNDATION GREEN; PRODUCTION PHYSICAL FOUNDATION RECONCILIATION REQUIRED
+**Fresh production recheck:** 2026-10-02 — read-only Neon inspection
 **Scope:** BeatOne from Product/Technical foundation through current Action, Payments, Event/Evidence runtime state
 **Production:** Neon project Zalagren / production branch / neondb
 **Rule:** no production Event/Evidence migration is authorized by this document.
@@ -54,7 +55,7 @@ Production currently has:
 
 The canonical Identity → Participant representation therefore cannot be treated as physically reconciled.
 
-Production contains 22 identities and 22 participants, so this is not an empty-schema cleanup. Any migration needs an explicit data-mapping contract.
+Fresh read-only production recheck shows `identities = 0` and `participants = 0`. The physical schema is still legacy-shaped, but the previously observed Identity/Participant data rows are no longer present. Therefore the already-rehearsed zero-data migration is applicable to the current production state; no data-mapping transformation is required at this checkpoint.
 
 ### Accounts / Credentials / Sessions
 
@@ -143,9 +144,9 @@ Their runtime application/isolated-PostgreSQL verification is green, but product
 
 ## 4. Downstream production state
 
-Current production counts are:
-- identities: 22
-- participants: 22
+Current production counts from the fresh read-only recheck are:
+- identities: 0
+- participants: 0
 - actions: 0
 - payments: 0
 - events: 0
@@ -156,11 +157,13 @@ Current production counts are:
 - intents: 0
 - proposals: 0
 
-The migration ledger contains the approved historical migrations through 022_cross_entity_lifecycle_integrity, followed by:
+The migration ledger was freshly re-read and contains 11 applied entries: the approved historical migrations through 022_cross_entity_lifecycle_integrity, followed by:
 - action-physical-canonicalization-2026-10-02
 - payments-physical-canonicalization-2026-10-02
 
 No Event/Evidence physical migration is registered.
+
+The Identity/Participant migration is committed in the repository and has been successfully rehearsed on disposable Neon branch `br-blue-glade-b5pdci8h`; it is not present in the production migration ledger.
 
 ## 5. What was NOT changed
 
@@ -178,7 +181,7 @@ This reconciliation did not:
 
 ## 6. Required correction
 
-The correct repair is not to weaken the application contracts to fit the legacy production tables.
+The correct repair is not to weaken the application contracts to fit the legacy production tables. The current production database has zero rows in the affected Identity/Participant tables, so the prepared narrow physical migration can be applied without a data transformation, subject to the production-change approval gate.
 
 The physical layer must be brought into explicit canonical alignment through controlled reconciliation:
 
@@ -196,4 +199,4 @@ The next exact stage is therefore:
 
 **FOUNDATION PHYSICAL PERSISTENCE FULL RECONCILIATION — IDENTITY → PARTICIPANT → ACCOUNT/CREDENTIAL/SESSION → ACCESS → PLACE → RELATIONSHIP → CONTEXT → CAPABILITY → AUTHORIZATION → INTENT → PROPOSAL**
 
-No production migration should be executed from this checkpoint until that sequence is reconciled and its migration path is proven.
+No production migration beyond the already-proven Identity/Participant step should be executed until the remaining upstream physical chain is reconciled. The immediate production gate is now the already-rehearsed Identity → Participant migration.

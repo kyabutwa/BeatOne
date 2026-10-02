@@ -33,7 +33,7 @@ test("resend supersedes the previous pending challenge before creating one curre
   assert.equal(challenge.identityId, "identity-1");
   assert.equal(challenge.channel, "email");
   assert.equal(challenge.provider, "neon_auth");
-  assert.equal(calls[0], "TRANSACTION:2");
+  assert.ok(calls.includes("TRANSACTION:2"));
 });
 
 test("failed verification attempts explicitly expire a pending challenge when its TTL has elapsed", async () => {

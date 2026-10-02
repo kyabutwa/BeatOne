@@ -165,3 +165,37 @@ BeatOne should feel like one coherent participant account and world, while retai
 `One provider connection ≠ fabricated execution`
 
 The participant remains the center of the ecosystem, and authority remains explicit, contextual, revocable and evidenced.
+
+
+## Revised account-entry model — 2026-10-02
+
+The previous mandatory contact-OTP gate is no longer the BeatOne account-entry architecture.
+
+Public patterns reviewed:
+- Upwork treats password login and optional/managed two-step methods as account security, while identity verification is a separate process that can be requested when required. citeturn0search0turn0search5turn0search8
+- Apple documents stronger account security such as security keys as an optional layer around the Apple Account rather than treating a security key as legal identity. citeturn0search2
+- Snapchat uses additional login verification for new/unrecognized devices and supports recovery codes for 2FA; its public signup flow can use phone or email. citeturn0search7turn0search13
+- Exness applies identity verification to sensitive account operations, illustrating a step-up boundary rather than making every ordinary navigation action a KYC flow. citeturn0search48
+
+BeatOne therefore uses:
+
+`Account credentials → provider session → canonical BeatOne session → Participant Home`
+
+Then, only when needed:
+
+`Step-up security → Contact assurance / authenticator / device → Legal identity evidence → Contextual authorization → Consequential action`
+
+### Important security distinction
+
+A user typing a phrase displayed by BeatOne can prove only that the person can read and reproduce that phrase. It is **not** proof of ownership of an email address, phone number, government identity, or account.
+
+Therefore BeatOne must never treat a freely typed "confirmation text" as identity verification. Such a phrase may be used as a harmless onboarding acknowledgement or UI test, but never as a substitute for authentication, recovery, KYC, or authorization.
+
+### Current account behavior
+
+- Sign-up creates the account and session without waiting for email OTP.
+- Sign-in is not blocked by an unverified email flag.
+- Sign-out revokes the corresponding canonical BeatOne sessions as well as invoking provider sign-out.
+- Contact verification endpoints remain available as optional assurance mechanisms.
+- Legal identity verification remains the stronger, real-information verification boundary.
+- Sensitive or regulated actions may require step-up assurance.

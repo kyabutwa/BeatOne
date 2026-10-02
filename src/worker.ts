@@ -205,75 +205,9 @@ async function authMutation(request: Request, env: Env, endpoint: string): Promi
     const user = providerUser(payload);
     const session = providerSession(payload);
 
-    if (endpoint === "/sign-in/email" && user && !Boolean(user.emailVerified)) {
-      let verificationRequested = false;
-      try {
-        const sql = requireDatabase(env);
-        const email = String(user.email).trim().toLowerCase();
-        const target = await verificationAccountForContact(sql, "email", email);
-        if (target) {
-          const challenge = await beginVerificationChallenge(sql, {
-            accountId: target.accountId,
-            identityId: target.identityId,
-            channel: "email",
-            targetHash: await sha256Hex(email),
-            provider: "neon_auth"
-          });
-          const verification = await providerRequest(
-            request,
-            env,
-            "/email-otp/send-verification-otp",
-            { email, type: "email-verification" }
-          );
-          await recordVerificationProviderResult(sql, challenge.id, {
-            ok: verification.ok,
-            errorCode: verification.ok ? null : "EMAIL_OTP_PROVIDER_FAILED"
-          });
-          verificationRequested = verification.ok;
-        }
-      } catch {}
-      return json(
-        { service: "BeatOne", error: "EMAIL_NOT_VERIFIED", verificationRequested },
-        403
-      );
-    }
-
-    const canonical = user
-      ? await syncCanonicalAuth(env, user, session, null, setCookies)
-      : null;
-
-    let emailVerificationRequested = false;
-    if (endpoint === "/sign-up/email" && user?.email && canonical) {
-      const sql = requireDatabase(env);
-      const email = String(user.email).trim().toLowerCase();
-      try {
-        const challenge = await beginVerificationChallenge(sql, {
-          accountId: canonical.accountId,
-          identityId: await (async () => {
-            const rows = await sql`SELECT identity_id FROM public.accounts WHERE id=${canonical.accountId} LIMIT 1`;
-            return rows[0]?.identity_id || "";
-          })(),
-          channel: "email",
-          targetHash: await sha256Hex(email),
-          provider: "neon_auth"
-        });
-        if (challenge.identityId) {
-          const verification = await providerRequest(
-            request,
-            env,
-            "/email-otp/send-verification-otp",
-            { email, type: "email-verification" }
-          );
-          await recordVerificationProviderResult(sql, challenge.id, {
-            ok: verification.ok,
-            errorCode: verification.ok ? null : "EMAIL_OTP_PROVIDER_FAILED"
-          });
-          emailVerificationRequested = verification.ok;
-        }
-      } catch {
-        emailVerificationRequested = false;
-      }
-    }
+    // Account creation and login are session-first.
+    // Email/phone contact verification is optional and never blocks ordinary access.
+    // Legal identity verification and sensitive-action step-up remain separate assurance layers.
 
     const outHeaders = headers({
       "content-type": "application/json; charset=utf-8",
@@ -1198,11 +1132,17 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/contact/phone/verify") return verifyPhone(request, env);
     if (request.method === "POST" && url.pathname === "/api/auth/sign-out") {
       try {
+        const current = await currentSession(request, env);
+        if (current?.canonical?.account_id || current?.canonical?.accountId) {
+          const sql = requireDatabase(env);
+          const accountId = current.canonical.account_id || current.canonical.accountId;
+          await sql`UPDATE public.sessions SET revoked_at=now() WHERE account_id=${accountId} AND revoked_at IS NULL`;
+        }
         const upstream = await providerRequest(request, env, "/sign-out");
         const setCookies = providerCookies(upstream);
         const outHeaders = headers({"content-type":"application/json; charset=utf-8"});
         for (const cookie of setCookies) outHeaders.append("set-cookie", cookie.replace(/;\s*Domain=[^;]+/gi,"").replace(/;\s*Path=\/[^;]*/i,"; Path=/"));
-        return new Response(JSON.stringify({service:"BeatOne",status:"signed_out"}),{status:upstream.status,headers:outHeaders});
+        return new Response(JSON.stringify({service:"BeatOne",status:"signed_out",sessionRevoked:true}),{status:upstream.status,headers:outHeaders});
       } catch (error) {
         return json({error:error instanceof Error?error.message:"SIGN_OUT_FAILED"},500);
       }

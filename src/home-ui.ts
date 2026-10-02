@@ -159,25 +159,7 @@ html,body{background:var(--canvas)!important;color:var(--white)!important}body,*
    <label class="label" for="email">Email</label><input id="email" autocomplete="email" inputmode="email" type="email" placeholder="you@example.com"><div id="signupPhoneField"><label class="label" for="phone">Phone number</label><input id="phone" autocomplete="tel" inputmode="tel" type="tel" placeholder="+254 7XX XXX XXX"></div>
    <label class="label" for="password">Password</label><input id="password" autocomplete="new-password" type="password" placeholder="Password (8+ characters)">
    <div class="actions"><button id="submit" class="action primary" type="submit">Create account</button><button id="mode" class="action secondary" type="button">Sign in instead</button></div>
-   <div id="verificationBox" class="verification-box">
- <div class="verification-title">Verify your contact details</div>
- <div id="verificationCopy" class="verification-copy"></div>
- <label class="label" for="emailVerificationCode">Email verification code</label>
- <input id="emailVerificationCode" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="Enter the code from your email">
- <div class="mini-actions">
-  <button id="verifyEmailCode" type="button">Verify email</button>
-  <button id="resendEmail" type="button">Send email verification again</button>
- </div>
- <div id="phoneVerificationSection">
-  <div class="verification-title" style="margin-top:14px">Phone verification</div>
-  <label class="label" for="phoneVerificationCode">SMS verification code</label>
-  <input id="phoneVerificationCode" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="Enter the SMS code">
-  <div class="mini-actions">
-   <button id="verifyPhoneCode" type="button">Verify phone</button>
-   <button id="resendPhone" type="button">Send SMS code again</button>
-  </div>
- </div>
-</div>
+   <div class="status" id="authAssuranceNote"><strong>Account access:</strong> Create or sign in with your account credentials. Contact verification is optional; stronger identity verification is requested only when a capability, regulation, recovery event, or sensitive action requires it.</div>
    <div id="error" class="error" role="alert" aria-live="polite"></div>
   </form>
  </div>
@@ -481,67 +463,14 @@ $("openMenu").onclick=openMenu;$("closeMenu").onclick=closeMenu;$("account").onc
 $("mode").onclick=()=>{signup=!signup;setError("");mode();};
 $("authForm").onsubmit=async event=>{
  event.preventDefault();setError("");
- const body={email:$("email").value.trim(),password:$("password").value};if(signup){body.name=$("name").value.trim();body.phone=$("phone").value.trim();}
+ const body={email:$("#email").value.trim(),password:$("#password").value};if(signup){body.name=$("#name").value.trim();body.phone=$("#phone").value.trim();}
  if(!body.email||!body.password||(signup&&!body.name)||(signup&&!body.phone)){setError("Name, email, phone number and password are required to create your account.");return;}
- const authBody={email:body.email,password:body.password};if(signup)authBody.name=body.name;const r=await fetch(signup?"/api/auth/sign-up/email":"/api/auth/sign-in/email",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(authBody)});
+ const authBody={email:body.email,password:body.password};if(signup)authBody.name=body.name;
+ const r=await fetch(signup?"/api/auth/sign-up/email":"/api/auth/sign-in/email",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(authBody)});
  const d=await r.json().catch(()=>({}));
- if(!r.ok){
-  if(d.error==="EMAIL_NOT_VERIFIED"){
-   $("verificationBox").classList.remove("hidden");
-   $("phoneVerificationSection").classList.remove("hidden");
-   $("verificationCopy").textContent="Your email address is not verified yet. Enter the email code below. If you are verifying a phone number, enter the SMS code in the phone section below.";
-   $("resendEmail").disabled=false;
-   $("resendEmail").textContent="Send verification email again";
-   setError("");
-   return;
-  }
-  setError(d.error||"Authentication failed.");
-  return;
- }
- if(signup){
-   $("verificationBox").classList.remove("hidden");
-   $("phoneVerificationSection").classList.remove("hidden");
-   $("verificationCopy").textContent="Your account was created. Verify your email and phone before continuing.";
-   // Sign-up authMutation already issues the canonical email-verification OTP.
-   // Do not immediately request a second OTP: Better Auth may invalidate the previous code.
-   try{
-    const pr=await fetch("/api/contact/phone/start",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({phone:body.phone})});
-    if(!pr.ok){const pd=await pr.json().catch(()=>({}));$("verificationCopy").textContent+=" Phone verification: "+(pd.error||"could not be started");}
-   }catch{$("verificationCopy").textContent+=" Phone verification could not be started.";}
-   return;
- }
- const meResponse=await fetch("/api/me"); const meData=meResponse.ok?await meResponse.json():{}; showHome(d.canonical?Object.assign({},meData,{identity:d.user,participant:d.canonical,verification:meData.verification||d.verification}):meData);
-};
-async function requestEmailVerification(){
- const email=$("email").value.trim();
- const r=await fetch("/api/auth/email/verification/send",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({email})});
- const d=await r.json().catch(()=>({}));
- $("verificationCopy").textContent=r.ok?"Email verification requested. Enter the code from your email when it arrives.":(d.error||"Email verification could not be requested yet.");
-}
-$("resendEmail").onclick=requestEmailVerification;
-$("verifyEmailCode").onclick=async()=>{
- const email=$("email").value.trim(), otp=$("emailVerificationCode").value.trim();
- if(!/^\d{4,10}$/.test(otp)){ $("verificationCopy").textContent="Enter the verification code from your email."; return; }
- const r=await fetch("/api/auth/email/verification/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({email,otp})});
- const d=await r.json().catch(()=>({}));
- if(!r.ok){$("verificationCopy").textContent=d.error||"Email verification failed.";return;}
- $("verificationCopy").textContent="Email verified. You can now sign in.";
- $("emailVerificationCode").value="";
-};
-$("resendPhone").onclick=async()=>{
- const phone=$("phone").value.trim();
- const r=await fetch("/api/contact/phone/start",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({phone})});
- const d=await r.json().catch(()=>({}));
- $("verificationCopy").textContent=r.ok?"SMS verification code sent to your phone.":(d.error||"Phone verification could not be started yet.");
-};
-$("verifyPhoneCode").onclick=async()=>{
- const phone=$("phone").value.trim(), code=$("phoneVerificationCode").value.trim();
- if(!/^\d{4,10}$/.test(code)){ $("verificationCopy").textContent="Enter the SMS verification code."; return; }
- const r=await fetch("/api/contact/phone/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({phone,code})});
- const d=await r.json().catch(()=>({}));
- if(!r.ok){$("verificationCopy").textContent=d.error||"Phone verification failed.";return;}
- $("verificationCopy").textContent="Phone verified. Your contact details are now confirmed.";
- $("phoneVerificationCode").value="";
+ if(!r.ok){setError(d.error||"Authentication failed.");return;}
+ const meResponse=await fetch("/api/me");const meData=meResponse.ok?await meResponse.json():{};
+ showHome(d.canonical?Object.assign({},meData,{identity:d.user,participant:d.canonical}):meData);
 };
 $("signout").onclick=async()=>{await fetch("/api/auth/sign-out",{method:"POST"});location.reload();};
 async function check(){const r=await fetch("/api/me");if(r.ok)showHome(await r.json());}

@@ -103,7 +103,17 @@ export async function executeAuthorizedAction(
     tx.insert("actions", action);
     tx.insert("action_executions", execution);
     tx.insert("events", event);
-    tx.insert("evidences", evidence);
+    tx.insert("evidences", {
+      id: evidence.id,
+      ...(evidence.eventId ? { eventId: evidence.eventId } : {}),
+      source: evidence.source,
+      verification: evidence.verification,
+      recordedAt: evidence.recordedAt,
+      ...(evidence.externalReference ? {
+        externalProvider: evidence.externalReference.provider,
+        externalReference: evidence.externalReference.reference
+      } : {})
+    });
     tx.insert("action_outcome_trace", outcomeTrace);
     return { action, execution, event, evidence, outcomeTrace };
   });

@@ -101,10 +101,8 @@ function providerSession(payload: any): any {
 async function syncCanonicalAuth(
   env: Env,
   user: any,
-  providerSessionValue: any,
-  cookieHeader: string | null,
-  setCookies: string[]
-): Promise<{ participantId: string; accountId: string; sessionId: string }> {
+  providerSessionValue: any
+): Promise<{ participantId: string; accountId: string; sessionId: string; sessionToken: string; expiresAt: string }> {
   if (!user?.id || !user?.email) throw new Error("AUTH_PROVIDER_USER_MISSING");
 
   const sql = requireDatabase(env);
@@ -173,16 +171,16 @@ async function syncCanonicalAuth(
     WHERE identity_id = ${identityId} AND kind = 'email' AND identifier = ${email} AND status <> 'revoked'
   `;
 
-  const cookieMaterial = cookieHeader || setCookies.join("; ");
-  if (!cookieMaterial) throw new Error("AUTH_SESSION_COOKIE_MISSING");
   const sessionId = "session-neon-" + crypto.randomUUID();
+  const sessionToken = base64UrlFromBytes(crypto.getRandomValues(new Uint8Array(32)));
+  const sessionTokenHash = await sha256Hex(sessionToken);
   const expiresAt =
     providerSessionValue?.expiresAt ||
     new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
   await sql`
-    INSERT INTO public.sessions (id, account_id, authenticated_at, expires_at)
-    VALUES (${sessionId}, ${accountId}, now(), ${expiresAt})
+    INSERT INTO public.sessions (id, account_id, authenticated_at, expires_at, session_token_hash)
+    VALUES (${sessionId}, ${accountId}, now(), ${expiresAt}, ${sessionTokenHash})
     ON CONFLICT (id) DO NOTHING
   `;
 
@@ -192,7 +190,7 @@ async function syncCanonicalAuth(
     WHERE participant_id = ${participantId} AND revoked_at IS NULL AND expires_at <= now()
   `;
 
-  return { participantId, accountId, sessionId };
+  return { participantId, accountId, sessionId, sessionToken, expiresAt };
 }
 
 async function authMutation(request: Request, env: Env, endpoint: string): Promise<Response> {
@@ -213,25 +211,23 @@ async function authMutation(request: Request, env: Env, endpoint: string): Promi
     // Email/phone contact verification is optional and never blocks ordinary access.
     // Legal identity verification and sensitive-action step-up remain separate assurance layers.
 
-    const canonical = user
-      ? await syncCanonicalAuth(env, user, session, null, setCookies)
-      : null;
+    const canonical = user ? await syncCanonicalAuth(env, user, session) : null;
     const emailVerificationRequested = false;
 
     const outHeaders = headers({
       "content-type": "application/json; charset=utf-8",
       "access-control-allow-origin": "*"
     });
-    for (const cookie of setCookies) {
-      const normalized = cookie.replace(/;\s*Domain=[^;]+/gi, "").replace(/;\s*Path=\/[^;]*/i, "; Path=/");
-      outHeaders.append("set-cookie", normalized);
+    if (canonical?.sessionToken && canonical?.expiresAt) {
+      const maxAge = Math.max(60, Math.floor((new Date(canonical.expiresAt).getTime() - Date.now()) / 1000));
+      outHeaders.append("set-cookie", "__Host-beatone_session=" + encodeURIComponent(canonical.sessionToken) + "; Path=/; Max-Age=" + maxAge + "; HttpOnly; Secure; SameSite=Lax");
     }
 
     return new Response(JSON.stringify({
       service: "BeatOne",
       status: "authenticated",
       user: user ? { id: user.id, name: user.name, email: user.email, emailVerified: Boolean(user.emailVerified) } : undefined,
-      canonical,
+      canonical: canonical ? { participantId: canonical.participantId, accountId: canonical.accountId } : undefined,
       verification: { email: Boolean(user?.emailVerified), emailVerificationRequested }
     }), { status: upstream.status, headers: outHeaders });
   } catch (error) {
@@ -288,6 +284,10 @@ function base64FromBytes(bytes: Uint8Array): string {
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
   return btoa(binary);
+}
+
+function base64UrlFromBytes(bytes: Uint8Array): string {
+  return base64FromBytes(bytes).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
 function bytesFromBase64(value: string): Uint8Array {

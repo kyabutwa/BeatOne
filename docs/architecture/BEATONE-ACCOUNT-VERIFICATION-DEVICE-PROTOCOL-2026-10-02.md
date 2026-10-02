@@ -1,6 +1,6 @@
 # BeatOne Canonical Account, Verification and Device Protocol — 2026-10-02
 
-**Status:** 🟡 SUPPORTED — canonical contract implemented in repository; production migration remains a separate approval gate.
+**Status:** 🟡 SUPPORTED — canonical contract implemented and the production persistence tables are present; end-to-end provider execution still requires live runtime proof.
 
 This is the foundational authentication/account reconciliation for BeatOne. It is inspired by publicly documented Apple platform patterns, not an implementation copy of Apple or iCloud.
 
@@ -100,6 +100,18 @@ The migration creates:
 - `public.verification_challenges`
 - `public.account_devices`
 
-Neither table stores OTP values.
+Neither table stores OTP values. Production currently contains both tables and they are empty after the authorized test-account cleanup.
 
-Production application of the migration is intentionally separate from repository implementation and requires the existing production-change gate.
+### Lifecycle correction
+Verification endpoints must load the latest challenge before applying expiry rules. An expired challenge is transitioned to `EXPIRED` before the provider is contacted; it must not be reported as merely `NOT_FOUND`. A resend supersedes the prior challenge, and a non-active challenge cannot be verified.
+
+### Assurance model
+BeatOne now treats contact verification, account security, legal identity verification and consequential-action step-up as separate assurance layers. Government-ID verification may be requested conditionally for risk, regulated services, or a specific capability. It is not required merely to create a BeatOne account.
+
+### Public-pattern review
+Upwork's public documentation separates account login security (password + configurable two-step methods) from identity verification (government ID, phone, location and, where required, visual checks), and exposes verification progress in account settings. Exness publicly documents a Personal Area security type (phone, email and in some countries TOTP), six-digit confirmation for sensitive account operations, and a separate identity/KYC boundary. BeatOne adopts the separation and step-up principles, not proprietary code, UI, or internal implementation.
+
+The resulting BeatOne chain is:
+`Account → Authentication Method → Session → Device → Contact Verification → Legal Identity Evidence → Assurance Level → Contextual Authorization → Consequential Action → Event/Evidence`.
+
+No verification state is allowed to silently grant community authority, financial authority, provider execution, or GENESIS authority.

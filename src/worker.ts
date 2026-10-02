@@ -473,13 +473,17 @@ async function verifyEmailVerificationCode(request: Request, env: Env): Promise<
     const sql=requireDatabase(env);
     const target=await verificationAccountForContact(sql,"email",email);
     if(!target) return json({service:"BeatOne",error:"ACCOUNT_NOT_FOUND"},404);
-    const challengeRows=await sql`SELECT id FROM public.verification_challenges
+    const challengeRows=await sql`SELECT id, expires_at, status FROM public.verification_challenges
       WHERE account_id=${target.accountId} AND identity_id=${target.identityId}
-        AND channel='email' AND target_hash=${await sha256Hex(email)} AND status='PENDING'
-        AND expires_at > now()
+        AND channel='email' AND target_hash=${await sha256Hex(email)}
       ORDER BY requested_at DESC LIMIT 1`;
     if(!challengeRows.length) return json({service:"BeatOne",error:"VERIFICATION_CHALLENGE_NOT_FOUND"},409);
     const challengeId=challengeRows[0].id;
+    if(String(challengeRows[0].status)!=="PENDING") return json({service:"BeatOne",error:"VERIFICATION_CHALLENGE_NOT_ACTIVE"},409);
+    if(new Date(String(challengeRows[0].expires_at)).getTime()<=Date.now()){
+      await recordVerificationAttempt(sql,challengeId,{ok:false,errorCode:"VERIFICATION_CHALLENGE_EXPIRED"});
+      return json({service:"BeatOne",error:"VERIFICATION_CHALLENGE_EXPIRED"},409);
+    }
     const upstream=await providerRequest(request,env,"/email-otp/verify-email",{email,otp});
     const payload=await readJson(upstream);
     await recordVerificationAttempt(sql,challengeId,{ok:upstream.ok,errorCode:upstream.ok?null:(payload?.message||payload?.error||"INVALID_VERIFICATION_CODE")});
@@ -551,13 +555,17 @@ async function verifyPhone(request: Request, env: Env): Promise<Response> {
       WHERE p.id=${participantId} LIMIT 1`;
     if(!rows.length) return json({service:"BeatOne",error:"IDENTITY_NOT_FOUND"},404);
     const identity=rows[0].id, accountId=rows[0].account_id, hash=await sha256Hex(phone);
-    const challengeRows=await sql`SELECT id FROM public.verification_challenges
+    const challengeRows=await sql`SELECT id, expires_at, status FROM public.verification_challenges
       WHERE account_id=${accountId} AND identity_id=${identity}
-        AND channel='phone' AND target_hash=${hash} AND status='PENDING'
-        AND expires_at > now()
+        AND channel='phone' AND target_hash=${hash}
       ORDER BY requested_at DESC LIMIT 1`;
     if(!challengeRows.length) return json({service:"BeatOne",error:"VERIFICATION_CHALLENGE_NOT_FOUND"},409);
     const challengeId=challengeRows[0].id;
+    if(String(challengeRows[0].status)!=="PENDING") return json({service:"BeatOne",error:"VERIFICATION_CHALLENGE_NOT_ACTIVE"},409);
+    if(new Date(String(challengeRows[0].expires_at)).getTime()<=Date.now()){
+      await recordVerificationAttempt(sql,challengeId,{ok:false,errorCode:"VERIFICATION_CHALLENGE_EXPIRED"});
+      return json({service:"BeatOne",error:"VERIFICATION_CHALLENGE_EXPIRED"},409);
+    }
     const payload=await twilioRequest(env,"/VerificationCheck",new URLSearchParams({to:phone,code}));
     if(payload?.status!=="approved"){
       await recordVerificationAttempt(sql,challengeId,{ok:false,errorCode:"PHONE_NOT_VERIFIED"});

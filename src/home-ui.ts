@@ -521,7 +521,7 @@ async function requestEmailVerification(){
 $("resendEmail").onclick=requestEmailVerification;
 $("verifyEmailCode").onclick=async()=>{
  const email=$("email").value.trim(), otp=$("emailVerificationCode").value.trim();
- if(!/^\\d{4,10}$/.test(otp)){ $("verificationCopy").textContent="Enter the verification code from your email."; return; }
+ if(!/^\d{4,10}$/.test(otp)){ $("verificationCopy").textContent="Enter the verification code from your email."; return; }
  const r=await fetch("/api/auth/email/verification/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({email,otp})});
  const d=await r.json().catch(()=>({}));
  if(!r.ok){$("verificationCopy").textContent=d.error||"Email verification failed.";return;}
@@ -536,7 +536,7 @@ $("resendPhone").onclick=async()=>{
 };
 $("verifyPhoneCode").onclick=async()=>{
  const phone=$("phone").value.trim(), code=$("phoneVerificationCode").value.trim();
- if(!/^\\d{4,10}$/.test(code)){ $("verificationCopy").textContent="Enter the SMS verification code."; return; }
+ if(!/^\d{4,10}$/.test(code)){ $("verificationCopy").textContent="Enter the SMS verification code."; return; }
  const r=await fetch("/api/contact/phone/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({phone,code})});
  const d=await r.json().catch(()=>({}));
  if(!r.ok){$("verificationCopy").textContent=d.error||"Phone verification failed.";return;}

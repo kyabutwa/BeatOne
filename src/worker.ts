@@ -334,7 +334,9 @@ async function saveLegalIdentity(request: Request, env: Env): Promise<Response> 
     const identityRows = await sql`SELECT i.id FROM public.identities i JOIN public.participants p ON p.identity_id=i.id WHERE p.id=${participantId} LIMIT 1`;
     if (!identityRows.length) return json({service:"Zalagren",error:"IDENTITY_NOT_FOUND"},404);
     const identity = identityRows[0].id;
-    const documentNumber = input.documentNumber.trim();
+    const documentNumber = input.documentType === "zalagren_identity"
+      ? "ZLG-" + participantId.replace(/[^a-zA-Z0-9]/g, "").slice(-24).toUpperCase()
+      : input.documentNumber.trim();
     const documentHash = await sha256Hex(documentNumber.toUpperCase());
     const encrypted = await encryptSensitive(documentNumber, env);
     const nationalIdentifier = String((input as any).nationalIdentifier || "").trim();
@@ -600,7 +602,8 @@ async function me(request: Request, env: Env): Promise<Response> {
              lip.status AS legal_verification_status,
              EXISTS(SELECT 1 FROM public.identity_contacts ic WHERE ic.identity_id=i.id AND ic.kind='email' AND ic.status='active' AND ic.verified_at IS NOT NULL) AS email_verified,
              EXISTS(SELECT 1 FROM public.identity_contacts ic WHERE ic.identity_id=i.id AND ic.kind='phone' AND ic.status='active' AND ic.verified_at IS NOT NULL) AS phone_verified,
-             EXISTS(SELECT 1 FROM public.identity_documents d WHERE d.identity_id=i.id AND d.status='verified') AS document_verified
+             EXISTS(SELECT 1 FROM public.identity_documents d WHERE d.identity_id=i.id AND d.status='verified') AS document_verified,
+             EXISTS(SELECT 1 FROM public.legal_identity_profiles lp2 WHERE lp2.participant_id=p.id AND lp2.status='verified') AS legal_identity_verified
       FROM public.identities i
       LEFT JOIN public.legal_identity_profiles lip ON lip.participant_id=p.id
       JOIN public.participants p ON p.identity_id=i.id
@@ -612,6 +615,12 @@ async function me(request: Request, env: Env): Promise<Response> {
       authenticated: true,
       participant: active.canonical,
       identity: { provider: "neon-auth", userId: active.user.id, name: active.user.name, email: active.user.email, legalName: identityRows[0]?.legal_name || null },
+      verification: {
+        email: Boolean(identityRows[0]?.email_verified),
+        phone: Boolean(identityRows[0]?.phone_verified),
+        document: Boolean(identityRows[0]?.document_verified),
+        legalIdentity: Boolean(identityRows[0]?.legal_identity_verified)
+      },
       home: {
         identity: "Ready",
         communities: "Available",

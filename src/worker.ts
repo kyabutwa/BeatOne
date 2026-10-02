@@ -396,12 +396,12 @@ async function me(request: Request, env: Env): Promise<Response> {
     const participantId = active.canonical.participant_id || active.canonical.participantId;
     const identityRows = await sql`
       SELECT i.id AS identity_id, lip.legal_name,
-             lip.verification_status AS legal_verification_status,
+             lip.status AS legal_verification_status,
              EXISTS(SELECT 1 FROM public.identity_contacts ic WHERE ic.identity_id=i.id AND ic.kind='email' AND ic.status='active' AND ic.verified_at IS NOT NULL) AS email_verified,
              EXISTS(SELECT 1 FROM public.identity_contacts ic WHERE ic.identity_id=i.id AND ic.kind='phone' AND ic.status='active' AND ic.verified_at IS NOT NULL) AS phone_verified,
              EXISTS(SELECT 1 FROM public.identity_documents d WHERE d.identity_id=i.id AND d.status='verified') AS document_verified
       FROM public.identities i
-      LEFT JOIN public.legal_identity_profiles lip ON lip.identity_id=i.id
+      LEFT JOIN public.legal_identity_profiles lip ON lip.participant_id=p.id
       JOIN public.participants p ON p.identity_id=i.id
       WHERE p.id=${participantId}
       LIMIT 1

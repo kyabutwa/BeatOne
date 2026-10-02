@@ -1,6 +1,8 @@
 export type LegalDocumentType =
   | "national_id"
   | "passport"
+  | "driving_license"
+  | "zalagren_identity"
   | "residence_permit"
   | "refugee_document"
   | "other";

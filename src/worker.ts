@@ -1132,11 +1132,17 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/contact/phone/verify") return verifyPhone(request, env);
     if (request.method === "POST" && url.pathname === "/api/auth/sign-out") {
       try {
+        const current = await currentSession(request, env);
+        if (current?.canonical?.account_id || current?.canonical?.accountId) {
+          const sql = requireDatabase(env);
+          const accountId = current.canonical.account_id || current.canonical.accountId;
+          await sql`UPDATE public.sessions SET revoked_at=now() WHERE account_id=${accountId} AND revoked_at IS NULL`;
+        }
         const upstream = await providerRequest(request, env, "/sign-out");
         const setCookies = providerCookies(upstream);
         const outHeaders = headers({"content-type":"application/json; charset=utf-8"});
         for (const cookie of setCookies) outHeaders.append("set-cookie", cookie.replace(/;\s*Domain=[^;]+/gi,"").replace(/;\s*Path=\/[^;]*/i,"; Path=/"));
-        return new Response(JSON.stringify({service:"BeatOne",status:"signed_out"}),{status:upstream.status,headers:outHeaders});
+        return new Response(JSON.stringify({service:"BeatOne",status:"signed_out",sessionRevoked:true}),{status:upstream.status,headers:outHeaders});
       } catch (error) {
         return json({error:error instanceof Error?error.message:"SIGN_OUT_FAILED"},500);
       }

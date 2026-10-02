@@ -6,7 +6,7 @@ const escapeHtml = (value: unknown): string =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 
-import { BEATONE_LOGO, BEAT_SERVICE_LOGOS } from "./beatone-brand";
+import { BEATONE_LOGO, BEAT_SERVICE_LOGOS } from "./beatone-brand.js";
 
 export const renderHome = (headers: (extra?: HeadersInit) => Headers): Response =>
   new Response(`<!doctype html>

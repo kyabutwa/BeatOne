@@ -51,3 +51,45 @@ GENESIS remains proposal/intelligence only and cannot become an authorization au
 10. Production verification and release-readiness assessment.
 
 No step may silently bypass a failed lower layer.
+
+## Production Neon read-only reconciliation
+
+Production-shaped branch inspected: `muddy-king-32123546 / br-frosty-poetry-b5tv56g1 / neondb`.
+
+Observed counts:
+- persons: 1
+- identities: 1
+- participants: 1
+- accounts: 1
+- credentials: 1
+- auth_methods: 1
+- sessions: 2
+- auth_sessions: 0
+- communities: 0
+- places: 0
+- services: 0
+- capabilities: 0
+- relationships: 0
+- contexts: 0
+- authorizations: 0
+- intents: 0
+- proposals: 0
+- actions: 0
+- action_executions: 0
+- events: 0
+- evidences: 0
+- genesis_intelligence: 0
+- genesis_knowledge: 0
+- payment_intents: 0
+- payments: 0
+- payment_events: 0
+
+The production migration ledger contains 15 applied migration IDs through `event-evidence-physical-canonicalization-2026-10-02`.
+
+### Architectural conclusion
+
+The physical foundation exists and has one real participant. Higher-domain persistence is present structurally but currently empty. That is a truthful state, not a failed database.
+
+The separate `public.auth_sessions` table is empty while canonical `public.sessions` contains two records. The provider-auth boundary is therefore being treated as external infrastructure, while `public.sessions` acts as the local canonical session projection. This must remain explicit; the two session concepts must not silently be merged.
+
+No production data mutation was performed during this reconciliation.

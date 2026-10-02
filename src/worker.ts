@@ -337,6 +337,12 @@ async function saveLegalIdentity(request: Request, env: Env): Promise<Response> 
     const documentNumber = input.documentNumber.trim();
     const documentHash = await sha256Hex(documentNumber.toUpperCase());
     const encrypted = await encryptSensitive(documentNumber, env);
+    const nationalIdentifier = String((input as any).nationalIdentifier || "").trim();
+    const nationalIdentifierHash = nationalIdentifier ? await sha256Hex(nationalIdentifier.toUpperCase()) : null;
+    const nationalIdentifierEncrypted = nationalIdentifier ? await encryptSensitive(nationalIdentifier, env) : null;
+    const documentSerial = String((input as any).documentSerialNumber || "").trim();
+    const documentSerialHash = documentSerial ? await sha256Hex(documentSerial.toUpperCase()) : null;
+    const documentSerialEncrypted = documentSerial ? await encryptSensitive(documentSerial, env) : null;
     const docId = "identity-document-" + crypto.randomUUID();
     const profileId = "legal-identity-" + participantId;
     const profile = await sql`
@@ -367,16 +373,26 @@ async function saveLegalIdentity(request: Request, env: Env): Promise<Response> 
       INSERT INTO public.identity_documents (
         id, identity_id, document_type, issuing_country_code, issuing_authority,
         document_number_ciphertext, document_number_hash, document_number_last4,
+        national_identifier_ciphertext, national_identifier_hash, national_identifier_last4,
+        document_serial_ciphertext, document_serial_hash, document_serial_last4, issue_place,
         issue_date, expiry_date, status, verification_method, updated_at
       ) VALUES (
         ${docId}, ${identity}, ${input.documentType}, ${normalizeCountryCode(input.issuingCountryCode)},
         ${input.issuingAuthority?.trim() || null}, ${encrypted}, ${documentHash}, ${documentNumber.slice(-4)},
-        ${input.issueDate || null}, ${input.expiryDate || null}, 'pending', null, now()
+        ${nationalIdentifierEncrypted}, ${nationalIdentifierHash}, ${nationalIdentifier ? nationalIdentifier.slice(-4) : null},
+        ${documentSerialEncrypted}, ${documentSerialHash}, ${documentSerial ? documentSerial.slice(-4) : null},
+        ${(input as any).issuePlace?.trim() || null}, ${input.issueDate || null}, ${input.expiryDate || null}, 'pending', null, now()
       )
       ON CONFLICT (identity_id, document_number_hash) DO UPDATE SET
         document_number_ciphertext=EXCLUDED.document_number_ciphertext,
         document_number_last4=EXCLUDED.document_number_last4,
-        issue_date=EXCLUDED.issue_date, expiry_date=EXCLUDED.expiry_date,
+        national_identifier_ciphertext=EXCLUDED.national_identifier_ciphertext,
+        national_identifier_hash=EXCLUDED.national_identifier_hash,
+        national_identifier_last4=EXCLUDED.national_identifier_last4,
+        document_serial_ciphertext=EXCLUDED.document_serial_ciphertext,
+        document_serial_hash=EXCLUDED.document_serial_hash,
+        document_serial_last4=EXCLUDED.document_serial_last4,
+        issue_place=EXCLUDED.issue_place, issue_date=EXCLUDED.issue_date, expiry_date=EXCLUDED.expiry_date,
         status='pending', updated_at=now()
     `;
     return json({service:"Zalagren",status:"legal_identity_saved",profile:profile[0],document:{type:input.documentType,issuingCountryCode:normalizeCountryCode(input.issuingCountryCode),last4:documentNumber.slice(-4),verificationStatus:"pending"}},201);

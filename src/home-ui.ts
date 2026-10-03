@@ -377,7 +377,7 @@ body.navy-mode .context-item,body.navy-mode .life-step,body.navy-mode .verificat
  </section>
 
  <section class="section zalagren-search">
-  <div class="section-head"><div><h2 class="section-title">CONSTANTYNA</h2><p class="section-copy">Your governed Zalagren intelligence. Ask about Zalagren, discover possibilities, compare options, understand missing information, research when enabled, or be guided to the right interface.</p></div></div>
+  <div class="section-head"><div><h2 class="section-title">CONSTANTYNA</h2><p class="section-copy">Your governed Zalagren intelligence. Ask about Zalagren, discover possibilities, compare options, understand missing information, research when enabled, find opportunities, or be guided to the right interface.</p></div><span id="constantynaPlanBadge" class="pill">PLAN · NORMAL</span></div>
   <div class="context-card constantyna-card" style="padding:16px">
    <div id="constantynaMessages" class="constantyna-messages" aria-live="polite">
     <div class="constantyna-message assistant"><strong>CONSTANTYNA</strong><div>I understand Zalagren through your account, context and authorization. I will tell you what is known, what is missing, what is possible, and what needs your approval.</div></div>
@@ -386,7 +386,7 @@ body.navy-mode .context-item,body.navy-mode .life-step,body.navy-mode .verificat
     <input id="zalagrenIntent" aria-label="Ask Constantyna" placeholder="Ask Constantyna about Zalagren or what you need…" autocomplete="off">
     <button id="constantynaSend" class="action" type="button">Ask</button>
    </div>
-   <div id="zalagrenIntentHint" class="status">Normal: explain, discover and guide. Plus: deeper opportunity scans and research when connected. Premium: advanced orchestration. Consequential actions remain authorization-gated.</div>
+   <div id="zalagrenIntentHint" class="status">Normal: explain, discover, compare and guide. Plus: opportunity intelligence, research and governed proposals. Premium: advanced orchestration. Consequential actions always remain authorization-gated.</div>
   </div>
  </section>
 
@@ -774,13 +774,43 @@ async function loadViews(){
 }
 document.querySelectorAll("[data-detail]").forEach(el=>el.addEventListener("click",()=>openDetail(el.dataset.detail)));
 document.querySelectorAll("[data-nav]").forEach(el=>el.addEventListener("click",()=>navigate(el.dataset.nav)));
-const constantynaMessages=$("constantynaMessages"),constantynaSend=$("constantynaSend");
+const constantynaMessages=$("constantynaMessages"),constantynaSend=$("constantynaSend"),constantynaPlanBadge=$("constantynaPlanBadge");
 const appendConstantyna=(role,text)=>{
  if(!constantynaMessages)return;
  const el=document.createElement("div");el.className="constantyna-message "+role;
- const safe=escHtml(text).split(String.fromCharCode(10)).join("<br>");
+ const safe=escHtml(String(text||"")).split(String.fromCharCode(10)).join("<br>");
  el.innerHTML="<strong>"+(role==="assistant"?"CONSTANTYNA":"YOU")+"</strong><div>"+safe+"</div>";
  constantynaMessages.appendChild(el);constantynaMessages.scrollTop=constantynaMessages.scrollHeight;
+};
+const addConstantynaAction=(label,handler)=>{
+ const b=document.createElement("button");b.className="action secondary";b.type="button";b.textContent=label;b.onclick=handler;
+ constantynaMessages?.appendChild(b);return b;
+};
+const renderConstantynaData=(d)=>{
+ const plan=String(d.plan||"normal").toUpperCase();
+ if(constantynaPlanBadge)constantynaPlanBadge.textContent="PLAN · "+plan;
+ const data=d.data||{};
+ if(data.planGate){
+   appendConstantyna("assistant","This capability is "+data.planGate.requiredCapability+" and your current plan is "+data.planGate.currentPlan+". Available upgrade path: "+data.planGate.upgradePath+". Your plan changes product capability, not legal or community authority.");
+ }
+ if(data.missing?.length){
+   appendConstantyna("assistant","Information gap detected: "+data.missing.join(", ").replaceAll("_"," ")+". I am showing the reason rather than inventing data.");
+ }
+ if(data.execution){
+   appendConstantyna("assistant",data.execution.reason||"This task is governed and requires a concrete authorized execution path.");
+ }
+ if(d.action?.target&&d.action.risk==="none"){
+   addConstantynaAction("Open interface",()=>openDetail(d.action.target));
+ }
+ if(data.opportunities?.length){
+   addConstantynaAction("Review opportunities",()=>openDetail("discoverDetail"));
+ }
+ if(data.navigation?.target&&d.action?.target!==data.navigation.target){
+   addConstantynaAction("Open suggested surface",()=>openDetail(data.navigation.target));
+ }
+ if(d.action?.requiresConfirmation){
+   addConstantynaAction("Review before execution",()=>appendConstantyna("assistant","Review the proposal in the relevant Zalagren interface. Explicit confirmation, applicable authorization and an auditable execution path are required; nothing was executed from this chat response."));
+ }
 };
 const askConstantyna=async()=>{
  const q=zalagrenIntent?.value.trim();if(!q)return;
@@ -788,23 +818,17 @@ const askConstantyna=async()=>{
  if(constantynaSend){constantynaSend.disabled=true;constantynaSend.textContent="Thinking…";}
  try{
   const r=await fetch("/api/constantyna",{method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",body:JSON.stringify({message:q})});
-  const d=await r.json();
-  if(!r.ok){appendConstantyna("assistant",d.error||"Constantyna could not process that request.");return;}
-  appendConstantyna("assistant",d.answer||"I have prepared the next governed step.");
-  if(d.action?.target&&d.action.risk==="none"){
-    const b=document.createElement("button");b.className="action secondary";b.textContent="Open interface";b.onclick=()=>openDetail(d.action.target);constantynaMessages?.appendChild(b);
-  } else if(d.action?.requiresConfirmation){
-    const b=document.createElement("button");b.className="action";b.textContent="Review before execution";b.onclick=()=>{appendConstantyna("assistant","This action requires your explicit authorization. Review the proposal and execute it through the appropriate Zalagren interface.");};constantynaMessages?.appendChild(b);
-  }
-  if(d.data?.planGate)appendConstantyna("assistant","This capability is "+d.data.planGate.requiredCapability+" and your current plan is "+d.data.planGate.currentPlan+". Available upgrade path: "+d.data.planGate.upgradePath+".");
- }catch{appendConstantyna("assistant","I could not reach Constantyna. No action was executed.");}
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok){appendConstantyna("assistant",d.error||"CONSTANTYNA could not process that request.");return;}
+  appendConstantyna("assistant",d.answer||"I prepared the next governed step.");
+  renderConstantynaData(d);
+ }catch{appendConstantyna("assistant","I could not reach CONSTANTYNA. No action was executed.");}
  finally{if(constantynaSend){constantynaSend.disabled=false;constantynaSend.textContent="Ask";}}
 };
 if(constantynaSend)constantynaSend.onclick=askConstantyna;
 if(zalagrenIntent)zalagrenIntent.addEventListener("keydown",e=>{if(e.key==="Enter")askConstantyna();});
 const zalagrenIntent=$("zalagrenIntent"),zalagrenIntentHint=$("zalagrenIntentHint");
-if(zalagrenIntent){zalagrenIntent.oninput=()=>{const q=zalagrenIntent.value.trim().toLowerCase();if(!q){zalagrenIntentHint.textContent="Examples: access, community, ride, food, payment, marketplace, health, GENESIS.";return;}const routes=[["access","worldDetail","Access"],["community","communityDetail","Communities"],["ride","serviceDetail","BeatRide"],["mobility","serviceDetail","BeatRide"],["food","serviceDetail","BeatFood"],["payment","serviceDetail","BeatPay"],["pay","serviceDetail","BeatPay"],["market","marketplaceDetail","BeatMarket"],["bnb","marketplaceDetail","BeatMarket"],["health","serviceDetail","BeatHealth"],["genesis","genesisDetail","GENESIS"],["education","genesisDetail","Knowledge"],["environment","genesisDetail","Knowledge"]];const hit=routes.find(([k])=>q.includes(k));zalagrenIntentHint.textContent=hit?"Open "+hit[2]+" to continue. Consequential actions remain authorization-gated.":"No direct surface matched yet. Zalagren will not invent a provider, authority or action.";if(hit)zalagrenIntentHint.onclick=()=>openDetail(hit[1]);zalagrenIntentHint.style.cursor=hit?"pointer":"default";};}
-
+if(zalagrenIntent){zalagrenIntent.oninput=()=>{const q=zalagrenIntent.value.trim().toLowerCase();if(!q){zalagrenIntentHint.textContent="Ask: explain Zalagren, find a community, compare services, find opportunities, research something, or take me to the right interface.";return;}const routes=[["access","worldDetail","Access"],["community","communityDetail","Communities"],["service","serviceDetail","Services"],["ride","serviceDetail","BeatRide"],["mobility","serviceDetail","BeatRide"],["food","serviceDetail","BeatFood"],["payment","serviceDetail","BeatPay"],["pay","serviceDetail","BeatPay"],["market","marketplaceDetail","BeatMarket"],["bnb","marketplaceDetail","BeatMarket"],["health","serviceDetail","BeatHealth"],["genesis","genesisDetail","GENESIS"],["education","genesisDetail","Knowledge"],["environment","genesisDetail","Knowledge"],["opportunit","discoverDetail","Opportunities"]];const hit=routes.find(([k])=>q.includes(k));zalagrenIntentHint.textContent=hit?"I can guide you to "+hit[2]+". Consequential actions remain authorization-gated.":"CONSTANTYNA will inspect your live Zalagren context and explain what is known, missing and possible.";if(hit)zalagrenIntentHint.onclick=()=>openDetail(hit[1]);zalagrenIntentHint.style.cursor=hit?"pointer":"default";};}
 async function loadParticipantProfile(){
  try{
   const r=await fetch("/api/profile",{credentials:"same-origin"}); if(!r.ok)return;

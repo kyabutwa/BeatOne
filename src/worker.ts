@@ -214,11 +214,12 @@ async function authMutation(request: Request, env: Env, endpoint: string): Promi
     if (canonical && signupPhone) {
       const sql = requireDatabase(env);
       const phoneHash = await sha256Hex(signupPhone);
+      const phoneContactId = "identity-contact-phone-" + crypto.randomUUID();
       await sql`
         INSERT INTO public.identity_contacts(
           id, identity_id, kind, value_normalized, value_hash, status, verified_at, is_primary, updated_at
         ) VALUES(
-          "identity-contact-phone-" || replace(gen_random_uuid()::text,'-',''), 
+          ${phoneContactId},
           (SELECT identity_id FROM public.accounts WHERE id=${canonical.accountId} LIMIT 1),
           'phone', ${signupPhone}, ${phoneHash}, 'pending', NULL, true, now()
         )

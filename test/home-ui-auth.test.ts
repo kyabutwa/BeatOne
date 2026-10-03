@@ -14,12 +14,12 @@ test("authentication form uses canonical id selectors", async () => {
   assert.match(html, /\/api\/auth\/sign-up\/email/);
 });
 
-
 test("Zalagren shell enforces the canonical visual contract", async () => {
   const response = renderHome(() => new Headers());
   const html = await response.text();
 
-  assert.match(html, /src="\/1\.png"/);
+  assert.match(html, /src="\/zalagren-emblem\.svg"/);
+  assert.doesNotMatch(html, /src="\/1\.png"/);
   assert.match(html, /body\.navy-mode \.topbar,body\.navy-mode \.bottom-nav[\s\S]*background:#061a33!important/);
   assert.match(html, /\.surface[\s\S]*background:#0b2a52!important/);
   assert.match(html, /\.surface \*[\s\S]*color:#fff!important/);

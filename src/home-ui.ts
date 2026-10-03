@@ -468,6 +468,24 @@ body.navy-mode .overlay{background:rgba(6,26,51,.82)!important}
     <div class="row-meta" style="margin-top:8px">Only communities where this participant has active representative authority appear here.</div>
    </div>
    <div id="managementStatus" class="status hidden"></div>
+   <div class="section-head" style="margin-top:22px"><div><h4 class="section-title" style="font-size:19px!important">Community operations</h4><p class="section-copy">Coordinate independent providers, maintenance, utilities and everyday services around this community.</p></div></div>
+   <div class="surface-grid">
+    <div class="surface"><div class="surface-mark">PROVIDERS</div><div class="surface-title">Provider network</div><div class="surface-copy">Invite providers or connect an existing Zalagren provider to this community.</div>
+     <div class="form-grid"><input id="communityProviderName" placeholder="Provider / company name"><select id="communityProviderService"></select><input id="communityProviderCategory" placeholder="Category"></div>
+     <div class="actions"><button class="action primary" id="communityProviderInvite" type="button">Invite provider</button><button class="action secondary" id="communityProviderJoin" type="button">Connect provider</button></div>
+     <div id="communityProviders" class="rows"></div>
+    </div>
+    <div class="surface"><div class="surface-mark">MAINTENANCE</div><div class="surface-title">Work orders</div><div class="surface-copy">Capture requests, priorities and place context.</div>
+     <div class="form-grid"><input id="communityWorkTitle" placeholder="Work needed"><input id="communityWorkPlace" placeholder="Place / unit (optional)"><select id="communityWorkPriority"><option value="normal">Normal</option><option value="high">High</option><option value="urgent">Urgent</option></select></div>
+     <button class="action primary" id="communityCreateWork" type="button">Create work order</button><div id="communityWorkOrders" class="rows"></div>
+    </div>
+    <div class="surface"><div class="surface-mark">UTILITIES</div><div class="surface-title">Utility coordination</div><div class="surface-copy">Keep electricity, water, gas, waste and other provider relationships visible.</div>
+     <div class="form-grid"><input id="communityUtilityProvider" placeholder="Utility provider"><select id="communityUtilityType"><option>electricity</option><option>water</option><option>gas</option><option>waste</option><option>internet</option><option>other</option></select><input id="communityUtilityRef" placeholder="Account / reference"></div>
+     <button class="action primary" id="communityLinkUtility" type="button">Link utility</button><div id="communityUtilities" class="rows"></div>
+    </div>
+    <div class="surface"><div class="surface-mark">COMMAND CENTER</div><div class="surface-title">Community activity</div><div class="surface-copy">Provider joins, service changes and work coordination in one timeline.</div><div id="communityEvents" class="rows"></div></div>
+   </div>
+
    <div class="surface-grid">
     <div class="surface"><div class="surface-mark">NODE</div><div class="surface-title">Onboarding & proposals</div><div class="surface-copy">Review participant proposals and community onboarding requests.</div><div id="managementRequests" class="rows"></div></div>
     <div class="surface"><div class="surface-mark">SUBSCRIPTION</div><div class="surface-title">Zalagren subscription</div><div class="surface-copy">Approve or reject the community subscription request. Billing remains a separate provider boundary.</div><div id="managementSubscriptions" class="rows"></div></div>
@@ -569,11 +587,24 @@ async function loadManagementDirectory(){
   $("managementCommunity").innerHTML=d.communities.map(c=>"<option value='"+c.community_id+"'></option>").join("");
   d.communities.forEach((c,i)=>{const o=$("managementCommunity").options[i];o.textContent=c.name+" · "+c.role;o.value=c.community_id;});
   await loadManagement();
+  await loadCommunityOperations();
  }catch(e){$("managementGate").innerHTML="<div class='row-title'>Management authority could not be loaded.</div><div class='row-meta'>Truthful runtime state · no authority is assumed.</div>";}
 }
 async function managementPost(path,body){const r=await fetch(path,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"MANAGEMENT_REQUEST_FAILED");return d;}
 function managementRow(title,meta,buttons){
  return "<div class='row'><div class='row-title'>"+String(title)+"</div><div class='row-meta'>"+String(meta||"")+"</div>"+(buttons||"")+"</div>";
+}
+async function loadCommunityOperations(){
+ const communityId=$("managementCommunity")?.value;if(!communityId)return;
+ try{
+  const r=await fetch("/api/community/management/operations");const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"COMMUNITY_OPERATIONS_LOAD_FAILED");
+  const services=(d.services||[]).filter(x=>x.provider_joinable);
+  $("communityProviderService").innerHTML=services.map(x=>"<option value='"+escapeHtml(x.id)+"'>"+escapeHtml(x.name)+"</option>").join("");
+  $("communityProviders").innerHTML=(d.bindings||[]).filter(x=>x.community_id===communityId).map(x=>managementRow(x.display_name,(x.service_name||"Service")+" · "+x.category+" · "+x.status,"<span class='pill'>"+escapeHtml(x.verification_state||"pending")+"</span>")).join("")||"<div class='row-title'>No community providers connected yet.</div>";
+  $("communityWorkOrders").innerHTML=(d.workOrders||[]).filter(x=>x.community_id===communityId).slice(0,8).map(x=>managementRow(x.title,(x.service_name||"Community service")+" · "+x.priority+" · "+x.status)).join("")||"<div class='row-title'>No work orders.</div>";
+  $("communityUtilities").innerHTML=(d.utilities||[]).filter(x=>x.community_id===communityId).map(x=>managementRow(x.provider_name,x.utility_type+" · "+x.status+(x.external_reference?" · "+x.external_reference:""))).join("")||"<div class='row-title'>No utility relationships connected.</div>";
+  $("communityEvents").innerHTML=(d.events||[]).filter(x=>x.community_id===communityId).slice(0,10).map(x=>managementRow(x.summary,new Date(x.occurred_at).toLocaleString())).join("")||"<div class='row-title'>No operational events yet.</div>";
+ }catch(e){$("managementStatus").classList.remove("hidden");$("managementStatus").textContent=e.message;}
 }
 async function loadManagement(){
  const communityId=$("managementCommunity").value;if(!communityId)return;
@@ -606,8 +637,12 @@ async function handleManagement(kind,id){
   await loadManagement();
  }catch(e){$("managementStatus").classList.remove("hidden");$("managementStatus").textContent=e.message;}
 }
-$("managementCommunity").onchange=loadManagement;
+$("managementCommunity").onchange=async()=>{await loadManagement();await loadCommunityOperations();};
 $("managementCreatePlace").onclick=async()=>{try{const communityId=$("managementCommunity").value;const name=$("managementPlaceName").value.trim();const type=$("managementPlaceType").value.trim();const parentId=$("managementPlaceParent").value.trim()||undefined;if(!name||!type)throw new Error("Place name and type are required.");await managementPost("/api/community/management/place",{communityId,name,type,parentId});$("managementPlaceName").value="";$("managementPlaceType").value="";$("managementPlaceParent").value="";$("managementStatus").classList.remove("hidden");$("managementStatus").textContent="Place created.";await loadManagement();}catch(e){$("managementStatus").classList.remove("hidden");$("managementStatus").textContent=e.message;}};
+$("communityProviderInvite").onclick=async()=>{try{const communityId=$("managementCommunity").value;const serviceId=$("communityProviderService").value;const providerName=$("communityProviderName").value.trim();if(!providerName)throw new Error("Provider name is required.");await managementPost("/api/community/management/provider/invite",{communityId,serviceId,providerName});$("communityProviderName").value="";await loadCommunityOperations();}catch(e){$("managementStatus").classList.remove("hidden");$("managementStatus").textContent=e.message;}};
+$("communityProviderJoin").onclick=async()=>{try{const communityId=$("managementCommunity").value;const serviceId=$("communityProviderService").value;const providerName=$("communityProviderName").value.trim();if(!providerName)throw new Error("Provider name is required.");await managementPost("/api/community/management/provider",{communityId,serviceId,displayName:providerName,category:$("communityProviderCategory").value.trim()||"service"});$("communityProviderName").value="";$("communityProviderCategory").value="";await loadCommunityOperations();}catch(e){$("managementStatus").classList.remove("hidden");$("managementStatus").textContent=e.message;}};
+$("communityCreateWork").onclick=async()=>{try{const communityId=$("managementCommunity").value;const title=$("communityWorkTitle").value.trim();if(!title)throw new Error("Work description is required.");await managementPost("/api/community/management/work-order",{communityId,title,priority:$("communityWorkPriority").value,placeId:$("communityWorkPlace").value.trim()||undefined});$("communityWorkTitle").value="";await loadCommunityOperations();}catch(e){$("managementStatus").classList.remove("hidden");$("managementStatus").textContent=e.message;}};
+$("communityLinkUtility").onclick=async()=>{try{const communityId=$("managementCommunity").value;const providerName=$("communityUtilityProvider").value.trim();if(!providerName)throw new Error("Utility provider is required.");await managementPost("/api/community/management/utility",{communityId,providerName,utilityType:$("communityUtilityType").value,externalReference:$("communityUtilityRef").value.trim()||undefined});$("communityUtilityProvider").value="";await loadCommunityOperations();}catch(e){$("managementStatus").classList.remove("hidden");$("managementStatus").textContent=e.message;}};
 async function loadViews(){
  try{
   const responses=await Promise.all([fetch("/api/home/communities"),fetch("/api/home/services"),fetch("/api/home/foundation")]);

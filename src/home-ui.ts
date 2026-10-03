@@ -1,4 +1,6 @@
-const escapeHtml = (value: unknown): string =>
+c
+.invite-modal{position:fixed;inset:0;z-index:80;display:none;place-items:center;padding:18px;background:rgba(7,26,51,.28);backdrop-filter:blur(10px)}.invite-modal.open{display:grid}.invite-sheet{width:min(100%,520px);padding:20px;border:1px solid var(--line);border-radius:24px;background:var(--surface);box-shadow:0 24px 80px rgba(7,26,51,.22)}.invite-sheet-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}.invite-sheet-title{font-size:21px;line-height:27px;font-weight:780}.invite-sheet-copy{font-size:13px;line-height:19px;color:var(--muted);margin-top:4px}.invite-close{width:38px;height:38px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);color:var(--navy)}.invite-type{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:16px}.invite-type button{padding:11px;border:1px solid var(--line);border-radius:13px;background:var(--surface);color:var(--navy);font-weight:750}.invite-type button.active{border-color:var(--orange);background:#fff7f1}.invite-status{margin-top:12px;min-height:20px;font-size:13px;line-height:19px;color:var(--muted)}
+onst escapeHtml = (value: unknown): string =>
   String(value ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -581,6 +583,16 @@ body.navy-mode .overlay{background:rgba(6,26,51,.82)!important}
  </div>
 </section>
 
+<div class="invite-modal" id="inviteModal" aria-hidden="true">
+ <div class="invite-sheet" role="dialog" aria-modal="true" aria-labelledby="inviteTitle">
+  <div class="invite-sheet-head"><div><div class="eyebrow">PARTICIPATION</div><div class="invite-sheet-title" id="inviteTitle">Create a Zalagren invitation</div><div class="invite-sheet-copy">Invite a community, business, service provider or participant. The invitation grants no authority by itself.</div></div><button class="invite-close" id="inviteClose" type="button" aria-label="Close">×</button></div>
+  <div class="invite-type"><button type="button" data-invite-type="community" class="active">Community</button><button type="button" data-invite-type="business">Business</button></div>
+  <label class="label" for="inviteName">Name</label><input id="inviteName" placeholder="Community or business name">
+  <label class="label" for="inviteContact">Email or phone</label><input id="inviteContact" placeholder="Where should the invitation go?">
+  <div class="invite-status" id="inviteStatus" role="status"></div>
+  <div class="actions"><button class="action secondary" id="inviteCancel" type="button">Cancel</button><button class="action primary" id="inviteSend" type="button">Create invitation</button></div>
+ </div>
+</div>
 <nav class="bottom-nav hidden" id="bottomNav" aria-label="Primary navigation">
  <button class="active" data-nav="home">Home</button><button data-nav="community">Communities</button><button data-nav="services">Services</button><button data-nav="genesis">GENESIS</button><button data-nav="activity">Activity</button>
 </nav>
@@ -812,8 +824,11 @@ mode();check();loadParticipantProfile();
   }catch{panel.classList.add("hidden")}
  }
  async function joinService(serviceId){const name=prompt("How should your capability appear in Zalagren?");if(!name)return;const r=await fetch("/api/services/provider",{method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",body:JSON.stringify({serviceId,displayName:name,providerKind:"individual"})});const d=await r.json();alert(r.ok?"Provider registration saved. Verification state: PROPOSED.":(d.error||"Could not register service."));}
- async function invite(type){const name=prompt(type==="community"?"Community name":"Business name");if(!name)return;const contact=prompt("Email or phone for the invitation");if(!contact)return;const r=await fetch("/api/invite",{method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",body:JSON.stringify({type,name,contact})});const d=await r.json();alert(r.ok?"Invitation ready. Share: "+d.sharePath:(d.error||"Invitation failed."));}
- document.addEventListener("click",e=>{const t=e.target.closest("#inviteCommunity,#networkInviteCommunity,#inviteBusiness,#networkInviteBusiness,#joinService");if(!t)return;if(t.id==="joinService")return loadNetwork();if(t.id.toLowerCase().includes("community"))return invite("community");return invite("business");});
+ let inviteType="community";
+ function openInvite(type){inviteType=type;$("inviteModal").classList.add("open");$("inviteModal").setAttribute("aria-hidden","false");$("inviteName").value="";$("inviteContact").value="";$("inviteStatus").textContent="";document.querySelectorAll("[data-invite-type]").forEach(b=>b.classList.toggle("active",b.dataset.inviteType===type));$("inviteName").focus();}
+ function closeInvite(){$("inviteModal").classList.remove("open");$("inviteModal").setAttribute("aria-hidden","true");}
+ async function submitInvite(){const name=$("inviteName").value.trim(),contact=$("inviteContact").value.trim(),status=$("inviteStatus");if(!name||!contact){status.textContent="Enter the name and email or phone number.";return;}status.textContent="Creating invitation…";$("inviteSend").disabled=true;try{const r=await fetch("/api/invite",{method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",body:JSON.stringify({type:inviteType,name,contact})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"Invitation failed.");status.textContent="Invitation created. Share link: "+d.sharePath;}catch(e){status.textContent=e instanceof Error?e.message:"Invitation failed.";}finally{$("inviteSend").disabled=false;}}
+ document.addEventListener("click",e=>{const t=e.target.closest("#inviteCommunity,#networkInviteCommunity,#inviteBusiness,#networkInviteBusiness,#joinService,#inviteClose,#inviteCancel,[data-invite-type],#inviteSend");if(!t)return;if(t.matches("[data-invite-type]")){inviteType=t.dataset.inviteType;document.querySelectorAll("[data-invite-type]").forEach(b=>b.classList.toggle("active",b.dataset.inviteType===inviteType));return;}if(t.id==="inviteClose"||t.id==="inviteCancel")return closeInvite();if(t.id==="inviteSend")return submitInvite();if(t.id==="joinService")return loadNetwork();return openInvite(t.id.toLowerCase().includes("community")?"community":"business");});
  window.zalagrenLoadNetwork=loadNetwork;setTimeout(loadNetwork,1000);
 })();
 </script>

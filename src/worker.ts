@@ -1075,12 +1075,51 @@ async function guardianCreateCheckin(request: Request, env: Env): Promise<Respon
   } catch(e){const m=e instanceof Error?e.message:"GUARDIAN_CHECKIN_FAILED";return json({service:"BeatGuardian",error:m},m==="UNAUTHORIZED"?401:400);}
 }
 
+async function beatHealthDashboard(request: Request, env: Env): Promise<Response> {
+  try {
+    const ctx=await participantIdFromSession(request,env); const participantId=ctx.participantId; const sql=ctx.sql;
+    const profiles=await sql`SELECT id,provider_type,facility_name,specialty,service_area,verification_state,status FROM public.beathealth_provider_profiles WHERE participant_id=${participantId} ORDER BY created_at DESC`;
+    const appointments=await sql`SELECT a.id,a.scheduled_at,a.reason,a.status,p.facility_name,p.specialty FROM public.beathealth_appointments a JOIN public.beathealth_provider_profiles p ON p.id=a.provider_profile_id WHERE a.patient_participant_id=${participantId} OR p.participant_id=${participantId} ORDER BY a.scheduled_at DESC LIMIT 50`;
+    const orders=await sql`SELECT id,status,created_at FROM public.beathealth_pharmacy_orders WHERE patient_participant_id=${participantId} ORDER BY created_at DESC LIMIT 50`;
+    const policies=await sql`SELECT p.id,i.name AS insurer,p.status,p.verification_state FROM public.beathealth_insurance_policies p JOIN public.beathealth_insurance_providers i ON i.id=p.insurer_id WHERE p.participant_id=${participantId} ORDER BY p.created_at DESC`;
+    const workers=await sql`SELECT w.id,w.facility_id,w.worker_type,w.professional_title,w.verification_state,w.employment_state,w.status,f.name AS facility_name FROM public.beathealth_workers w JOIN public.beathealth_facilities f ON f.id=w.facility_id WHERE w.participant_id=${participantId} ORDER BY w.created_at DESC`;
+    return json({service:"BeatHealth",status:"dashboard_ready",scope:"participant",protected:true,profiles,appointments,orders,policies,workers});
+  } catch(e){const m=e instanceof Error?e.message:"BEATHEALTH_DASHBOARD_FAILED";return json({service:"BeatHealth",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function beatHealthSearch(request: Request, env: Env): Promise<Response> {
+  try {
+    const ctx=await participantIdFromSession(request,env); const sql=ctx.sql; const url=new URL(request.url);
+    const q=(url.searchParams.get("q")||"").trim(); if(!q)return json({service:"BeatHealth",error:"SEARCH_QUERY_REQUIRED"},400);
+    const type=(url.searchParams.get("type")||"all").trim(); const limit=Math.min(50,Math.max(1,Number(url.searchParams.get("limit")||20))); const like="%"+q.replace(/[%_]/g,"")+"%";
+    const facilities=(type==="medicine"||type==="doctor")?[]:await sql`SELECT id,name,facility_type,status,verification_state,location,contact FROM public.beathealth_facilities WHERE status='active' AND (name ILIKE ${like} OR facility_type ILIKE ${like}) ORDER BY verification_state='verified' DESC,name LIMIT ${limit}`;
+    const providers=(type==="medicine"||type==="facility")?[]:await sql`SELECT id,provider_type,facility_name,specialty,service_area,verification_state,status FROM public.beathealth_provider_profiles WHERE status='active' AND (facility_name ILIKE ${like} OR specialty ILIKE ${like} OR provider_type ILIKE ${like}) ORDER BY verification_state='verified' DESC,facility_name LIMIT ${limit}`;
+    const medicines=(type==="facility"||type==="doctor")?[]:await sql`SELECT p.id,p.name,p.generic_name,p.dosage_form,p.strength,p.pack_size,p.regulatory_state,p.status,f.name AS facility_name,i.availability_state,i.quantity_available FROM public.beathealth_medicine_products p LEFT JOIN public.beathealth_facilities f ON f.id=p.facility_id LEFT JOIN public.beathealth_medicine_inventory i ON i.product_id=p.id WHERE p.status='active' AND (p.name ILIKE ${like} OR COALESCE(p.generic_name,'') ILIKE ${like}) ORDER BY p.regulatory_state='verified' DESC,p.name LIMIT ${limit}`;
+    return json({service:"BeatHealth",status:"search_ready",protected:true,query:q,facilities,providers,medicines});
+  } catch(e){const m=e instanceof Error?e.message:"BEATHEALTH_SEARCH_FAILED";return json({service:"BeatHealth",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function beatHealthCreateFacility(request: Request, env: Env): Promise<Response> {
+  try {
+    const ctx=await participantIdFromSession(request,env); const participantId=ctx.participantId; const sql=ctx.sql; const b=await request.json();
+    if(!b.name?.trim()||!b.facilityType?.trim())return json({service:"BeatHealth",error:"FACILITY_FIELDS_REQUIRED"},400);
+    const profileId="health-provider-"+crypto.randomUUID(), facilityId="health-facility-"+crypto.randomUUID();
+    await sql.transaction([
+      sql`INSERT INTO public.beathealth_provider_profiles(id,participant_id,provider_type,facility_name,verification_state) VALUES(${profileId},${participantId},${b.facilityType.trim()},${b.name.trim()},'proposed')`,
+      sql`INSERT INTO public.beathealth_facilities(id,provider_profile_id,name,facility_type,location,contact,verification_state) VALUES(${facilityId},${profileId},${b.name.trim()},${b.facilityType.trim()},${JSON.stringify(b.location||{})}::jsonb,${JSON.stringify(b.contact||{})}::jsonb,'proposed')`
+    ]);
+    return json({service:"BeatHealth",status:"facility_created",verificationState:"PROPOSED",facilityId},201);
+  } catch(e){const m=e instanceof Error?e.message:"BEATHEALTH_FACILITY_CREATE_FAILED";return json({service:"BeatHealth",error:m},m==="UNAUTHORIZED"?401:400);}
+}
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === "OPTIONS") return new Response(null,{status:204,headers:headers({"access-control-allow-origin":"*","access-control-allow-headers":"content-type, authorization","access-control-allow-methods":"GET,POST,OPTIONS"})});
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/") return renderHome(headers);
     if (request.method === "GET" && url.pathname === "/api/health") return health(env);
+    if (request.method === "GET" && url.pathname === "/api/health/dashboard") return beatHealthDashboard(request, env);
+    if (request.method === "GET" && url.pathname === "/api/health/search") return beatHealthSearch(request, env);
+    if (request.method === "POST" && url.pathname === "/api/health/facility") return beatHealthCreateFacility(request, env);
     if (request.method === "GET" && url.pathname === "/api/foundation") return foundation(env);
     if (request.method === "GET" && url.pathname === "/api/home/communities") return homeCommunities(request, env);
     if (request.method === "GET" && url.pathname === "/api/home/services") return homeServices(request, env);

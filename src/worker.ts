@@ -621,7 +621,7 @@ async function domainEvent(sql: DbSql, participantId: string, type: string, sour
   await sql`INSERT INTO public.events(id,type,context_id,actor_id,source,occurred_at,state,version)
     VALUES(${eventId},${type},${contextId || null},${participantId},${source},now(),'COMPLETED',1)`;
   await sql`INSERT INTO public.participant_activity(id,participant_id,event_id,activity_type,title,summary,status,context_type,context_id,metadata,occurred_at)
-    VALUES('activity-'||replace(gen_random_uuid()::text,'-',''),${participantId},${eventId},${type},${replace(type,'.',' ')},${type},'completed',CASE WHEN ${contextId||null} IS NULL THEN NULL ELSE 'context' END,${contextId||null},'{}'::jsonb,now())`;
+    VALUES('activity-'||replace(gen_random_uuid()::text,'-',''),${participantId},${eventId},${type},${type},${type},'completed',CASE WHEN ${contextId||null} IS NULL THEN NULL ELSE 'context' END,${contextId||null},'{}'::jsonb,now())`;
   return eventId;
 }
 

@@ -44,7 +44,11 @@ jobs:
       - name: Verify production shell
         run: |
           body=$(curl -L -sS https://zalagren.kyabutwabis-f.workers.dev/)
-          printf "%s" "$body" | grep -q "BeatOne"
+          printf "%s" "$body" | grep -q "Zalagren"
           printf "%s" "$body" | grep -q "Participant Home"
           printf "%s" "$body" | grep -q "GENESIS"
-          printf "%s" "$body" | grep -q "BeatOne · 8 pillars"
+          printf "%s" "$body" | grep -q "/1.png"
+          if printf "%s" "$body" | grep -q "BeatOne"; then
+            echo "Obsolete BeatOne branding detected in production shell"
+            exit 1
+          fi

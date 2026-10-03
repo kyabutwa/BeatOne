@@ -51,9 +51,9 @@ The owner-provided Zalagren logo binary is present at `1.png` and is the canonic
 EarthBeat and SpeedMe are historical/internal lineage only and must not appear as user-facing product branding. Zalagren is the sole current user-facing product identity. Zalagren remains the architectural lineage underneath the Zalagren ecosystem.
 
 
-## Zalagren x Zalagren integration
+## Zalagren ecosystem integration
 
-Zalagren is the primary participant-facing brand and ecosystem shell. Zalagren remains the integrated intelligent-living foundation and architectural lineage underneath Zalagren; it is not a separate user-facing product.
+Zalagren is the participant-facing ecosystem shell and the integrated intelligent-living foundation. Historical BeatOne naming remains only in repository and compatibility identifiers.
 
 ### Zalagren 8-pillar model
 

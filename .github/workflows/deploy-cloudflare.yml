@@ -17,6 +17,7 @@ jobs:
         with:
           node-version: 22
       - run: npm install
+      - run: npm run prepare:logo
       - run: npm run integrity
       - run: npm run typecheck
       - run: npm test
@@ -50,11 +51,10 @@ jobs:
           grep -q "Zalagren" /tmp/zalagren-home.html
           grep -q "Participant Home" /tmp/zalagren-home.html
           grep -q "GENESIS" /tmp/zalagren-home.html
-          grep -q "/zalagren-emblem.svg" /tmp/zalagren-home.html
-          logo_headers=$(curl -L -sS -D - -o /tmp/zalagren-logo.svg https://zalagren.kyabutwabis-f.workers.dev/zalagren-emblem.svg)
-          printf "%s" "$logo_headers" | grep -qi "content-type: image/svg+xml"
-          grep -q 'fill="none"' /tmp/zalagren-logo.svg
-          grep -q 'fill="black"' /tmp/zalagren-logo.svg
+          grep -q "/zalagren-emblem.png" /tmp/zalagren-home.html
+          logo_headers=$(curl -L -sS -D - -o /tmp/zalagren-logo.png https://zalagren.kyabutwabis-f.workers.dev/zalagren-emblem.png)
+          printf "%s" "$logo_headers" | grep -qi "content-type: image/png"
+          /opt/imagemagick/bin/magick identify -format "%[channels]" /tmp/zalagren-logo.png | grep -q "a"
           if grep -q "BeatOne" /tmp/zalagren-home.html; then
             echo "Obsolete BeatOne branding detected in production shell"
             exit 1

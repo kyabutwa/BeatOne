@@ -285,6 +285,8 @@ body.navy-mode .bottom-nav{background:rgba(6,26,51,.72)!important;border-color:r
 body.navy-mode .overlay{background:rgba(6,26,51,.82)!important}
 .account-id,.surface-state,.truth,.control-grid,.lifecycle{display:none!important}
 .verification-state-value{font-size:12px;line-height:18px}
+.settings-hero{padding:18px;border:1px solid var(--line);border-radius:20px;background:var(--surface-2);margin-bottom:12px}.settings-hero-title{font-size:22px;line-height:28px;font-weight:780;margin:5px 0}.settings-section{margin-top:12px;border:1px solid var(--line);border-radius:20px;background:var(--surface);overflow:hidden}.settings-section-title{padding:14px 16px;border-bottom:1px solid var(--line-soft);font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--orange)}.settings-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 16px;border-top:1px solid var(--line-soft)}.settings-row:first-of-type{border-top:0}.settings-row strong,.settings-toggle strong,.settings-select strong{display:block;font-size:14px}.settings-row span,.settings-toggle small,.settings-select small{display:block;color:var(--muted);font-size:12px;line-height:18px;margin-top:3px}.settings-action{min-width:84px;flex:0 0 auto}.settings-toggle,.settings-select{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 16px;border-top:1px solid var(--line-soft)}.settings-toggle input{width:48px;height:28px;min-height:0;accent-color:var(--orange)}.settings-select select{min-height:42px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text)}@media(max-width:700px){.settings-row{align-items:flex-start}.settings-action{margin-top:2px}.settings-select{align-items:flex-start;flex-direction:column}.settings-select select{width:100%}}
+
 
 </style>
 </head>
@@ -302,7 +304,8 @@ body.navy-mode .overlay{background:rgba(6,26,51,.82)!important}
    <button class="menu-item" data-nav="community"><strong>Community</strong><span>People, relationships and participation</span></button>
    <button class="menu-item" data-nav="genesis"><strong>GENESIS</strong><span>Knowledge and proposal-only intelligence</span></button>
    <button class="menu-item" data-nav="activity"><strong>Activity</strong><span>Actions, events and evidence</span></button>
-   <button class="menu-item" data-nav="account"><strong>My Zalagren</strong><span>Your account, privacy and settings</span></button>
+   <button class="menu-item" data-nav="account"><strong>My Zalagren</strong><span>Your participant identity and account</span></button>
+   <button class="menu-item" data-nav="settings"><strong>Settings</strong><span>Identity, privacy, security, permissions and controls</span></button>
    <button class="menu-item" data-nav="management"><strong>Team Workspace</strong><span>Workspaces and operations</span></button>
    <button class="menu-item" id="inviteCommunity" type="button"><strong>Invite my community</strong><span>Bring a real community into Zalagren coordination.</span></button>
    <button class="menu-item" id="inviteBusiness" type="button"><strong>Invite my business</strong><span>Register and connect a business or service.</span></button>
@@ -451,6 +454,40 @@ body.navy-mode .overlay{background:rgba(6,26,51,.82)!important}
   </div>
   <div class="status" style="margin-top:12px">Verification status is shown here. Some services may require additional verification.</div>
  </section>
+ 
+ <section id="settingsDetail" class="detail-card">
+  <div class="detail-head"><div><h3 class="detail-title">Settings</h3><div class="detail-sub">Your control center — identity, security, privacy, permissions, regulation and preferences.</div></div></div>
+  <div class="settings-hero">
+   <div><div class="eyebrow">Participant control</div><div class="settings-hero-title">You decide what Zalagren knows, uses and can do.</div><div class="row-meta">Controls are grouped by consequence. Regulated actions remain subject to the relevant provider, law and authorization.</div></div>
+  </div>
+  <div class="settings-section"><div class="settings-section-title">Identity & verification</div>
+   <div class="settings-row"><div><strong>Verification Center</strong><span>Finish email, phone, document and legal identity verification.</span></div><button class="action primary settings-action" id="settingsVerification" type="button">Open</button></div>
+   <div class="settings-row"><div><strong>Legal identity</strong><span>Review or correct your legal identity information and supporting document.</span></div><button class="action secondary settings-action" id="settingsLegalIdentity" type="button">Review</button></div>
+  </div>
+  <div class="settings-section"><div class="settings-section-title">Security & access</div>
+   <div class="settings-row"><div><strong>Account security</strong><span>Review sign-in, verification and recovery controls.</span></div><button class="action secondary settings-action" id="settingsSecurity" type="button">Review</button></div>
+   <div class="settings-row"><div><strong>Sign out</strong><span>End this participant session on this device.</span></div><button class="action secondary settings-action" id="settingsSignOut" type="button">Sign out</button></div>
+  </div>
+  <div class="settings-section"><div class="settings-section-title">Privacy & sharing</div>
+   <label class="settings-toggle"><span><strong>Contextual sharing</strong><small>Allow Zalagren to use relevant participant context when an authorized action needs it.</small></span><input type="checkbox" id="prefContext"></label>
+   <label class="settings-toggle"><span><strong>Location for active services</strong><small>Allow location only when a service or action needs it. This preference does not bypass device permissions.</small></span><input type="checkbox" id="prefLocation"></label>
+   <label class="settings-toggle"><span><strong>Service communications</strong><small>Receive operational messages from services you have joined or used.</small></span><input type="checkbox" id="prefServiceMessages"></label>
+  </div>
+  <div class="settings-section"><div class="settings-section-title">Regulation & consent</div>
+   <div class="settings-row"><div><strong>Regulatory profile</strong><span>Review the jurisdiction, legal basis and evidence requirements that may apply to your participation.</span></div><button class="action secondary" id="settingsRegulation" type="button">Review</button></div>
+   <div class="settings-row"><div><strong>Consents & authorizations</strong><span>Review permissions you granted to communities, providers and Zalagren services.</span></div><button class="action secondary" id="settingsAuthorizations" type="button">Review</button></div>
+  </div>
+  <div class="settings-section"><div class="settings-section-title">Data & corrections</div>
+   <div class="settings-row"><div><strong>Correct my information</strong><span>Flag identity, profile or participation information that is inaccurate.</span></div><button class="action secondary" id="settingsCorrection" type="button">Start</button></div>
+   <div class="settings-row"><div><strong>Data export</strong><span>Request a copy of participant information Zalagren holds about you.</span></div><button class="action secondary" id="settingsExport" type="button">Request</button></div>
+  </div>
+  <div class="settings-section"><div class="settings-section-title">Experience</div>
+   <label class="settings-toggle"><span><strong>Navy mode</strong><small>Switch between the white and navy Zalagren appearance.</small></span><input type="checkbox" id="prefNavy"></label>
+   <label class="settings-toggle"><span><strong>Reduced motion</strong><small>Reduce interface motion on this device.</small></span><input type="checkbox" id="prefReducedMotion"></label>
+   <label class="settings-select"><span><strong>Language</strong><small>Interface language preference.</small></span><select id="prefLanguage"><option value="en">English</option><option value="sw">Kiswahili</option><option value="neoolien">Neoolien</option><option value="luxaria">Luxaria</option></select></label>
+  </div>
+  <div id="settingsStatus" class="status hidden"></div>
+ </section>
  <section id="communityDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">Community</h3><div class="detail-sub">Participation and context</div></div></div><div id="communityBody"></div></section>
  <section id="serviceDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">Services</h3><div class="detail-sub">Services available through Zalagren</div></div></div><div id="serviceBody"></div></section>
  <section id="genesisDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">GENESIS</h3><div class="detail-sub">Intelligence proposes; authorized participants decide</div></div></div><div id="genesisBody"></div></section>
@@ -543,6 +580,10 @@ function openDetail(id){
  const v=$(id); if(v){v.classList.add("active");v.scrollIntoView({behavior:"smooth",block:"nearest"});}
 }
 function setTruth(el,state){if(!el)return;el.classList.remove("truth-verified","truth-supported","truth-proposed","truth-failed","truth-pending");el.classList.add("truth-"+state.toLowerCase());}
+
+function showSettingsStatus(message){const el=$("settingsStatus");if(!el)return;el.classList.remove("hidden");el.textContent=message;}
+function loadSettingsPreferences(){try{const get=(k,d)=>{const v=localStorage.getItem(k);return v===null?d:v==="true";};$("prefContext").checked=get("zalagren-pref-context",true);$("prefLocation").checked=get("zalagren-pref-location",false);$("prefServiceMessages").checked=get("zalagren-pref-service-messages",true);$("prefNavy").checked=get("zalagren-theme","") === "navy";$("prefReducedMotion").checked=get("zalagren-pref-reduced-motion",false);$("prefLanguage").value=localStorage.getItem("zalagren-language")||"en";}catch{}}
+function saveSetting(id,key){const el=$(id);if(!el)return;try{localStorage.setItem(key,String(el.checked));}catch{}showSettingsStatus("Preference saved on this device.");}
 function openMenu(){ $("menuOverlay").classList.add("open");$("menuOverlay").setAttribute("aria-hidden","false"); }
 function closeMenu(){ $("menuOverlay").classList.remove("open");$("menuOverlay").setAttribute("aria-hidden","true"); }
 function navigate(name){
@@ -661,6 +702,18 @@ document.querySelectorAll("[data-detail]").forEach(el=>el.addEventListener("clic
 document.querySelectorAll("[data-nav]").forEach(el=>el.addEventListener("click",()=>navigate(el.dataset.nav)));
 const zalagrenIntent=$("zalagrenIntent"),zalagrenIntentHint=$("zalagrenIntentHint");
 if(zalagrenIntent){zalagrenIntent.oninput=()=>{const q=zalagrenIntent.value.trim().toLowerCase();if(!q){zalagrenIntentHint.textContent="Examples: access, community, ride, food, payment, marketplace, health, GENESIS.";return;}const routes=[["access","worldDetail","Access"],["community","communityDetail","Communities"],["ride","serviceDetail","BeatRide"],["mobility","serviceDetail","BeatRide"],["food","serviceDetail","BeatFood"],["payment","serviceDetail","BeatPay"],["pay","serviceDetail","BeatPay"],["market","marketplaceDetail","BeatMarket"],["bnb","marketplaceDetail","BeatMarket & BnB"],["health","serviceDetail","BeatHealth"],["genesis","genesisDetail","GENESIS"],["education","genesisDetail","Knowledge"],["environment","genesisDetail","Knowledge"]];const hit=routes.find(([k])=>q.includes(k));zalagrenIntentHint.textContent=hit?"Open "+hit[2]+" to continue. Consequential actions remain authorization-gated.":"No direct surface matched yet. Zalagren will not invent a provider, authority or action.";if(hit)zalagrenIntentHint.onclick=()=>openDetail(hit[1]);zalagrenIntentHint.style.cursor=hit?"pointer":"default";};}
+
+$("settingsVerification").onclick=()=>navigate("account");
+$("settingsLegalIdentity").onclick=()=>navigate("account");
+$("settingsSecurity").onclick=()=>showSettingsStatus("Security review is anchored to your authenticated participant session. Additional recovery controls will appear when supported by the account provider.");
+$("settingsRegulation").onclick=()=>showSettingsStatus("Regulatory review is context-specific. Zalagren will show applicable evidence and authorization requirements when a regulated capability is requested.");
+$("settingsAuthorizations").onclick=()=>showSettingsStatus("Authorization review: participant authority is separate from authentication. Community and service permissions are evaluated in their active context.");
+$("settingsCorrection").onclick=()=>showSettingsStatus("Correction request prepared. Use the Verification Center to correct identity evidence; participation data is corrected within its owning context.");
+$("settingsExport").onclick=()=>showSettingsStatus("Data export request is not yet connected to a verified export processor. No export is claimed until that workflow is implemented.");
+$("settingsSignOut").onclick=async()=>{try{await apiPost("/api/auth/sign-out",{});location.reload();}catch(e){showSettingsStatus("Sign-out failed: "+e.message);}};
+$("prefContext").onchange=()=>saveSetting("prefContext","zalagren-pref-context");$("prefLocation").onchange=()=>saveSetting("prefLocation","zalagren-pref-location");$("prefServiceMessages").onchange=()=>saveSetting("prefServiceMessages","zalagren-pref-service-messages");
+$("prefNavy").onchange=()=>{applyTheme($("prefNavy").checked);showSettingsStatus("Appearance saved.");};$("prefReducedMotion").onchange=()=>{try{localStorage.setItem("zalagren-pref-reduced-motion",String($("prefReducedMotion").checked));}catch{}document.documentElement.style.scrollBehavior=$("prefReducedMotion").checked?"auto":"";showSettingsStatus("Motion preference saved.");};$("prefLanguage").onchange=()=>{try{localStorage.setItem("zalagren-language",$("prefLanguage").value);}catch{}showSettingsStatus("Language preference saved. Interface translation is enabled progressively by language pack.");};
+loadSettingsPreferences();
 $("openMenu").onclick=openMenu;$("closeMenu").onclick=closeMenu;$("account").onclick=()=>navigate("account");$("accountInline").onclick=()=>navigate("account");
 $("themeToggle").onclick=()=>applyTheme(!document.body.classList.contains("navy-mode"));
 try{applyTheme(localStorage.getItem("zalagren-theme")==="navy");}catch{applyTheme(false);}

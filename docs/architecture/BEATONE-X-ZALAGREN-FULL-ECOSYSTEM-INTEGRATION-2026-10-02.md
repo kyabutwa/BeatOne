@@ -51,9 +51,7 @@ The request hub performs local surface routing only. It does not silently author
 
 ## 6. Logo truth
 
-The repository currently does not contain the owner-provided BeatOne logo binary. Historical 1.png and 1.png (canonical asset; historical reference retired) references are not treated as present files without repository evidence.
-
-A self-contained BeatOne legacy fallback mark (no longer used) is therefore used until the actual owner logo binary is supplied or restored. The fallback is not represented as the owner's original artwork.
+Zalagren is the sole current participant-facing identity. The owner-provided canonical Zalagren logo is present at `1.png` and is published by the Worker at `/1.png`. Historical fallback marks are not part of the participant-facing shell.
 
 ## 7. Runtime boundary
 

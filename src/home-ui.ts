@@ -396,7 +396,7 @@ body.navy-mode .overlay{background:rgba(6,26,51,.82)!important}
    <button class="surface" data-detail="serviceDetail"><div class="surface-mark">04 · ECONOMY</div><div class="surface-title">Payments & Economy</div><div class="surface-copy">Payments and financial activity, where available.</div></button>
    <button class="surface" data-detail="serviceDetail"><div class="surface-mark">05 · SERVICES</div><div class="surface-title">Services</div><div class="surface-copy">Utilities, maintenance and everyday services.</div></button>
    <button class="surface" data-detail="serviceDetail"><div class="surface-mark">06 · MOBILITY</div><div class="surface-title">Mobility</div><div class="surface-copy">Mobility and transport services connected to your context.</div></button>
-   <button class="surface" data-detail="marketplaceDetail"><div class="surface-mark">07 · COMMERCE</div><div class="surface-title">Commerce</div><div class="surface-copy">BeatMarket/Marketplace, BeatFood and accommodation share one participant foundation.</div></button>
+   <button class="surface" data-detail="marketplaceDetail"><div class="surface-mark">07 · COMMERCE</div><div class="surface-title">Commerce</div><div class="surface-copy">BeatMarket is the professional and opportunity network. BeatBnB is the separate accommodation network. Both share the Zalagren participant foundation.</div></button>
    <button class="surface" data-detail="genesisDetail"><div class="surface-mark">08 · KNOWLEDGE</div><div class="surface-title">Education & Environment</div><div class="surface-copy">Knowledge, sustainability and future sensor/edge inputs feed context without granting hidden authority.</div></button>
   </div>
  </section>

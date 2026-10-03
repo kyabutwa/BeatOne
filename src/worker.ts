@@ -255,8 +255,8 @@ async function authMutation(request: Request, env: Env, endpoint: string): Promi
 async function currentSession(request: Request, env: Env): Promise<{ user: any; session: any; canonical: any } | null> {
   const cookieHeader = request.headers.get("cookie") || "";
   const tokenMatches = [
-    cookieHeader.match(/(?:^|;\\s*)__Host-zalagren_session=([^;]+)/),
-    cookieHeader.match(/(?:^|;\\s*)__Host-zalagren_session=([^;]+)/)
+    cookieHeader.match(/(?:^|;\s*)__Host-zalagren_session=([^;]+)/),
+    cookieHeader.match(/(?:^|;\s*)__Host-zalagren_session=([^;]+)/)
   ].filter(Boolean) as RegExpMatchArray[];
   const sql = requireDatabase(env);
   for (const tokenMatch of tokenMatches) {
@@ -1202,8 +1202,8 @@ export default {
         const outHeaders = headers({"content-type":"application/json; charset=utf-8"});
         const cookieHeader = request.headers.get("cookie") || "";
         const tokenMatches = [
-          cookieHeader.match(/(?:^|;\\s*)__Host-zalagren_session=([^;]+)/),
-          cookieHeader.match(/(?:^|;\\s*)__Host-beatone_session=([^;]+)/)
+          cookieHeader.match(/(?:^|;\s*)__Host-zalagren_session=([^;]+)/),
+          cookieHeader.match(/(?:^|;\s*)__Host-beatone_session=([^;]+)/)
         ].filter(Boolean) as RegExpMatchArray[];
         if (tokenMatches.length) {
           const sql = requireDatabase(env);

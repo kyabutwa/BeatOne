@@ -1,6 +1,7 @@
 // Canonical Zalagren visual identity boundary.
-// The owner-provided logo asset is kept as a real image; it is never recreated or recolored in CSS.
-export const ZALAGREN_LOGO = "/1.png";
+// The owner-provided emblem is served as a transparent vector asset so only the emblem
+// is visible on light or navy surfaces; it is never recreated or recolored in CSS.
+export const ZALAGREN_LOGO = "/zalagren-emblem.svg";
 
 const escape = (v:string) => v.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const serviceLogo = (label:string) => {

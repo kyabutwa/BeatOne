@@ -183,6 +183,7 @@ body.navy-mode .verification-state-value{color:#dce8f5}
    <button class="menu-item" data-nav="activity"><strong>Activity</strong><span>Actions, events and evidence</span></button>
    <button class="menu-item" data-nav="account"><strong>My Zalagren</strong><span>Identity, authority, requests and settings</span></button>
    <button class="menu-item" data-nav="management"><strong>Team Workspace</strong><span>Management and provider operations</span></button>
+   <button class="menu-item" id="themeToggle" type="button"><strong>Appearance</strong><span id="themeToggleLabel">Use navy mode</span></button>
   </div>
  </div>
 </div>
@@ -399,6 +400,12 @@ function mode(){
  const phoneField=$("signupPhoneField");
  if(phoneField)phoneField.classList.toggle("signup-only-hidden",!signup);
 }
+function applyTheme(navy){
+ document.body.classList.toggle("navy-mode",!!navy);
+ const label=$("themeToggleLabel");
+ if(label)label.textContent=navy?"Use white mode":"Use navy mode";
+ try{localStorage.setItem("zalagren-theme",navy?"navy":"white");}catch{}
+}
 function openDetail(id){
  document.querySelectorAll(".detail-card").forEach(v=>v.classList.remove("active"));
  const v=$(id); if(v){v.classList.add("active");v.scrollIntoView({behavior:"smooth",block:"nearest"});}
@@ -506,6 +513,8 @@ document.querySelectorAll("[data-nav]").forEach(el=>el.addEventListener("click",
 const zalagrenIntent=$("zalagrenIntent"),zalagrenIntentHint=$("zalagrenIntentHint");
 if(zalagrenIntent){zalagrenIntent.oninput=()=>{const q=zalagrenIntent.value.trim().toLowerCase();if(!q){zalagrenIntentHint.textContent="Examples: access, community, ride, food, payment, marketplace, health, GENESIS.";return;}const routes=[["access","worldDetail","Access"],["community","communityDetail","Communities"],["ride","serviceDetail","BeatRide"],["mobility","serviceDetail","BeatRide"],["food","serviceDetail","BeatFood"],["payment","serviceDetail","BeatPay"],["pay","serviceDetail","BeatPay"],["market","marketplaceDetail","BeatMarket"],["bnb","marketplaceDetail","BeatMarket & BnB"],["health","serviceDetail","BeatHealth"],["genesis","genesisDetail","GENESIS"],["education","genesisDetail","Knowledge"],["environment","genesisDetail","Knowledge"]];const hit=routes.find(([k])=>q.includes(k));zalagrenIntentHint.textContent=hit?"Open "+hit[2]+" to continue. Consequential actions remain authorization-gated.":"No direct surface matched yet. Zalagren will not invent a provider, authority or action.";if(hit)zalagrenIntentHint.onclick=()=>openDetail(hit[1]);zalagrenIntentHint.style.cursor=hit?"pointer":"default";};}
 $("openMenu").onclick=openMenu;$("closeMenu").onclick=closeMenu;$("account").onclick=()=>navigate("account");$("accountInline").onclick=()=>navigate("account");
+$("themeToggle").onclick=()=>applyTheme(!document.body.classList.contains("navy-mode"));
+try{applyTheme(localStorage.getItem("zalagren-theme")==="navy");}catch{applyTheme(false);}
 $("mode").onclick=()=>{signup=!signup;setError("");mode();};
 $("authForm").onsubmit=async event=>{
  event.preventDefault();setError("");

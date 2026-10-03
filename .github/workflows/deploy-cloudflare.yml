@@ -1,4 +1,5 @@
 name: Deploy Zalagren Worker
+# CI execution trigger: validate the current production tree end-to-end.
 
 on:
   push:

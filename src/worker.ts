@@ -1111,6 +1111,97 @@ async function beatHealthCreateFacility(request: Request, env: Env): Promise<Res
     return json({service:"BeatHealth",status:"facility_created",verificationState:"PROPOSED",facilityId},201);
   } catch(e){const m=e instanceof Error?e.message:"BEATHEALTH_FACILITY_CREATE_FAILED";return json({service:"BeatHealth",error:m},m==="UNAUTHORIZED"?401:400);}
 }
+
+async function communityOperationsDashboard(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const communities=await sql`
+      SELECT c.* FROM public.communities c
+      JOIN public.community_participations cp ON cp.community_id=c.id
+      WHERE cp.participant_id=${participantId}
+        AND cp.status IN ('active','approved')
+        AND lower(cp.role) IN ('manager','community_manager','admin','representative','board')
+      ORDER BY c.created_at DESC`;
+    if(!communities.length) return json({service:"Zalagren",communities:[],message:"No community management role is currently connected to this participant."});
+    const ids=communities.map((c:any)=>c.id);
+    const [services,bindings,workOrders,invites,utilities,events]=await Promise.all([
+      sql`SELECT id,name,domain,status,owner_mode,provider_joinable,first_party,launch_state FROM public.services ORDER BY name`,
+      sql`SELECT b.*,s.name service_name,sp.display_name provider_profile_name FROM public.community_service_bindings b
+          LEFT JOIN public.services s ON s.id=b.service_id
+          LEFT JOIN public.service_provider_profiles sp ON sp.id=b.provider_profile_id
+          WHERE b.community_id = ANY(${ids}) ORDER BY b.updated_at DESC`,
+      sql`SELECT w.*,b.display_name service_name FROM public.community_work_orders w
+          LEFT JOIN public.community_service_bindings b ON b.id=w.service_binding_id
+          WHERE w.community_id = ANY(${ids}) ORDER BY w.created_at DESC LIMIT 100`,
+      sql`SELECT i.*,s.name service_name FROM public.community_provider_invites i
+          LEFT JOIN public.services s ON s.id=i.service_id
+          WHERE i.community_id = ANY(${ids}) ORDER BY i.created_at DESC LIMIT 100`,
+      sql`SELECT * FROM public.community_utility_accounts WHERE community_id = ANY(${ids}) ORDER BY updated_at DESC`,
+      sql`SELECT e.*,b.display_name service_name FROM public.community_service_events e
+          LEFT JOIN public.community_service_bindings b ON b.id=e.service_binding_id
+          WHERE e.community_id = ANY(${ids}) ORDER BY e.occurred_at DESC LIMIT 100`
+    ]);
+    return json({service:"Zalagren",communities,services,bindings,workOrders,providerInvites:invites,utilities,events});
+  } catch(e){const m=e instanceof Error?e.message:"COMMUNITY_OPERATIONS_LOOKUP_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:500);}
+}
+
+async function communityProviderJoin(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const body=await request.json() as {communityId?:string;serviceId?:string;providerProfileId?:string;displayName?:string;category?:string;coverage?:unknown;contact?:unknown};
+    if(!body.communityId||!body.serviceId||!body.displayName) return json({service:"Zalagren",error:"COMMUNITY_SERVICE_PROVIDER_REQUIRED"},400);
+    const auth=await sql`SELECT 1 FROM public.community_participations WHERE community_id=${body.communityId} AND participant_id=${participantId} AND status IN ('active','approved') AND lower(role) IN ('manager','community_manager','admin','representative','board') LIMIT 1`;
+    if(!auth.length) return json({service:"Zalagren",error:"COMMUNITY_MANAGEMENT_REQUIRED"},403);
+    const service=await sql`SELECT id FROM public.services WHERE id=${body.serviceId} LIMIT 1`;
+    if(!service.length) return json({service:"Zalagren",error:"SERVICE_NOT_FOUND"},404);
+    const id="community-binding-"+crypto.randomUUID();
+    const rows=await sql`INSERT INTO public.community_service_bindings(id,community_id,service_id,provider_profile_id,display_name,category,status,verification_state,coverage,contact,created_by_participant_id)
+      VALUES(${id},${body.communityId},${body.serviceId},${body.providerProfileId||null},${String(body.displayName).trim()},${String(body.category||"service").trim()},'proposed','pending',${JSON.stringify(body.coverage||{})}::jsonb,${JSON.stringify(body.contact||{})}::jsonb,${participantId}) RETURNING *`;
+    await sql`INSERT INTO public.community_service_events(id,community_id,service_binding_id,event_type,actor_participant_id,summary) VALUES(${"community-event-"+crypto.randomUUID()},${body.communityId},${id},'provider_join_requested',${participantId},${"Provider "+String(body.displayName).trim()+" requested community coordination."})`;
+    return json({service:"Zalagren",status:"provider_join_requested",binding:rows[0]},201);
+  } catch(e){return json({service:"Zalagren",error:e instanceof Error?e.message:"COMMUNITY_PROVIDER_JOIN_FAILED"},400);}
+}
+
+async function communityProviderInvite(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const body=await request.json() as {communityId?:string;serviceId?:string;providerName?:string;contact?:unknown;message?:string};
+    if(!body.communityId||!body.serviceId||!body.providerName) return json({service:"Zalagren",error:"PROVIDER_INVITE_REQUIRED"},400);
+    const auth=await sql`SELECT 1 FROM public.community_participations WHERE community_id=${body.communityId} AND participant_id=${participantId} AND status IN ('active','approved') AND lower(role) IN ('manager','community_manager','admin','representative','board') LIMIT 1`;
+    if(!auth.length) return json({service:"Zalagren",error:"COMMUNITY_MANAGEMENT_REQUIRED"},403);
+    const id="community-provider-invite-"+crypto.randomUUID();
+    const rows=await sql`INSERT INTO public.community_provider_invites(id,community_id,service_id,invited_by_participant_id,provider_name,contact,message) VALUES(${id},${body.communityId},${body.serviceId},${participantId},${String(body.providerName).trim()},${JSON.stringify(body.contact||{})}::jsonb,${body.message||null}) RETURNING *`;
+    return json({service:"Zalagren",status:"provider_invited",invite:rows[0]},201);
+  } catch(e){return json({service:"Zalagren",error:e instanceof Error?e.message:"COMMUNITY_PROVIDER_INVITE_FAILED"},400);}
+}
+
+async function communityWorkOrderCreate(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const body=await request.json() as {communityId?:string;serviceBindingId?:string;title?:string;description?:string;priority?:string;placeId?:string;scheduledFor?:string};
+    if(!body.communityId||!body.title) return json({service:"Zalagren",error:"WORK_ORDER_REQUIRED"},400);
+    const auth=await sql`SELECT 1 FROM public.community_participations WHERE community_id=${body.communityId} AND participant_id=${participantId} AND status IN ('active','approved') AND lower(role) IN ('manager','community_manager','admin','representative','board') LIMIT 1`;
+    if(!auth.length) return json({service:"Zalagren",error:"COMMUNITY_MANAGEMENT_REQUIRED"},403);
+    const id="community-work-"+crypto.randomUUID();
+    const rows=await sql`INSERT INTO public.community_work_orders(id,community_id,service_binding_id,requested_by_participant_id,title,description,priority,place_id,scheduled_for)
+      VALUES(${id},${body.communityId},${body.serviceBindingId||null},${participantId},${String(body.title).trim()},${body.description||null},${String(body.priority||"normal").trim()},${body.placeId||null},${body.scheduledFor?new Date(body.scheduledFor):null}) RETURNING *`;
+    return json({service:"Zalagren",status:"work_order_created",workOrder:rows[0]},201);
+  } catch(e){return json({service:"Zalagren",error:e instanceof Error?e.message:"COMMUNITY_WORK_ORDER_FAILED"},400);}
+}
+
+async function communityUtilityLink(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const body=await request.json() as {communityId?:string;providerName?:string;utilityType?:string;externalReference?:string;serviceBindingId?:string;metadata?:unknown};
+    if(!body.communityId||!body.providerName||!body.utilityType) return json({service:"Zalagren",error:"UTILITY_LINK_REQUIRED"},400);
+    const auth=await sql`SELECT 1 FROM public.community_participations WHERE community_id=${body.communityId} AND participant_id=${participantId} AND status IN ('active','approved') AND lower(role) IN ('manager','community_manager','admin','representative','board') LIMIT 1`;
+    if(!auth.length) return json({service:"Zalagren",error:"COMMUNITY_MANAGEMENT_REQUIRED"},403);
+    const id="community-utility-"+crypto.randomUUID();
+    const rows=await sql`INSERT INTO public.community_utility_accounts(id,community_id,provider_name,utility_type,external_reference,service_binding_id,metadata) VALUES(${id},${body.communityId},${String(body.providerName).trim()},${String(body.utilityType).trim()},${body.externalReference||null},${body.serviceBindingId||null},${JSON.stringify(body.metadata||{})}::jsonb) RETURNING *`;
+    return json({service:"Zalagren",status:"utility_linked",utility:rows[0]},201);
+  } catch(e){return json({service:"Zalagren",error:e instanceof Error?e.message:"COMMUNITY_UTILITY_LINK_FAILED"},400);}
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === "OPTIONS") return new Response(null,{status:204,headers:headers({"access-control-allow-origin":"*","access-control-allow-headers":"content-type, authorization","access-control-allow-methods":"GET,POST,OPTIONS"})});
@@ -1136,7 +1227,7 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/guardian/checkin") return guardianCreateCheckin(request, env);
     if (request.method === "GET" && url.pathname === "/api/home/foundation") return homeFoundation(request, env);
     if (request.method === "GET" && url.pathname === "/api/participation") return listParticipation(request, env);
-    if (request.method === "GET" && url.pathname === "/api/community/management") return communityManagement(request, env);
+    if (request.method === "GET" && url.pathname === "/api/community/management") return communityManagement(request, env);\n    if (request.method === "GET" && url.pathname === "/api/community/management/operations") return communityOperationsDashboard(request, env);\n    if (request.method === "POST" && url.pathname === "/api/community/management/provider") return communityProviderJoin(request, env);\n    if (request.method === "POST" && url.pathname === "/api/community/management/provider/invite") return communityProviderInvite(request, env);\n    if (request.method === "POST" && url.pathname === "/api/community/management/work-order") return communityWorkOrderCreate(request, env);\n    if (request.method === "POST" && url.pathname === "/api/community/management/utility") return communityUtilityLink(request, env);\n
     if (request.method === "POST" && url.pathname === "/api/community/representative/request") return requestRepresentative(request, env);
     if (request.method === "POST" && url.pathname === "/api/community/management/onboarding/decision") return communityOnboardingDecision(request, env);
     if (request.method === "POST" && url.pathname === "/api/community/management/subscription/decision") return communitySubscriptionDecision(request, env);

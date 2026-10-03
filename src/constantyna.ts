@@ -46,12 +46,13 @@ export const CONSTANTYNA_CAPABILITIES: readonly ConstantynaCapability[] = [
   { code: "navigate", description: "Open the correct Zalagren interface or surface.", minimumPlan: "normal", risk: "none", requiresConfirmation: false },
   { code: "discover", description: "Find available communities, places, services and participation opportunities.", minimumPlan: "normal", risk: "none", requiresConfirmation: false },
   { code: "compare", description: "Compare available Zalagren options using available evidence.", minimumPlan: "normal", risk: "none", requiresConfirmation: false },
-  { code: "community_guidance", description: "Explain why a community is or is not available and guide onboarding or joining.", minimumPlan: "normal", risk: "none", requiresConfirmation: false },
-  { code: "opportunity_scan", description: "Scan current Zalagren data for actionable opportunities and missing-data explanations.", minimumPlan: "plus", risk: "none", requiresConfirmation: false },
+  { code: "community_guidance", description: "Understand a community, explain participation requirements, diagnose missing context and guide onboarding or joining.", minimumPlan: "normal", risk: "none", requiresConfirmation: false },
+  { code: "opportunity_scan", description: "Scan current Zalagren data for actionable opportunities, blockers, missing-data explanations and next steps.", minimumPlan: "plus", risk: "none", requiresConfirmation: false },
   { code: "research", description: "Use an enabled external research connector and clearly separate external evidence from Zalagren facts.", minimumPlan: "plus", risk: "none", requiresConfirmation: false },
   { code: "proposal", description: "Prepare a governed action/proposal for the participant.", minimumPlan: "plus", risk: "low", requiresConfirmation: true },
-  { code: "orchestration", description: "Coordinate eligible multi-step Zalagren workflows.", minimumPlan: "premium", risk: "medium", requiresConfirmation: true },
-  { code: "consequential_action", description: "Execute an eligible consequential action only after authorization and confirmation.", minimumPlan: "premium", risk: "high", requiresConfirmation: true }
+  { code: "orchestration", description: "Coordinate eligible multi-step Zalagren workflows across authorized services and interfaces.", minimumPlan: "premium", risk: "medium", requiresConfirmation: true },
+  { code: "consequential_action", description: "Execute an eligible consequential action only after explicit confirmation, applicable authorization and an auditable execution path.", minimumPlan: "premium", risk: "high", requiresConfirmation: true },
+  { code: "explain_missing_data", description: "Explain whether missing information comes from empty Zalagren state, unavailable provider data, missing community context, authorization, jurisdiction or an unconfigured integration.", minimumPlan: "normal", risk: "none", requiresConfirmation: false }
 ];
 
 export function hasConstantynaCapability(plan: ConstantynaPlan, code: string): boolean {
@@ -97,8 +98,8 @@ export function buildConstantynaSystemContext(context: ConstantynaContext): stri
     "Never invent a community, provider, availability, authority, payment, verification, action, event, evidence, integration or result.",
     "Always distinguish FACT, CONTEXT, RECOMMENDATION, PROPOSAL and AUTHORIZED ACTION.",
     "Authentication never implies authorization. Participation never grants authority.",
-    "When information is absent, explain the concrete reason and the next available path instead of pretending it exists.",
-    "You may guide, compare, research through enabled connectors, open interfaces and prepare proposals. Consequential actions require the participant's authorization and the applicable Zalagren capability.",
+    "When information is absent, diagnose the concrete state: empty Zalagren data, no active community context, provider unavailable, capability unavailable, authorization missing, jurisdiction restriction, or integration not configured. Never convert absence of data into a claim that something does not exist in the wider world.",
+    "You may explain, guide, compare, research through enabled connectors, identify opportunities, diagnose missing information, open interfaces and prepare proposals. Consequential actions require the participant's explicit confirmation, applicable authorization and an auditable execution path. Subscription level controls product capability, never legal or community authority.",
     `Current participant plan: ${context.plan}.`,
     `Current community count: ${context.activeCommunityCount}; service count: ${context.serviceCount}; capability count: ${context.capabilityCount}.`
   ].join(String.fromCharCode(10));

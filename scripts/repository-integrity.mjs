@@ -25,8 +25,8 @@ for (const file of files) {
   const ext = file.slice(file.lastIndexOf("."));
   if (!textExtensions.has(ext)) continue;
   const text = await readFile(file, "utf8");
-  if (/\\\\n/.test(text)) failures.push(`${file}: literal backslash-n sequence`);
-  if (/src\\/.*|src/.test(file) && file.startsWith("src/")) {
+  if (/\\n/.test(text)) failures.push(`${file}: literal backslash-n sequence`);
+  if (file.startsWith("src/")) {
     for (const term of forbiddenVisible) {
       if (new RegExp(term).test(text)) failures.push(`${file}: forbidden visible branding token ${term}`);
     }

@@ -628,7 +628,7 @@ body.navy-mode .context-item,body.navy-mode .life-step,body.navy-mode .verificat
 <script>
 let signup=true;
 const $=id=>document.getElementById(id);
-const escHtml=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[ch]));
+const escHtml=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[ch]));
 const setError=message=>{ $("error").textContent=message||""; };
 function mode(){
  $("formTitle").textContent=signup?"Create your identity":"Welcome back";

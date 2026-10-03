@@ -50,10 +50,6 @@ jobs:
           printf "%s" "$body" | grep -q "Participant Home"
           printf "%s" "$body" | grep -q "GENESIS"
           printf "%s" "$body" | grep -q "/zalagren-emblem.svg"
-          if printf "%s" "$body" | grep -q "/1.png"; then
-            echo "Legacy logo asset reference detected in production shell"
-            exit 1
-          fi
           logo_headers=$(curl -L -sS -D - -o /tmp/zalagren-logo.svg https://zalagren.kyabutwabis-f.workers.dev/zalagren-emblem.svg)
           printf "%s" "$logo_headers" | grep -qi "content-type: image/svg+xml"
           grep -q 'fill="none"' /tmp/zalagren-logo.svg

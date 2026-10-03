@@ -44,7 +44,7 @@ test("browser script contains no TypeScript-only syntax", async () => {
 test("rendered browser scripts are valid JavaScript", async () => {
   const response = renderHome(() => new Headers());
   const html = await response.text();
-  const scripts = [...html.matchAll(/<script>([\\s\\S]*?)<\\/script>/g)].map(m => m[1]);
+  const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);
   assert.ok(scripts.length >= 2);
   for (const script of scripts) {
     assert.doesNotThrow(() => new Function(script));

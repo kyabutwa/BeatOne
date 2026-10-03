@@ -838,14 +838,14 @@ async function loadZalagrenPlans(){
   const [pr,sr]=await Promise.all([fetch("/api/plans",{credentials:"same-origin"}),fetch("/api/subscription",{credentials:"same-origin"})]);
   const d=await pr.json(); const sd=await sr.json(); const active=sd.subscription;
   current.textContent=active?("Current plan: "+active.plan_name+" · "+active.status):"Current plan: Zalagren Normal · no paid subscription selected";
-  grid.innerHTML=(d.plans||[]).map((p:any)=>{
+  grid.innerHTML=(d.plans||[]).map((p)=>{
    const isActive=active&&active.plan_id===p.id&&active.status==="active";
    const price=p.amount_minor===0?"Free":"KES "+Math.round(p.amount_minor/100).toLocaleString();
-   const features=(p.features||[]).slice(0,5).map((f:any)=>"<li>✓ "+escapeHtml(f.feature_name)+"</li>").join("");
+   const features=(p.features||[]).slice(0,5).map((f)=>"<li>✓ "+escapeHtml(f.feature_name)+"</li>").join("");
    const paid=p.amount_minor>0;
    return '<div class="plan-card '+(isActive?"active":"")+'"><div class="eyebrow">'+escapeHtml(p.code==="free"?"NORMAL":p.code.toUpperCase())+'</div><div class="plan-name">'+escapeHtml(p.name)+'</div><div class="plan-price">'+price+(paid?'<small>/month</small>':"")+'</div><div class="plan-copy">'+escapeHtml(p.description)+'</div><ul class="plan-features">'+features+'</ul>'+(paid&&!isActive?'<div class="plan-phone"><input data-plan-phone="'+escapeHtml(p.id)+'" placeholder="M-PESA number e.g. 0712345678" inputmode="tel"></div>':"")+'<button class="action '+(isActive?"secondary":"primary")+' plan-action" data-plan-id="'+escapeHtml(p.id)+'" '+(isActive?"disabled":"")+'> '+(isActive?"Active":(paid?"Choose & pay":"Use Normal"))+' </button></div>';
   }).join("");
-  grid.querySelectorAll(".plan-action").forEach((b:any)=>b.onclick=()=>selectZalagrenPlan(b.dataset.planId));
+  grid.querySelectorAll(".plan-action").forEach((b)=>b.onclick=()=>selectZalagrenPlan(b.dataset.planId));
  }catch{current.textContent="Unable to load plans right now.";}
 }
 async function selectZalagrenPlan(planId){
@@ -854,7 +854,7 @@ async function selectZalagrenPlan(planId){
   const r=await fetch("/api/subscriptions",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({planId})});
   const d=await r.json().catch(()=>({})); if(!r.ok)throw new Error(d.error||"PLAN_SELECTION_FAILED");
   if(d.status==="active"){status.classList.remove("hidden");status.textContent="Zalagren Normal is active. Your core participant foundation remains available.";loadZalagrenPlans();return;}
-  const input=document.querySelector('[data-plan-phone="'+CSS.escape(planId)+'"]') as HTMLInputElement|null;
+  const input=document.querySelector('[data-plan-phone="'+CSS.escape(planId)+'"]');
   const phone=input?.value?.trim();
   if(!phone)throw new Error("Enter your M-PESA number to continue.");
   const pay=await fetch("/api/payments/mpesa/stk",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({subscriptionId:d.subscription.id,phone})});

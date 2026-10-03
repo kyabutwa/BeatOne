@@ -1060,6 +1060,21 @@ async function updateBeatRideTrip(request: Request, env: Env): Promise<Response>
   } catch(e){const m=e instanceof Error?e.message:"RIDE_TRIP_UPDATE_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
 }
 
+async function guardianCreateIncident(request: Request, env: Env): Promise<Response> {
+  try { const {participantId,sql}=await participantIdFromSession(request,env); const b=await request.json() as {incidentType?:string;severity?:string;description?:string;location?:unknown;communityId?:string};
+    if(!b.incidentType?.trim())return json({service:"BeatGuardian",error:"INCIDENT_TYPE_REQUIRED"},400);
+    const id="guardian-incident-"+crypto.randomUUID(); const rows=await sql`INSERT INTO public.beatguardian_incidents(id,participant_id,community_id,incident_type,severity,location,description) VALUES(${id},${participantId},${b.communityId||null},${b.incidentType.trim()},${b.severity||"normal"},${JSON.stringify(b.location||{})}::jsonb,${b.description?.trim()||null}) RETURNING id,incident_type,severity,status,created_at`;
+    return json({service:"BeatGuardian",status:"incident_created",incident:rows[0],coordination:"Zalagren"},201);
+  } catch(e){const m=e instanceof Error?e.message:"GUARDIAN_INCIDENT_FAILED";return json({service:"BeatGuardian",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+async function guardianCreateCheckin(request: Request, env: Env): Promise<Response> {
+  try { const {participantId,sql}=await participantIdFromSession(request,env); const b=await request.json() as {destination?:string;eta?:string};
+    if(!b.destination?.trim()||!b.eta)return json({service:"BeatGuardian",error:"CHECKIN_FIELDS_REQUIRED"},400);
+    const id="guardian-checkin-"+crypto.randomUUID(); const rows=await sql`INSERT INTO public.beatguardian_checkins(id,participant_id,destination,eta) VALUES(${id},${participantId},${b.destination.trim()},${b.eta}) RETURNING id,destination,eta,status,created_at`;
+    return json({service:"BeatGuardian",status:"checkin_created",checkin:rows[0]},201);
+  } catch(e){const m=e instanceof Error?e.message:"GUARDIAN_CHECKIN_FAILED";return json({service:"BeatGuardian",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === "OPTIONS") return new Response(null,{status:204,headers:headers({"access-control-allow-origin":"*","access-control-allow-headers":"content-type, authorization","access-control-allow-methods":"GET,POST,OPTIONS"})});
@@ -1078,6 +1093,8 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/beatride/vehicle") return addBeatRideVehicle(request, env);
     if (request.method === "POST" && url.pathname === "/api/beatride/offer/accept") return acceptBeatRideOffer(request, env);
     if (request.method === "POST" && url.pathname === "/api/beatride/trip") return updateBeatRideTrip(request, env);
+    if (request.method === "POST" && url.pathname === "/api/guardian/incident") return guardianCreateIncident(request, env);
+    if (request.method === "POST" && url.pathname === "/api/guardian/checkin") return guardianCreateCheckin(request, env);
     if (request.method === "GET" && url.pathname === "/api/home/foundation") return homeFoundation(request, env);
     if (request.method === "GET" && url.pathname === "/api/participation") return listParticipation(request, env);
     if (request.method === "GET" && url.pathname === "/api/community/management") return communityManagement(request, env);

@@ -4,5 +4,6 @@
   "main": "src/worker.ts",
   "compatibility_date": "2026-10-02",
   "observability": { "enabled": true },
+  "rules": [{ "type": "Data", "globs": ["1.png"] }],
   "workers_dev": true
 }

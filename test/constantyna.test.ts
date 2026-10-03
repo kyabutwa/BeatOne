@@ -32,7 +32,7 @@ test("Constantyna intent classification maps to governed capabilities",()=>{
 });
 
 test("Constantyna system context preserves the authority boundary",()=>{
-  const text=buildConstantynaSystemContext({participantId:"p-1",plan:"premium",activeCommunityCount:0,serviceCount:10,capabilityCount:20});
+  const text=buildConstantynaSystemContext({participantId:"p-1" as any,plan:"premium",activeCommunityCount:0,serviceCount:10,capabilityCount:20});
   assert.match(text,/Authentication never implies authorization/);
   assert.match(text,/Never invent/);
   assert.match(text,/Identity -> Participant -> Community/);

@@ -138,6 +138,41 @@ input::placeholder,textarea::placeholder{color:#718096!important;opacity:1}
 .surface{min-height:168px;border-radius:22px;background:linear-gradient(180deg,#ffffff 0%,#ffffff 72%,#fbfdff 100%)!important;color:var(--navy)!important;border:1px solid #DCE3EC!important;box-shadow:0 10px 30px rgba(7,26,51,.07),inset 0 1px 0 rgba(255,255,255,.98)!important;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}.surface *{color:var(--navy)}.surface .surface-copy,.surface .row-meta,.surface .detail-sub{color:var(--muted)!important}.surface:hover{transform:translateY(-2px);box-shadow:0 18px 44px rgba(7,26,51,.12),0 0 0 1px rgba(11,122,59,.08)!important;border-color:#B9C7D8!important}.service-logo{background:#fff;border:1px solid var(--line);padding:4px}.service-logo-stack .service-logo{padding:3px}
 .account-hero{background:#F4F8F5!important;border-color:#D3E5D8!important}.account-avatar{background:#E7F2EA!important;border-color:#B9D8C1!important;color:var(--green)!important}
 @media(prefers-color-scheme:dark){html[data-zalagren-theme="light"],html[data-zalagren-theme="light"] body{background:#fff!important;color:var(--navy)!important}}
+
+/* Zalagren card contract: white canvas, blue/deep-navy cards, white text. */
+:root{
+ --canvas:#ffffff;--surface:#0B2A52;--surface-2:#123A6B;--navy:#ffffff;--blue:#1554A6;
+ --orange:#F27A21;--muted:#DCE8F5;--line:rgba(255,255,255,.16);--line-soft:rgba(255,255,255,.11);
+ --green:#54C878;--danger:#FFB4A8;--shadow:0 14px 34px rgba(7,26,51,.16)
+}
+html,body{background:#fff!important;color:#fff!important}
+body{color:#071A33!important}
+.topbar,.bottom-nav{background:#061A33!important;color:#fff!important;border-color:rgba(255,255,255,.16)!important;box-shadow:0 12px 30px rgba(7,26,51,.18)!important}
+.top-action,.bottom-nav button,.account-control{color:#fff!important}
+.account-control{background:#0B2A52!important;border-color:rgba(255,255,255,.16)!important}
+.context-card,.auth-card,.detail-card,.surface,.control-card,.menu-item,.context-item,.life-step,.verification-box,.status,.participant-card{
+ background:#0B2A52!important;color:#fff!important;border-color:rgba(255,255,255,.16)!important;box-shadow:0 14px 34px rgba(7,26,51,.16)!important
+}
+.context-item,.life-step,.verification-box,.status,.control-card{background:#123A6B!important}
+.surface:hover{background:#123A6B!important;border-color:rgba(255,255,255,.28)!important}
+.surface *,.context-card *,.auth-card *,.detail-card *,.control-card *,.menu-item *,.context-item *,.life-step *,.verification-box *,.status *,.participant-card *{color:#fff!important}
+.surface-copy,.row-meta,.detail-sub,.identity-meta,.verification-copy,.status,.context-label,.life-step span,.overlay-copy,.menu-item span,.control-copy,.section-copy,.lede{color:#DCE8F5!important}
+.title,.section-title,.detail-title,.auth-title,.surface-title,.control-title,.row-title,.verification-title,.identity,.context-value{color:#071A33!important}
+.overlay{background:#061A33!important;color:#fff!important}
+.overlay *{color:#fff!important}
+.overlay-copy,.menu-item span{color:#DCE8F5!important}
+.menu-item{background:#0B2A52!important}
+input,select,textarea,.mini-actions button,.secondary{background:#0B2A52!important;color:#fff!important;border-color:rgba(255,255,255,.18)!important}
+input::placeholder,textarea::placeholder{color:#DCE8F5!important}
+.primary{background:#1554A6!important;color:#fff!important}
+.secondary{background:#123A6B!important;color:#fff!important}
+.bottom-nav button.active{background:#1554A6!important;color:#fff!important}
+.pill{background:#123A6B!important;color:#fff!important;border-color:rgba(255,255,255,.18)!important}
+.context-chip{background:#0B2A52!important;color:#fff!important;border-color:rgba(255,255,255,.16)!important}
+.context-chip i,.account-dot{background:#54C878!important}
+.eyebrow,.surface-mark,.surface-state,.control-kicker,.link-button{color:#F27A21!important}
+.truth-verified .truth-dot{background:#54C878!important}.truth-supported .truth-dot{background:#7FB3FF!important}.truth-proposed .truth-dot{background:#B9C9DD!important}.truth-failed .truth-dot{background:#FF8B7B!important}.truth-pending .truth-dot{background:#F27A21!important}
+.brand-logo{height:36px;max-width:min(210px,48vw);object-fit:contain;object-position:center;background:transparent!important}
 </style>
 </head>
 <body>

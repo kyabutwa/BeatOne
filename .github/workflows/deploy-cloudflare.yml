@@ -53,6 +53,7 @@ jobs:
           logo_headers=$(curl -L -sS -D - -o /tmp/zalagren-logo.png https://zalagren.kyabutwabis-f.workers.dev/1.png)
           printf "%s" "$logo_headers" | grep -qi "content-type: image/png"
           test "$(wc -c < /tmp/zalagren-logo.png)" -gt 1000
+          test "$(sha256sum /tmp/zalagren-logo.png | cut -d' ' -f1)" = "b458ef87d81ffea17d6dbafacbc8975e781911a8e4f349b6dd043081813d5669"
           if printf "%s" "$body" | grep -q "BeatOne"; then
             echo "Obsolete BeatOne branding detected in production shell"
             exit 1

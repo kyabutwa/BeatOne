@@ -627,6 +627,18 @@ async function domainEvent(sql: DbSql, participantId: string, type: string, sour
 
 
 
+async function communitySpatialHierarchy(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const url=new URL(request.url); const communityId=url.searchParams.get("communityId");
+    if(!communityId)return json({service:"Zalagren",error:"COMMUNITY_ID_REQUIRED"},400);
+    const allowed=await sql`SELECT 1 FROM public.community_participations WHERE community_id=${communityId} AND participant_id=${participantId} AND status IN ('active','approved') LIMIT 1`;
+    if(!allowed.length)return json({service:"Zalagren",error:"COMMUNITY_PARTICIPATION_REQUIRED"},403);
+    const nodes=await sql`SELECT id,place_id,parent_node_id,node_type,name,code,status,metadata,created_at,updated_at FROM public.community_spatial_nodes WHERE community_id=${communityId} ORDER BY node_type,name`;
+    return json({service:"Zalagren",communityId,nodes});
+  }catch(e){const m=e instanceof Error?e.message:"COMMUNITY_SPATIAL_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
 async function beatMarketProfile(request: Request, env: Env): Promise<Response> {
   try {
     const {participantId,sql}=await participantIdFromSession(request,env);
@@ -1546,6 +1558,7 @@ export default {
     if (request.method === "GET" && url.pathname === "/api/home/foundation") return homeFoundation(request, env);
     if (request.method === "GET" && url.pathname === "/api/identity/verification/status") return participantVerificationStatus(request, env);
     if ((request.method === "GET" || request.method === "PUT") && url.pathname === "/api/beatmarket/profile") return beatMarketProfile(request, env);
+    if (request.method === "GET" && url.pathname === "/api/community/spatial") return communitySpatialHierarchy(request, env);
     if ((request.method === "GET" || request.method === "POST") && url.pathname === "/api/beatmarket/opportunities") return beatMarketOpportunities(request, env);
     if (request.method === "GET" && url.pathname === "/api/beatbnb/properties") return beatBnBProperties(request, env);
     if (request.method === "POST" && url.pathname === "/api/beatbnb/favorite") return beatBnBFavorite(request, env);

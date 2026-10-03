@@ -6,15 +6,15 @@ Status: 🟡 SUPPORTED — BRAND/EXPERIENCE INTEGRATION IMPLEMENTED; OWNER-PROVI
 
 ## 1. Brand boundary
 
-BeatOne is the primary participant-facing ecosystem brand.
+Zalagren is the sole current participant-facing ecosystem brand.
 
-Zalagren remains the integrated intelligent-living architecture and historical foundation underneath BeatOne. It is not a second user-facing product, account, or identity silo.
+BeatOne is retained only as the repository/history lineage and compatibility identifier; it is not a user-facing product identity.
 
-- UI shell, browser title, navigation and participant-facing runtime labels use BeatOne.
-- Existing database and migration identifiers containing `zalagren` remain unchanged where they are physical compatibility identifiers; they are not user-facing branding.
+- UI shell, browser title, navigation and participant-facing runtime labels use Zalagren.
+- Existing database, migration and internal identifiers containing BeatOne remain unchanged where they are physical compatibility identifiers; they are not user-facing branding.
 - GENESIS remains the intelligence layer and never becomes authority.
 
-## 2. BeatOne 8 pillars
+## 2. Zalagren 8 pillars
 
 1. Identity — participant identity, authenticators, verification boundaries and account security.
 2. Access — contextual permissions for places, units, gates and secure digital surfaces.

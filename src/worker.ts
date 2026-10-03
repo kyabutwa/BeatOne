@@ -660,6 +660,18 @@ async function joinCommunity(request: Request, env: Env): Promise<Response> {
   } catch(e){const m=e instanceof Error?e.message:"COMMUNITY_JOIN_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
 }
 
+async function zalagrenPolicy(request: Request, env: Env, policyType: string): Promise<Response> {
+  const policies: Record<string,{title:string;body:string[]}> = {
+    privacy:{title:"Zalagren Privacy Notice",body:["Zalagren processes only what is needed for participation, service delivery, security, legal compliance and requested actions.","Sensitive data such as health, biometrics, precise location and legal identity is purpose-bound and access-controlled.","Participants can request access, correction, export and other applicable data-protection rights through Settings.","Third-party providers receive only the information required for an authorized service action."]},
+    terms:{title:"Zalagren Terms",body:["Zalagren is coordination infrastructure. Availability of a service does not by itself mean Zalagren is the licensed provider of that service.","Participants must provide accurate information, protect their credentials and use services lawfully.","Service providers remain responsible for their regulated goods, professional services, licences, safety and fulfilment.","Paid plans are billed only after successful payment confirmation and can be cancelled according to the published plan terms."]},
+    consumer:{title:"Zalagren Consumer Policy",body:["Prices, plan intervals and material service limitations are shown before purchase.","Payment failures do not create a paid entitlement.","Complaints, correction requests, refunds where applicable and service issues are recorded and handled through the support process."]},
+    payments:{title:"Zalagren Payments Policy",body:["M-PESA is an external regulated payment rail connected through Safaricom Daraja.","Zalagren does not claim to be a bank or payment service provider merely because it coordinates payment initiation.","Payment status is confirmed from provider callbacks and reconciliation, not from client-side success messages."]},
+    community:{title:"Zalagren Community Coordination Policy",body:["Communities coordinate providers, places, maintenance, utilities and participation through authorized community roles.","A community does not own or arbitrarily block a Zalagren service; it manages its authorized local context.","Provider verification and regulatory evidence remain separate from community membership."]}
+  };
+  const p=policies[policyType]; if(!p)return json({service:"Zalagren",error:"POLICY_NOT_FOUND"},404);
+  return new Response("<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>"+p.title+" · Zalagren</title><style>body{font-family:system-ui,sans-serif;max-width:760px;margin:40px auto;padding:0 20px;color:#10233f}h1{font-size:30px}p{line-height:1.65}</style></head><body><h1>"+p.title+"</h1>"+p.body.map(x=>"<p>"+x+"</p>").join("")+"<p><strong>Version KE-1.0 · Effective 3 October 2026.</strong></p></body></html>",{status:200,headers:headers({"content-type":"text/html;charset=utf-8"})});
+}
+
 async function zalagrenPlans(request: Request, env: Env): Promise<Response> {
   try {
     const {sql}=await participantIdFromSession(request,env);
@@ -1388,6 +1400,7 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/beatfood/order") return createBeatFoodOrder(request, env);
     if (request.method === "POST" && url.pathname === "/api/beatride/profile") return createBeatRideProfile(request, env);
     if (request.method === "POST" && url.pathname === "/api/beatride/request") return requestBeatRide(request, env);
+    if (request.method === "GET" && /^\\/policies\\/(privacy|terms|consumer|payments|community)$/.test(url.pathname)) return zalagrenPolicy(request, env, url.pathname.split("/")[2]);
     if (request.method === "GET" && url.pathname === "/api/me") return me(request, env);
     if (request.method === "GET" && url.pathname === "/api/plans") return zalagrenPlans(request, env);
     if (request.method === "POST" && url.pathname === "/api/subscriptions") return subscribeZalagrenPlan(request, env);

@@ -675,7 +675,7 @@ async function zalagrenPolicy(request: Request, env: Env, policyType: string): P
 async function zalagrenPlans(request: Request, env: Env): Promise<Response> {
   try {
     const {sql}=await participantIdFromSession(request,env);
-    const rows=await sql`SELECT id,code,name,description,currency,amount_minor,interval_unit,interval_count FROM public.zalagren_plan_catalog WHERE active=true ORDER BY amount_minor`;
+    const rows=await sql`SELECT id,code,name,description,currency,amount_minor,interval_unit,interval_count FROM public.zalagren_plan_catalog WHERE active=true AND code <> 'participant' ORDER BY amount_minor`;
     const features=await sql`SELECT plan_id,feature_code,feature_name,feature_description,included,limit_value FROM public.zalagren_plan_features WHERE included=true ORDER BY plan_id,feature_name`;
     const byPlan=features.reduce((acc:any[],f:any)=>{const p=acc.find(x=>x.plan_id===f.plan_id);if(p)p.features.push(f);else acc.push({plan_id:f.plan_id,features:[f]});return acc;},[]);
     return json({service:"Zalagren",plans:rows.map((p:any)=>({...p,features:byPlan.find(x=>x.plan_id===p.id)?.features||[]}))});

@@ -626,6 +626,75 @@ async function domainEvent(sql: DbSql, participantId: string, type: string, sour
 }
 
 
+
+async function beatMarketProfile(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    if(request.method==="GET"){
+      const [row]=await sql`SELECT * FROM public.beatmarket_professional_profiles WHERE participant_id=${participantId} LIMIT 1`;
+      return json({service:"BeatMarket",profile:row||null});
+    }
+    const b=await request.json().catch(()=>({})) as any;
+    const [row]=await sql`INSERT INTO public.beatmarket_professional_profiles(participant_id,headline,bio,skills,services,experience,education,portfolio,availability)
+      VALUES(${participantId},${b.headline||null},${b.bio||null},${JSON.stringify(b.skills||[]) }::jsonb,${JSON.stringify(b.services||[]) }::jsonb,${JSON.stringify(b.experience||[]) }::jsonb,${JSON.stringify(b.education||[]) }::jsonb,${JSON.stringify(b.portfolio||[]) }::jsonb,${JSON.stringify(b.availability||{})}::jsonb)
+      ON CONFLICT(participant_id) DO UPDATE SET headline=EXCLUDED.headline,bio=EXCLUDED.bio,skills=EXCLUDED.skills,services=EXCLUDED.services,experience=EXCLUDED.experience,education=EXCLUDED.education,portfolio=EXCLUDED.portfolio,availability=EXCLUDED.availability,updated_at=now()
+      RETURNING *`;
+    await domainEvent(sql,participantId,"beatmarket.profile.updated","zalagren-worker");
+    return json({service:"BeatMarket",profile:row});
+  } catch(e){const m=e instanceof Error?e.message:"BEATMARKET_PROFILE_FAILED";return json({service:"BeatMarket",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function beatMarketOpportunities(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    if(request.method==="GET"){
+      const rows=await sql`SELECT * FROM public.beatmarket_opportunities WHERE status<>'draft' ORDER BY created_at DESC LIMIT 100`;
+      return json({service:"BeatMarket",items:rows});
+    }
+    const b=await request.json().catch(()=>({})) as any;
+    if(!b.title||!b.description||!b.opportunityType)return json({service:"BeatMarket",error:"OPPORTUNITY_FIELDS_REQUIRED"},400);
+    const id="market-opportunity-"+crypto.randomUUID();
+    const [row]=await sql`INSERT INTO public.beatmarket_opportunities(id,participant_id,opportunity_type,title,description,location,compensation_minor,currency,remote_mode,status)
+      VALUES(${id},${participantId},${b.opportunityType},${b.title},${b.description},${JSON.stringify(b.location||{})}::jsonb,${b.compensationMinor??null},${b.currency||"KES"},${b.remoteMode||"flexible"},'draft') RETURNING *`;
+    await domainEvent(sql,participantId,"beatmarket.opportunity.created","zalagren-worker");
+    return json({service:"BeatMarket",opportunity:row},201);
+  } catch(e){const m=e instanceof Error?e.message:"BEATMARKET_OPPORTUNITY_FAILED";return json({service:"BeatMarket",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function beatBnBProperties(request: Request, env: Env): Promise<Response> {
+  try {
+    const {sql}=await participantIdFromSession(request,env);
+    const rows=await sql`SELECT p.*,u.bedrooms,u.bathrooms,u.floor_area_sqm,u.furnishing,u.floor_level,u.parking,u.utilities,u.safety_features,u.accessibility_features,u.inventory,u.inspection_evidence
+      FROM public.beatbnb_properties p LEFT JOIN public.beatbnb_unit_profiles u ON u.property_id=p.id
+      WHERE p.listing_status='published' ORDER BY p.created_at DESC LIMIT 100`;
+    return json({service:"BeatBnB",items:rows});
+  } catch(e){const m=e instanceof Error?e.message:"BEATBNB_PROPERTIES_FAILED";return json({service:"BeatBnB",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function beatBnBFavorite(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const b=await request.json().catch(()=>({})) as any;
+    if(!b.propertyId)return json({service:"BeatBnB",error:"PROPERTY_ID_REQUIRED"},400);
+    await sql`INSERT INTO public.beatbnb_favorites(participant_id,property_id) VALUES(${participantId},${b.propertyId}) ON CONFLICT DO NOTHING`;
+    await domainEvent(sql,participantId,"beatbnb.favorite.created","zalagren-worker");
+    return json({service:"BeatBnB",status:"favorite_saved"});
+  } catch(e){const m=e instanceof Error?e.message:"BEATBNB_FAVORITE_FAILED";return json({service:"BeatBnB",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function beatBnBTravelSearch(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const b=await request.json().catch(()=>({})) as any;
+    if(!b.origin||!b.destination)return json({service:"BeatBnB",error:"TRAVEL_SEARCH_FIELDS_REQUIRED"},400);
+    const id="bnb-travel-search-"+crypto.randomUUID();
+    const [row]=await sql`INSERT INTO public.beatbnb_travel_searches(id,participant_id,origin,destination,depart_on,return_on,passengers,cabin,filters)
+      VALUES(${id},${participantId},${JSON.stringify(b.origin)}::jsonb,${JSON.stringify(b.destination)}::jsonb,${b.departOn||null},${b.returnOn||null},${Number(b.passengers||1)},${b.cabin||null},${JSON.stringify(b.filters||{})}::jsonb) RETURNING *`;
+    await domainEvent(sql,participantId,"beatbnb.travel.search.created","zalagren-worker");
+    return json({service:"BeatBnB",search:row,availability:"not_provider_verified"});
+  } catch(e){const m=e instanceof Error?e.message:"BEATBNB_TRAVEL_SEARCH_FAILED";return json({service:"BeatBnB",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
 async function participantVerificationStatus(request: Request, env: Env): Promise<Response> {
   try {
     const {participantId,active,sql}=await participantIdFromSession(request,env);
@@ -1476,6 +1545,11 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/guardian/checkin") return guardianCreateCheckin(request, env);
     if (request.method === "GET" && url.pathname === "/api/home/foundation") return homeFoundation(request, env);
     if (request.method === "GET" && url.pathname === "/api/identity/verification/status") return participantVerificationStatus(request, env);
+    if ((request.method === "GET" || request.method === "PUT") && url.pathname === "/api/beatmarket/profile") return beatMarketProfile(request, env);
+    if ((request.method === "GET" || request.method === "POST") && url.pathname === "/api/beatmarket/opportunities") return beatMarketOpportunities(request, env);
+    if (request.method === "GET" && url.pathname === "/api/beatbnb/properties") return beatBnBProperties(request, env);
+    if (request.method === "POST" && url.pathname === "/api/beatbnb/favorite") return beatBnBFavorite(request, env);
+    if (request.method === "POST" && url.pathname === "/api/beatbnb/travel/search") return beatBnBTravelSearch(request, env);
     if (request.method === "GET" && url.pathname === "/api/activity") return participantActivity(request, env);
     if (request.method === "GET" && url.pathname === "/api/notifications") return participantNotifications(request, env);
     if (request.method === "POST" && url.pathname === "/api/notifications/read") return markParticipantNotification(request, env);

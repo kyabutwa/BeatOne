@@ -255,8 +255,7 @@ async function authMutation(request: Request, env: Env, endpoint: string): Promi
 async function currentSession(request: Request, env: Env): Promise<{ user: any; session: any; canonical: any } | null> {
   const cookieHeader = request.headers.get("cookie") || "";
   const tokenMatches = [
-    cookieHeader.match(/(?:^|;\s*)__Host-zalagren_session=([^;]+)/),
-    cookieHeader.match(/(?:^|;\s*)__Host-beatone_session=([^;]+)/)
+    cookieHeader.match(/(?:^|;\s*)__Host-zalagren_session=([^;]+)/)
   ].filter(Boolean) as RegExpMatchArray[];
   const sql = requireDatabase(env);
   for (const tokenMatch of tokenMatches) {
@@ -328,6 +327,12 @@ function base64FromBytes(bytes: Uint8Array): string {
 
 function base64UrlFromBytes(bytes: Uint8Array): string {
   return base64FromBytes(bytes).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function normalizeSetCookieForHost(cookie: string): string {
+  return cookie
+    .replace(/;\s*Domain=[^;]+/gi, "")
+    .replace(/;\s*Path=\/[^;]*/i, "; Path=/");
 }
 
 function bytesFromBase64(value: string): Uint8Array {
@@ -1202,8 +1207,7 @@ export default {
         const outHeaders = headers({"content-type":"application/json; charset=utf-8"});
         const cookieHeader = request.headers.get("cookie") || "";
         const tokenMatches = [
-          cookieHeader.match(/(?:^|;\s*)__Host-zalagren_session=([^;]+)/),
-          cookieHeader.match(/(?:^|;\s*)__Host-beatone_session=([^;]+)/)
+          cookieHeader.match(/(?:^|;\s*)__Host-zalagren_session=([^;]+)/)
         ].filter(Boolean) as RegExpMatchArray[];
         if (tokenMatches.length) {
           const sql = requireDatabase(env);
@@ -1215,10 +1219,9 @@ export default {
         try {
           const upstream = await providerRequest(request, env, "/sign-out");
           const setCookies = providerCookies(upstream);
-          for (const cookie of setCookies) outHeaders.append("set-cookie", cookie.replace(/;\s*Domain=[^;]+/gi,"").replace(/;\s*Path=\/[^;]*/i,"; Path=/"));
+          for (const cookie of setCookies) outHeaders.append("set-cookie", normalizeSetCookieForHost(cookie));
         } catch {}
         outHeaders.append("set-cookie", "__Host-zalagren_session=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax");
-        outHeaders.append("set-cookie", "__Host-beatone_session=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax");
         return new Response(JSON.stringify({service:"Zalagren",status:"signed_out",sessionRevoked:true}),{status:200,headers:outHeaders});
       } catch (error) {
         return json({error:error instanceof Error?error.message:"SIGN_OUT_FAILED"},500);

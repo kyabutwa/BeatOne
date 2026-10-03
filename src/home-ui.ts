@@ -289,6 +289,27 @@ body.navy-mode .overlay{background:rgba(6,26,51,.82)!important}
 
 
 .invite-modal{position:fixed;inset:0;z-index:80;display:none;place-items:center;padding:18px;background:rgba(7,26,51,.28);backdrop-filter:blur(10px)}.invite-modal.open{display:grid}.invite-sheet{width:min(100%,520px);padding:20px;border:1px solid var(--line);border-radius:24px;background:var(--surface);box-shadow:0 24px 80px rgba(7,26,51,.22)}.invite-sheet-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}.invite-sheet-title{font-size:21px;line-height:27px;font-weight:780}.invite-sheet-copy{font-size:13px;line-height:19px;color:var(--muted);margin-top:4px}.invite-close{width:38px;height:38px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);color:var(--navy)}.invite-type{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:16px}.invite-type button{padding:11px;border:1px solid var(--line);border-radius:13px;background:var(--surface);color:var(--navy);font-weight:750}.invite-type button.active{border-color:var(--orange);background:#fff7f1}.invite-status{margin-top:12px;min-height:20px;font-size:13px;line-height:19px;color:var(--muted)}
+/* Compact participant experience: Home is a command center, not the database. */
+#home>.section:nth-of-type(n+4){display:none!important}
+#home>.detail-card{display:none}
+#home>.detail-card.active{display:block}
+.menu-dots{display:grid;gap:3px;place-items:center}
+.menu-dots i{display:block;width:4px;height:4px;border-radius:50%;background:currentColor}
+.menu-dots-button{display:grid;place-items:center}
+/* Final Zalagren clean UI contract: white/light or navy mode; no decorative gradients or glass dependency. */
+html{background:#fff!important}
+body{background:#fff!important;color:#071a33!important}
+.shell{width:min(100% - 24px,1080px)!important}
+.topbar,.bottom-nav{background:#fff!important;border:1px solid #dfe5ec!important;box-shadow:0 8px 28px rgba(7,26,51,.07)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.context-card,.auth-card,.detail-card,.participant-card,.account-hero,.surface,.menu-item,.control-card{background:#fff!important;border:1px solid #dfe5ec!important;box-shadow:0 6px 22px rgba(7,26,51,.055)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.surface{min-height:136px!important;border-radius:20px!important;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease!important}
+.surface:hover{transform:translateY(-2px)!important;box-shadow:0 10px 28px rgba(7,26,51,.08)!important;border-color:#b8c6d6!important}
+.overlay{background:#fff!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.context-item,.life-step,.verification-box,.status,.menu-item{background:#f6f8fb!important}
+body.navy-mode{background:#071a33!important;color:#fff!important}
+body.navy-mode .topbar,body.navy-mode .bottom-nav{background:#061a33!important;color:#fff!important;border-color:rgba(255,255,255,.16)!important}
+body.navy-mode .context-card,body.navy-mode .auth-card,body.navy-mode .detail-card,body.navy-mode .participant-card,body.navy-mode .account-hero,body.navy-mode .surface,body.navy-mode .menu-item,body.navy-mode .control-card{background:#0b2a52!important;color:#fff!important;border-color:rgba(255,255,255,.16)!important;box-shadow:0 10px 28px rgba(0,0,0,.18)!important}
+body.navy-mode .context-item,body.navy-mode .life-step,body.navy-mode .verification-box,body.navy-mode .status{background:#123a6b!important;color:#fff!important}
 </style>
 </head>
 <body>
@@ -318,7 +339,7 @@ body.navy-mode .overlay{background:rgba(6,26,51,.82)!important}
 
 <main class="shell">
 <header class="topbar">
- <button class="top-action" id="openMenu" type="button" aria-label="Open Zalagren menu"><span class="menu-lines"><span></span><span></span><span></span></span></button>
+ <button class="top-action menu-dots-button" id="openMenu" type="button" aria-label="Open Zalagren menu"><span class="menu-dots" aria-hidden="true"><i></i><i></i><i></i></span></button>
  <div class="brand-lockup"><img class="brand-logo" src="${ZALAGREN_LOGO}" alt="Zalagren"></div>
  <button class="account-control" id="account" type="button"><i class="account-dot"></i><span>My Zalagren</span></button>
 </header>
@@ -366,10 +387,10 @@ body.navy-mode .overlay{background:rgba(6,26,51,.82)!important}
  <section class="section">
   <div class="section-head"><div><h2 class="section-title">What do you need to do?</h2><p class="section-copy">Everything you use stays connected to your Zalagren context.</p></div></div>
   <div class="surface-grid">
-   <button class="surface" data-detail="identityDetail"><div class="surface-mark">FOUNDATION</div><div class="surface-title">Identity</div><div class="surface-copy">Your Zalagren identity and account.</div></button>
-   <button class="surface" data-detail="communityDetail"><div class="surface-mark">PARTICIPATION</div><div class="surface-title">Community</div><div class="surface-copy">Connect with the people and places that matter to you.</div></button>
-   <button class="surface" data-detail="serviceDetail"><div class="surface-mark">CAPABILITIES</div><div class="surface-title">Services</div><div class="surface-copy">Discover useful services and capabilities in one place.</div></button>
-   <button class="surface" data-detail="genesisDetail"><div class="surface-mark">INTELLIGENCE</div><div class="surface-title">GENESIS</div><div class="surface-copy">Understand your options and get help deciding what to do next.</div></button>
+   <button class="surface" data-detail="discoverDetail"><div class="surface-mark">DISCOVER</div><div class="surface-title">Places & people</div><div class="surface-copy">Explore communities, places, organizations and people connected to your context.</div></button>
+   <button class="surface" data-detail="serviceDetail"><div class="surface-mark">SERVICES</div><div class="surface-title">Services</div><div class="surface-copy">Discover available capabilities without creating disconnected accounts.</div></button>
+   <button class="surface" data-detail="communityDetail"><div class="surface-mark">CONTEXT</div><div class="surface-title">My participation</div><div class="surface-copy">See your relationships, communities and current participation context.</div></button>
+   <button class="surface" data-detail="genesisDetail"><div class="surface-mark">GENESIS</div><div class="surface-title">Ask & understand</div><div class="surface-copy">Get facts, context and proposals. Authorized participants remain in control.</div></button>
   </div>
  </section>
 
@@ -516,6 +537,14 @@ body.navy-mode .overlay{background:rgba(6,26,51,.82)!important}
   </div>
   <div id="settingsStatus" class="status hidden"></div>
  </section>
+ <section id="discoverDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">Discover</h3><div class="detail-sub">Places · people · organizations · services</div></div></div>
+  <div class="surface-grid">
+   <button class="surface" data-detail="worldDetail"><div class="surface-mark">PLACES</div><div class="surface-title">Places & spaces</div><div class="surface-copy">Communities, estates, buildings, units, rooms and other participating places.</div></button>
+   <button class="surface" data-detail="communityDetail"><div class="surface-mark">PEOPLE</div><div class="surface-title">People & communities</div><div class="surface-copy">Relationships and participation are shown only in the context you are authorized to see.</div></button>
+   <button class="surface" data-detail="serviceDetail"><div class="surface-mark">SERVICES</div><div class="surface-title">Services</div><div class="surface-copy">Health, mobility, food, commerce, payments, utilities and other governed capabilities.</div></button>
+   <button class="surface" data-detail="genesisDetail"><div class="surface-mark">INTELLIGENCE</div><div class="surface-title">GENESIS</div><div class="surface-copy">Move from facts and context to proposals without silently granting authority.</div></button>
+  </div>
+ </section>
  <section id="communityDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">Community</h3><div class="detail-sub">Participation and context</div></div></div><div id="communityBody"></div></section>
  <section id="serviceDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">Services</h3><div class="detail-sub">Services available through Zalagren</div></div></div><div id="serviceBody"></div></section>
  <section id="genesisDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">GENESIS</h3><div class="detail-sub">Intelligence proposes; authorized participants decide</div></div></div><div id="genesisBody"></div></section>
@@ -593,12 +622,13 @@ body.navy-mode .overlay{background:rgba(6,26,51,.82)!important}
  </div>
 </div>
 <nav class="bottom-nav hidden" id="bottomNav" aria-label="Primary navigation">
- <button class="active" data-nav="home">Home</button><button data-nav="community">Communities</button><button data-nav="services">Services</button><button data-nav="genesis">GENESIS</button><button data-nav="activity">Activity</button>
+ <button class="active" data-nav="home">Home</button><button data-nav="discover">Discover</button><button data-nav="activity">Activity</button><button data-nav="genesis">GENESIS</button><button data-nav="account">Me</button>
 </nav>
 
 <script>
 let signup=true;
 const $=id=>document.getElementById(id);
+const escHtml=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[ch]));
 const setError=message=>{ $("error").textContent=message||""; };
 function mode(){
  $("formTitle").textContent=signup?"Create your identity":"Welcome back";
@@ -627,7 +657,7 @@ function closeMenu(){ $("menuOverlay").classList.remove("open");$("menuOverlay")
 function navigate(name){
  closeMenu();
  document.querySelectorAll(".bottom-nav button").forEach(b=>b.classList.toggle("active",b.dataset.nav===name));
- const map={home:null,world:"worldDetail",services:"serviceDetail",activity:"activityDetail",account:"identityDetail",community:"communityDetail",genesis:"genesisDetail",management:"managementDetail"};
+ const map={home:null,discover:"discoverDetail",world:"worldDetail",services:"serviceDetail",activity:"activityDetail",account:"identityDetail",community:"communityDetail",genesis:"genesisDetail",management:"managementDetail"};
  if(name==="home"){window.scrollTo({top:0,behavior:"smooth"});return;}
  openDetail(map[name]||"identityDetail");
 }
@@ -671,15 +701,15 @@ async function loadManagementDirectory(){
 }
 async function managementPost(path,body){const r=await fetch(path,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"MANAGEMENT_REQUEST_FAILED");return d;}
 function managementRow(title,meta,buttons){
- return "<div class='row'><div class='row-title'>"+String(title)+"</div><div class='row-meta'>"+String(meta||"")+"</div>"+(buttons||"")+"</div>";
+ return "<div class='row'><div class='row-title'>"+escHtml(title)+"</div><div class='row-meta'>"+escHtml(meta||"")+"</div>"+(buttons||"")+"</div>";
 }
 async function loadCommunityOperations(){
  const communityId=$("managementCommunity")?.value;if(!communityId)return;
  try{
   const r=await fetch("/api/community/management/operations");const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"COMMUNITY_OPERATIONS_LOAD_FAILED");
   const services=(d.services||[]).filter(x=>x.provider_joinable);
-  $("communityProviderService").innerHTML=services.map(x=>"<option value='"+escapeHtml(x.id)+"'>"+escapeHtml(x.name)+"</option>").join("");
-  $("communityProviders").innerHTML=(d.bindings||[]).filter(x=>x.community_id===communityId).map(x=>managementRow(x.display_name,(x.service_name||"Service")+" · "+x.category+" · "+x.status,"<span class='pill'>"+escapeHtml(x.verification_state||"pending")+"</span>")).join("")||"<div class='row-title'>No community providers connected yet.</div>";
+  $("communityProviderService").innerHTML=services.map(x=>"<option value='"+escHtml(x.id)+"'>"+escHtml(x.name)+"</option>").join("");
+  $("communityProviders").innerHTML=(d.bindings||[]).filter(x=>x.community_id===communityId).map(x=>managementRow(x.display_name,(x.service_name||"Service")+" · "+x.category+" · "+x.status,"<span class='pill'>"+escHtml(x.verification_state||"pending")+"</span>")).join("")||"<div class='row-title'>No community providers connected yet.</div>";
   $("communityWorkOrders").innerHTML=(d.workOrders||[]).filter(x=>x.community_id===communityId).slice(0,8).map(x=>managementRow(x.title,(x.service_name||"Community service")+" · "+x.priority+" · "+x.status)).join("")||"<div class='row-title'>No work orders.</div>";
   $("communityUtilities").innerHTML=(d.utilities||[]).filter(x=>x.community_id===communityId).map(x=>managementRow(x.provider_name,x.utility_type+" · "+x.status+(x.external_reference?" · "+x.external_reference:""))).join("")||"<div class='row-title'>No utility relationships connected.</div>";
   $("communityEvents").innerHTML=(d.events||[]).filter(x=>x.community_id===communityId).slice(0,10).map(x=>managementRow(x.summary,new Date(x.occurred_at).toLocaleString())).join("")||"<div class='row-title'>No operational events yet.</div>";
@@ -841,9 +871,9 @@ async function loadZalagrenPlans(){
   grid.innerHTML=(d.plans||[]).map((p)=>{
    const isActive=active&&active.plan_id===p.id&&active.status==="active";
    const price=p.amount_minor===0?"Free":"KES "+Math.round(p.amount_minor/100).toLocaleString();
-   const features=(p.features||[]).slice(0,5).map((f)=>"<li>✓ "+escapeHtml(f.feature_name)+"</li>").join("");
+   const features=(p.features||[]).slice(0,5).map((f)=>"<li>✓ "+escHtml(f.feature_name)+"</li>").join("");
    const paid=p.amount_minor>0;
-   return '<div class="plan-card '+(isActive?"active":"")+'"><div class="eyebrow">'+escapeHtml(p.code==="free"?"NORMAL":p.code.toUpperCase())+'</div><div class="plan-name">'+escapeHtml(p.name)+'</div><div class="plan-price">'+price+(paid?'<small>/month</small>':"")+'</div><div class="plan-copy">'+escapeHtml(p.description)+'</div><ul class="plan-features">'+features+'</ul>'+(paid&&!isActive?'<div class="plan-phone"><input data-plan-phone="'+escapeHtml(p.id)+'" placeholder="M-PESA number e.g. 0712345678" inputmode="tel"></div>':"")+'<button class="action '+(isActive?"secondary":"primary")+' plan-action" data-plan-id="'+escapeHtml(p.id)+'" '+(isActive?"disabled":"")+'> '+(isActive?"Active":(paid?"Choose & pay":"Use Normal"))+' </button></div>';
+   return '<div class="plan-card '+(isActive?"active":"")+'"><div class="eyebrow">'+escHtml(p.code==="free"?"NORMAL":p.code.toUpperCase())+'</div><div class="plan-name">'+escHtml(p.name)+'</div><div class="plan-price">'+price+(paid?'<small>/month</small>':"")+'</div><div class="plan-copy">'+escHtml(p.description)+'</div><ul class="plan-features">'+features+'</ul>'+(paid&&!isActive?'<div class="plan-phone"><input data-plan-phone="'+escHtml(p.id)+'" placeholder="M-PESA number e.g. 0712345678" inputmode="tel"></div>':"")+'<button class="action '+(isActive?"secondary":"primary")+' plan-action" data-plan-id="'+escHtml(p.id)+'" '+(isActive?"disabled":"")+'> '+(isActive?"Active":(paid?"Choose & pay":"Use Normal"))+' </button></div>';
   }).join("");
   grid.querySelectorAll(".plan-action").forEach((b)=>b.onclick=()=>selectZalagrenPlan(b.dataset.planId));
  }catch{current.textContent="Unable to load plans right now.";}

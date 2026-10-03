@@ -1,14 +1,14 @@
-# BeatOne
+# Zalagren
 
-BeatOne is an intelligent living infrastructure for participating communities.
+Zalagren is an intelligent living infrastructure for participating communities.
 
 It connects identity, participants, communities, places, access, capabilities, authorization, commerce, services, mobility, accommodation, payments through regulated external rails, health coordination, utilities and GENESIS intelligence through one governed ecosystem.
 
 ## Current product identity
 
-**BeatOne** is the user-facing product name.
+**Zalagren** is the user-facing product name.
 
-Historical architecture work from NEOOLITEC, Savannah Genesis, EarthBeat and GENESIS is preserved as lineage and design input. Historical names are not user-facing product branding.
+Historical architecture work from NEOOLITEC, Savannah Genesis, EarthBeat and GENESIS is preserved as lineage and design input. Zalagren is the current user-facing product and ecosystem identity.
 
 ## Canonical lifecycle
 
@@ -40,22 +40,22 @@ These are governed ecosystem capabilities, not separate identity silos.
 
 ## Runtime boundary
 
-BeatOne coordinates intent, authorization, provider interaction, evidence and participant experience. It does not fabricate regulated providers, licences, verification, payments, health records, communities or operational data.
+Zalagren coordinates intent, authorization, provider interaction, evidence and participant experience. It does not fabricate regulated providers, licences, verification, payments, health records, communities or operational data.
 
 Cloudflare Worker + Neon PostgreSQL are the current production infrastructure.
 
 ## Brand
 
-The owner-provided BeatOne logo is the intended canonical UI logo. The repository currently does not contain the owner logo binary, so the interface uses a self-contained BeatOne fallback mark until that asset is restored. The previously referenced IMG_1383.jpeg / IMG_1384.jpeg files are not currently present in the repository; no missing asset is treated as live.
+The owner-provided Zalagren logo is the intended canonical UI logo. The repository currently does not contain the owner logo binary, so the interface uses a self-contained Zalagren fallback mark until that asset is restored. The previously referenced IMG_1383.jpeg / IMG_1384.jpeg files are not currently present in the repository; no missing asset is treated as live.
 
-No EarthBeat, SpeedMe or Zalagren visible product branding is permitted. Zalagren remains the architectural lineage underneath the BeatOne ecosystem.
+No EarthBeat, SpeedMe or Zalagren visible product branding is permitted. Zalagren remains the architectural lineage underneath the Zalagren ecosystem.
 
 
-## BeatOne x Zalagren integration
+## Zalagren x Zalagren integration
 
-BeatOne is the primary participant-facing brand and ecosystem shell. Zalagren remains the integrated intelligent-living foundation and architectural lineage underneath BeatOne; it is not a separate user-facing product.
+Zalagren is the primary participant-facing brand and ecosystem shell. Zalagren remains the integrated intelligent-living foundation and architectural lineage underneath Zalagren; it is not a separate user-facing product.
 
-### BeatOne 8-pillar model
+### Zalagren 8-pillar model
 
 1. Identity
 2. Access

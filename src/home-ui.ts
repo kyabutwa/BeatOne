@@ -682,12 +682,29 @@ function loadSettingsPreferences(){try{const get=(k,d)=>{const v=localStorage.ge
 function saveSetting(id,key){const el=$(id);if(!el)return;try{localStorage.setItem(key,String(el.checked));}catch{}showSettingsStatus("Preference saved on this device.");}
 function openMenu(){ $("menuOverlay").classList.add("open");$("menuOverlay").setAttribute("aria-hidden","false"); }
 function closeMenu(){ $("menuOverlay").classList.remove("open");$("menuOverlay").setAttribute("aria-hidden","true"); }
+function openAuthSignin(){
+ closeMenu();
+ signup=false;
+ const auth=$("auth"),home=$("home"),bottom=$("bottomNav");
+ if(auth)auth.classList.remove("hidden");
+ if(home)home.classList.add("hidden");
+ if(bottom)bottom.classList.add("hidden");
+ setError("");
+ mode();
+ const email=$("email");
+ if(email){email.focus();email.scrollIntoView({behavior:"smooth",block:"center"});}
+}
 function navigate(name){
  closeMenu();
+ if((name==="account"||name==="settings"||name==="management") && $("auth") && !$("auth").classList.contains("hidden")){
+   openAuthSignin();
+   return;
+ }
  document.querySelectorAll(".bottom-nav button").forEach(b=>b.classList.toggle("active",b.dataset.nav===name));
- const map={home:null,discover:"discoverDetail",world:"worldDetail",services:"serviceDetail",activity:"activityDetail",account:"identityDetail",community:"communityDetail",genesis:"genesisDetail",management:"managementDetail"};
+ const map={home:null,discover:"discoverDetail",world:"worldDetail",services:"serviceDetail",activity:"activityDetail",account:"identityDetail",community:"communityDetail",genesis:"genesisDetail",management:"managementDetail",settings:"settingsDetail"};
  if(name==="home"){window.scrollTo({top:0,behavior:"smooth"});return;}
- openDetail(map[name]||"identityDetail");
+ const target=map[name];
+ if(target)openDetail(target);
 }
 function showHome(d){
  $("auth").classList.add("hidden");$("home").classList.remove("hidden");$("bottomNav").classList.remove("hidden");
@@ -866,10 +883,25 @@ $("settingsSignOut").onclick=async()=>{try{await apiPost("/api/auth/sign-out",{}
 $("prefContext").onchange=()=>saveSetting("prefContext","zalagren-pref-context");$("prefLocation").onchange=()=>saveSetting("prefLocation","zalagren-pref-location");$("prefServiceMessages").onchange=()=>saveSetting("prefServiceMessages","zalagren-pref-service-messages");
 $("prefNavy").onchange=()=>{applyTheme($("prefNavy").checked);showSettingsStatus("Appearance saved.");};$("prefReducedMotion").onchange=()=>{try{localStorage.setItem("zalagren-pref-reduced-motion",String($("prefReducedMotion").checked));}catch{}document.documentElement.style.scrollBehavior=$("prefReducedMotion").checked?"auto":"";showSettingsStatus("Motion preference saved.");};$("prefLanguage").onchange=()=>{try{localStorage.setItem("zalagren-language",$("prefLanguage").value);}catch{}showSettingsStatus("Language preference saved. Interface translation is enabled progressively by language pack.");};
 loadSettingsPreferences();
-$("openMenu").onclick=openMenu;$("closeMenu").onclick=closeMenu;$("account").onclick=()=>navigate("account");$("accountInline").onclick=()=>navigate("account");
-$("themeToggle").onclick=()=>applyTheme(!document.body.classList.contains("navy-mode"));
+function bindClick(id,handler){
+ const el=$(id);
+ if(el)el.addEventListener("click",handler);
+}
+bindClick("openMenu",openMenu);
+bindClick("closeMenu",closeMenu);
+bindClick("account",()=>navigate("account"));
+bindClick("accountInline",()=>navigate("account"));
+bindClick("themeToggle",()=>applyTheme(!document.body.classList.contains("navy-mode")));
 try{applyTheme(localStorage.getItem("zalagren-theme")==="navy");}catch{applyTheme(false);}
-$("mode").onclick=()=>{signup=!signup;setError("");mode();};
+bindClick("mode",()=>{signup=!signup;setError("");mode();});
+document.addEventListener("click",event=>{
+ const target=event.target instanceof Element?event.target.closest("#openMenu,#closeMenu,#account,#accountInline,#mode"):null;
+ if(!target)return;
+ if(target.id==="openMenu"){openMenu();event.preventDefault();return;}
+ if(target.id==="closeMenu"){closeMenu();event.preventDefault();return;}
+ if(target.id==="account"||target.id==="accountInline"){navigate("account");event.preventDefault();return;}
+ if(target.id==="mode"){signup=!signup;setError("");mode();event.preventDefault();}
+},true);
 $("authForm").onsubmit=async event=>{
  event.preventDefault();setError("");
  const body={email:$("email").value.trim(),password:$("password").value};if(signup){body.name=$("name").value.trim();body.phone=$("phone").value.trim();}

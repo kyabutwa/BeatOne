@@ -310,7 +310,7 @@ body.navy-mode{background:#071a33!important;color:#fff!important}
 body.navy-mode .topbar,body.navy-mode .bottom-nav{background:#061a33!important;color:#fff!important;border-color:rgba(255,255,255,.16)!important}
 body.navy-mode .context-card,body.navy-mode .auth-card,body.navy-mode .detail-card,body.navy-mode .participant-card,body.navy-mode .account-hero,body.navy-mode .surface,body.navy-mode .menu-item,body.navy-mode .control-card{background:#0b2a52!important;color:#fff!important;border-color:rgba(255,255,255,.16)!important;box-shadow:0 10px 28px rgba(0,0,0,.18)!important}
 body.navy-mode .context-item,body.navy-mode .life-step,body.navy-mode .verification-box,body.navy-mode .status{background:#123a6b!important;color:#fff!important}
-</style>
+.constantyna-card{border-color:#d7e0eb!important}.constantyna-messages{display:grid;gap:10px;max-height:360px;overflow:auto;margin-bottom:12px}.constantyna-message{padding:12px 14px;border-radius:16px;border:1px solid #dfe5ec;background:#f7f9fc;line-height:1.5}.constantyna-message.user{background:#eef3f9}.constantyna-message strong{display:block;font-size:11px;letter-spacing:.08em;margin-bottom:4px;color:#31577f}.constantyna-compose{display:flex;gap:8px}.constantyna-compose input{flex:1;min-width:0}.constantyna-compose .action{white-space:nowrap}</style>
 </head>
 <body>
 <div class="overlay" id="menuOverlay" aria-hidden="true">
@@ -377,10 +377,16 @@ body.navy-mode .context-item,body.navy-mode .life-step,body.navy-mode .verificat
  </section>
 
  <section class="section zalagren-search">
-  <div class="section-head"><div><h2 class="section-title">Ask Zalagren</h2><p class="section-copy">Tell Zalagren what you need and it will take you to the right place.</p></div></div>
-  <div class="context-card" style="padding:16px">
-   <input id="zalagrenIntent" aria-label="Ask Zalagren" placeholder="Ask Zalagren or describe what you need…" autocomplete="off">
-   <div id="zalagrenIntentHint" class="status">Try: “find a doctor”, “book an appointment”, “find medicine”, “request a ride”, or “help me with my community”.</div>
+  <div class="section-head"><div><h2 class="section-title">CONSTANTYNA</h2><p class="section-copy">Your governed Zalagren intelligence. Ask about Zalagren, discover possibilities, compare options, understand missing information, research when enabled, or be guided to the right interface.</p></div></div>
+  <div class="context-card constantyna-card" style="padding:16px">
+   <div id="constantynaMessages" class="constantyna-messages" aria-live="polite">
+    <div class="constantyna-message assistant"><strong>CONSTANTYNA</strong><div>I understand Zalagren through your account, context and authorization. I will tell you what is known, what is missing, what is possible, and what needs your approval.</div></div>
+   </div>
+   <div class="constantyna-compose">
+    <input id="zalagrenIntent" aria-label="Ask Constantyna" placeholder="Ask Constantyna about Zalagren or what you need…" autocomplete="off">
+    <button id="constantynaSend" class="action" type="button">Ask</button>
+   </div>
+   <div id="zalagrenIntentHint" class="status">Normal: explain, discover and guide. Plus: deeper opportunity scans and research when connected. Premium: advanced orchestration. Consequential actions remain authorization-gated.</div>
   </div>
  </section>
 
@@ -768,6 +774,34 @@ async function loadViews(){
 }
 document.querySelectorAll("[data-detail]").forEach(el=>el.addEventListener("click",()=>openDetail(el.dataset.detail)));
 document.querySelectorAll("[data-nav]").forEach(el=>el.addEventListener("click",()=>navigate(el.dataset.nav)));
+const constantynaMessages=$("constantynaMessages"),constantynaSend=$("constantynaSend");
+const appendConstantyna=(role,text)=>{
+ if(!constantynaMessages)return;
+ const el=document.createElement("div");el.className="constantyna-message "+role;
+ const safe=escHtml(text).replace(/\n/g,"<br>");
+ el.innerHTML="<strong>"+(role==="assistant"?"CONSTANTYNA":"YOU")+"</strong><div>"+safe+"</div>";
+ constantynaMessages.appendChild(el);constantynaMessages.scrollTop=constantynaMessages.scrollHeight;
+};
+const askConstantyna=async()=>{
+ const q=zalagrenIntent?.value.trim();if(!q)return;
+ appendConstantyna("user",q);zalagrenIntent.value="";
+ if(constantynaSend){constantynaSend.disabled=true;constantynaSend.textContent="Thinking…";}
+ try{
+  const r=await fetch("/api/constantyna",{method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",body:JSON.stringify({message:q})});
+  const d=await r.json();
+  if(!r.ok){appendConstantyna("assistant",d.error||"Constantyna could not process that request.");return;}
+  appendConstantyna("assistant",d.answer||"I have prepared the next governed step.");
+  if(d.action?.target&&d.action.risk==="none"){
+    const b=document.createElement("button");b.className="action secondary";b.textContent="Open interface";b.onclick=()=>openDetail(d.action.target);constantynaMessages?.appendChild(b);
+  } else if(d.action?.requiresConfirmation){
+    const b=document.createElement("button");b.className="action";b.textContent="Review before execution";b.onclick=()=>{appendConstantyna("assistant","This action requires your explicit authorization. Review the proposal and execute it through the appropriate Zalagren interface.");};constantynaMessages?.appendChild(b);
+  }
+  if(d.data?.planGate)appendConstantyna("assistant","This capability is "+d.data.planGate.requiredCapability+" and your current plan is "+d.data.planGate.currentPlan+". Available upgrade path: "+d.data.planGate.upgradePath+".");
+ }catch{appendConstantyna("assistant","I could not reach Constantyna. No action was executed.");}
+ finally{if(constantynaSend){constantynaSend.disabled=false;constantynaSend.textContent="Ask";}}
+};
+if(constantynaSend)constantynaSend.onclick=askConstantyna;
+if(zalagrenIntent)zalagrenIntent.addEventListener("keydown",e=>{if(e.key==="Enter")askConstantyna();});
 const zalagrenIntent=$("zalagrenIntent"),zalagrenIntentHint=$("zalagrenIntentHint");
 if(zalagrenIntent){zalagrenIntent.oninput=()=>{const q=zalagrenIntent.value.trim().toLowerCase();if(!q){zalagrenIntentHint.textContent="Examples: access, community, ride, food, payment, marketplace, health, GENESIS.";return;}const routes=[["access","worldDetail","Access"],["community","communityDetail","Communities"],["ride","serviceDetail","BeatRide"],["mobility","serviceDetail","BeatRide"],["food","serviceDetail","BeatFood"],["payment","serviceDetail","BeatPay"],["pay","serviceDetail","BeatPay"],["market","marketplaceDetail","BeatMarket"],["bnb","marketplaceDetail","BeatMarket"],["health","serviceDetail","BeatHealth"],["genesis","genesisDetail","GENESIS"],["education","genesisDetail","Knowledge"],["environment","genesisDetail","Knowledge"]];const hit=routes.find(([k])=>q.includes(k));zalagrenIntentHint.textContent=hit?"Open "+hit[2]+" to continue. Consequential actions remain authorization-gated.":"No direct surface matched yet. Zalagren will not invent a provider, authority or action.";if(hit)zalagrenIntentHint.onclick=()=>openDetail(hit[1]);zalagrenIntentHint.style.cursor=hit?"pointer":"default";};}
 

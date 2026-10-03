@@ -69,9 +69,9 @@ Legal identity is deferred to protected identity/verification flows. Backend leg
 
 ## Logo boundary
 
-The current repository does not contain the owner-provided 1.png binary. The UI therefore uses a self-contained temporary Zalagren mark rather than a broken image reference.
+The owner-provided Zalagren logo binary is present at `1.png` and is the canonical participant-facing logo. The Worker publishes it at `/1.png`, and the shell references that asset directly.
 
-This is NOT equivalent to verification of the owner-provided artwork. The canonical artwork must replace the temporary mark when the actual asset is restored.
+No generated fallback is used for the primary Zalagren shell. The asset SHA-256 is pinned by the production smoke test.
 
 ## Deployment boundary
 

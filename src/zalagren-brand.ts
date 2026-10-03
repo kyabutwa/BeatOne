@@ -1,5 +1,5 @@
 // Canonical Zalagren visual identity boundary.
-// The owner-provided emblem is served as a transparent vector asset so only the emblem
+// The owner-provided emblem is served as a transparent PNG asset so only the emblem
 // is visible on light or navy surfaces; it is never recreated or recolored in CSS.
 export const ZALAGREN_LOGO = "/zalagren-emblem.png";
 

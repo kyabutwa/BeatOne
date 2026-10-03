@@ -46,7 +46,7 @@ Cloudflare Worker + Neon PostgreSQL are the current production infrastructure.
 
 ## Brand
 
-The owner-provided Zalagren logo binary is present at `1.png` and is the canonical UI logo. It is published through the Worker static-assets pipeline as `/1.png`. No generated fallback logo is used for the primary Zalagren shell.
+The canonical Zalagren participant-facing emblem is published as a transparent asset at `/zalagren-emblem.svg`; it contains the emblem only, with no background.
 
 EarthBeat and SpeedMe are historical/internal lineage only and must not appear as user-facing product branding. Zalagren is the sole current user-facing product identity. Zalagren remains the architectural lineage underneath the Zalagren ecosystem.
 

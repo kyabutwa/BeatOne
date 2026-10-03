@@ -6,7 +6,7 @@ const escapeHtml = (value: unknown): string =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 
-import { BEATONE_LOGO, BEAT_SERVICE_LOGOS } from "./beatone-brand.js";
+import { ZALAGREN_LOGO, ZALAGREN_SERVICE_LOGOS } from "./zalagren-brand.js";
 
 export const renderHome = (headers: (extra?: HeadersInit) => Headers): Response =>
   new Response(`<!doctype html>
@@ -14,12 +14,12 @@ export const renderHome = (headers: (extra?: HeadersInit) => Headers): Response 
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#ffffff"><meta name="application-name" content="Zalagren">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="preload" as="image" href="${BEATONE_LOGO}">
-<link rel="icon" href="${BEATONE_LOGO}">
-<title>BeatOne</title>
+<link rel="preload" as="image" href="${ZALAGREN_LOGO}">
+<link rel="icon" href="${ZALAGREN_LOGO}">
+<title>Zalagren</title>
 <style>
 :root{
  --canvas:#fff;--surface:#fff;--surface-2:#f6f8fb;--navy:#071a33;--blue:#245fa8;
@@ -97,8 +97,8 @@ input::placeholder{color:#7a8798}
 .control-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.control-card{padding:15px;border:1px solid var(--line);border-radius:17px;background:var(--surface);box-shadow:0 5px 18px rgba(7,26,51,.04)}.control-kicker{font-size:10px;line-height:15px;font-weight:800;letter-spacing:.09em;color:var(--orange);text-transform:uppercase}.control-title{font-size:15px;line-height:20px;font-weight:760;margin-top:6px}.control-copy{font-size:12px;line-height:18px;color:var(--muted);margin-top:4px}.truth{display:inline-flex;align-items:center;gap:5px;margin-top:10px;font-size:10px;font-weight:800;letter-spacing:.05em}.truth-dot{width:7px;height:7px;border-radius:50%;display:inline-block}.truth-verified .truth-dot{background:#1d7a4d}.truth-supported .truth-dot{background:#315f9a}.truth-proposed .truth-dot{background:#6b7280}.truth-failed .truth-dot{background:#a63a2b}.truth-pending .truth-dot{background:var(--orange)}.lifecycle{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.life-step{padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2)}.life-step strong{display:block;font-size:12px}.life-step span{display:block;font-size:11px;line-height:16px;color:var(--muted);margin-top:3px}@media(max-width:700px){.control-grid,.lifecycle{grid-template-columns:1fr}}@media(max-width:700px){.shell{padding-top:4px}.topbar{top:4px}.account-control span{display:none}.home-intro{display:block}.context-chip{margin-top:12px}.context-grid{grid-template-columns:1fr}.surface-grid{grid-template-columns:1fr}.surface{min-height:128px}.participant-card{grid-template-columns:1fr}.actions{flex-direction:column}.action{width:100%}.menu-grid{grid-template-columns:1fr}}
 @media(min-width:701px){.page{padding-top:18px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.surface{transition:none}.surface:hover{transform:none}}
-/* Temporary self-contained BeatOne mark: the owner-provided IMG_1383 artwork is not present in this repository yet. */
-/* BeatOne interface integration — iPhone-class spatial shell. */
+/* Temporary self-contained Zalagren mark: the owner-provided IMG_1383 artwork is not present in this repository yet. */
+/* Zalagren interface integration — iPhone-class spatial shell. */
 :root{
  --canvas:#060B14;--surface:rgba(255,255,255,.08);--surface-2:rgba(255,255,255,.055);
  --navy:#F8FAFC;--blue:#1B365D;--orange:#F27A21;--muted:#94A3B8;--line:rgba(255,255,255,.14);--line-soft:rgba(255,255,255,.08);
@@ -116,16 +116,35 @@ input::placeholder,.lede,.section-copy,.surface-copy,.control-copy,.row-meta,.de
 .truth-verified .truth-dot{background:#10B981}.truth-supported .truth-dot{background:#60A5FA}.truth-proposed .truth-dot{background:#A78BFA}.truth-failed .truth-dot{background:#F87171}
 /* Preserve readable dark-on-light controls where necessary. */
 
-/* BeatOne iPhone-class dark system surface: Apple HIG-inspired, not a copy of proprietary Apple UI. */
+/* Zalagren iPhone-class dark system surface: Apple HIG-inspired, not a copy of proprietary Apple UI. */
 :root{--canvas:#050B16;--surface:rgba(255,255,255,.075);--surface-2:rgba(255,255,255,.055);--navy:#F8FAFC;--blue:#1B365D;--orange:#10B981;--muted:#F8FAFC;--line:rgba(255,255,255,.14);--line-soft:rgba(255,255,255,.08);--danger:#FF6B6B;--green:#10B981;--white:#F8FAFC;--shadow:0 22px 70px rgba(0,0,0,.34)}
 html,body{background:var(--canvas)!important;color:var(--white)!important}body,*{color:#F8FAFC}.lede,.section-copy,.surface-copy,.control-copy,.row-meta,.detail-sub,.identity-meta,.verification-copy,.status,.context-label,.life-step span,.overlay-copy,.menu-item span{color:#F8FAFC!important;opacity:.78}.title,.overlay-title,.section-title,.detail-title,.auth-title,.surface-title,.control-title,.row-title,.verification-title,.identity{color:#F8FAFC!important}.eyebrow,.surface-mark,.surface-state,.control-kicker,.link-button{color:#10B981!important}.topbar,.bottom-nav,.context-card,.auth-card,.detail-card,.surface,.control-card,.menu-item,.context-item,.life-step,.verification-box,.status,.participant-card{background:rgba(255,255,255,.075)!important;border-color:rgba(255,255,255,.14)!important;box-shadow:var(--shadow)!important;backdrop-filter:blur(24px) saturate(150%);-webkit-backdrop-filter:blur(24px) saturate(150%)}.topbar,.bottom-nav{background:rgba(5,11,22,.82)!important}.overlay{background:rgba(5,11,22,.985)!important}.account-control,input,select,textarea,.mini-actions button,.secondary{background:rgba(255,255,255,.075)!important;color:#F8FAFC!important;border-color:rgba(255,255,255,.16)!important}input::placeholder,textarea::placeholder{color:#F8FAFC!important;opacity:.55}.primary{background:#10B981!important;color:#06110D!important;border:0!important}.action,.mini-actions button,.secondary,.top-action,.bottom-nav button{color:#F8FAFC!important}.bottom-nav button.active{background:rgba(16,185,129,.17)!important;color:#10B981!important}.account-dot,.context-chip i,.truth-dot,.verification-symbol{background:#10B981!important}.pill{background:rgba(16,185,129,.14)!important;color:#10B981!important;border:1px solid rgba(16,185,129,.22)}.title{font-size:clamp(34px,7vw,50px)!important;font-weight:780!important;letter-spacing:-.035em}.section-title{font-size:22px!important;font-weight:780!important}.detail-title{font-size:26px!important;font-weight:780!important}.surface-title{font-size:20px!important;font-weight:760!important}.account-hero{display:grid;grid-template-columns:auto 1fr;gap:15px;align-items:center;padding:18px;border-radius:22px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.22);margin-bottom:12px}.account-avatar{width:56px;height:56px;border-radius:18px;display:grid;place-items:center;background:rgba(16,185,129,.16);border:1px solid rgba(16,185,129,.35);font-size:22px;font-weight:800;color:#10B981!important}.account-id{font-size:12px;line-height:18px;opacity:.72;overflow-wrap:anywhere}.verification-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}.verification-state{padding:14px;border:1px solid rgba(255,255,255,.13);border-radius:17px;background:rgba(255,255,255,.045)}.verification-state-head{display:flex;align-items:center;gap:8px;font-weight:760}.verification-symbol{width:9px;height:9px;border-radius:50%;flex:0 0 auto}.verification-state.pending .verification-symbol{background:#F59E0B!important}.verification-state.verified .verification-symbol{background:#10B981!important}.verification-state.required .verification-symbol,.verification-state.not_started .verification-symbol{background:#94A3B8!important}.verification-state-label{font-size:13px;font-weight:760}.verification-state-value{font-size:11px;line-height:17px;margin-top:5px;opacity:.72}@media(max-width:700px){.verification-grid{grid-template-columns:1fr}.account-hero{grid-template-columns:auto 1fr}}
+
+/* Canonical Zalagren white-mode system. Historical theme experiments above are intentionally overridden here. */
+:root{--canvas:#ffffff;--surface:#ffffff;--surface-2:#f7f9fc;--navy:#071A33;--blue:#1554A6;--orange:#F27A21;--muted:#526173;--line:#DCE3EC;--line-soft:#EEF2F6;--danger:#A63A2B;--green:#0B7A3B;--shadow:0 12px 36px rgba(7,26,51,.08)}
+html,body{background:#fff!important;color:var(--navy)!important}
+body,*{color:var(--navy)}
+.lede,.section-copy,.surface-copy,.control-copy,.row-meta,.detail-sub,.identity-meta,.verification-copy,.status,.context-label,.life-step span,.overlay-copy,.menu-item span{color:var(--muted)!important;opacity:1}
+.title,.overlay-title,.section-title,.detail-title,.auth-title,.surface-title,.control-title,.row-title,.verification-title,.identity{color:var(--navy)!important}
+.eyebrow,.surface-mark,.surface-state,.control-kicker,.link-button{color:var(--orange)!important}
+.topbar,.bottom-nav,.context-card,.auth-card,.detail-card,.surface,.control-card,.menu-item,.context-item,.life-step,.verification-box,.status,.participant-card{background:#fff!important;border-color:var(--line)!important;box-shadow:var(--shadow)!important;backdrop-filter:saturate(180%) blur(18px);-webkit-backdrop-filter:saturate(180%) blur(18px)}
+.topbar,.bottom-nav{background:rgba(255,255,255,.94)!important}
+.overlay{background:rgba(255,255,255,.985)!important}
+.account-control,input,select,textarea,.mini-actions button,.secondary{background:#fff!important;color:var(--navy)!important;border-color:#CBD5E1!important}
+input::placeholder,textarea::placeholder{color:#718096!important;opacity:1}
+.primary{background:var(--navy)!important;color:#fff!important}.action,.mini-actions button,.secondary,.top-action,.bottom-nav button{color:var(--navy)!important}
+.bottom-nav button.active{background:#EEF5F0!important;color:var(--green)!important}.account-dot,.context-chip i{background:var(--green)!important}.pill{background:#EEF5F0!important;color:var(--green)!important;border:1px solid #CDE3D3}.context-chip{background:#F7F9FC!important;border-color:var(--line)!important;color:var(--navy)!important}
+.truth-verified .truth-dot{background:#0B7A3B!important}.truth-supported .truth-dot{background:#1554A6!important}.truth-proposed .truth-dot{background:#6B7280!important}.truth-failed .truth-dot{background:#A63A2B!important}.truth-pending .truth-dot{background:#F27A21!important}
+.surface{min-height:168px;border-radius:22px;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}.surface:hover{transform:translateY(-2px);box-shadow:0 18px 44px rgba(7,26,51,.12)!important;border-color:#B9C7D8!important}.service-logo{background:#fff;border:1px solid var(--line);padding:4px}.service-logo-stack .service-logo{padding:3px}
+.account-hero{background:#F4F8F5!important;border-color:#D3E5D8!important}.account-avatar{background:#E7F2EA!important;border-color:#B9D8C1!important;color:var(--green)!important}
+@media(prefers-color-scheme:dark){html[data-zalagren-theme="light"],html[data-zalagren-theme="light"] body{background:#fff!important;color:var(--navy)!important}}
 </style>
 </head>
 <body>
 <div class="overlay" id="menuOverlay" aria-hidden="true">
  <div class="overlay-shell">
-  <div class="overlay-head"><img class="brand-logo" src="${BEATONE_LOGO}" alt="BeatOne"><button class="top-action" id="closeMenu" type="button" aria-label="Close menu">×</button></div>
-  <div class="eyebrow" style="margin-top:34px">BeatOne</div>
+  <div class="overlay-head"><img class="brand-logo" src="${ZALAGREN_LOGO}" alt="Zalagren"><button class="top-action" id="closeMenu" type="button" aria-label="Close menu">×</button></div>
+  <div class="eyebrow" style="margin-top:34px">Zalagren</div>
   <h2 class="overlay-title">Everything connected to participation.</h2>
   <p class="overlay-copy">Navigate the ecosystem by context, capability and authority. A surface may be verified, supported, proposed or failed; empty and provider-dependent states remain explicitly described.</p>
   <div class="menu-grid">
@@ -135,7 +154,7 @@ html,body{background:var(--canvas)!important;color:var(--white)!important}body,*
    <button class="menu-item" data-nav="community"><strong>Community</strong><span>People, relationships and participation</span></button>
    <button class="menu-item" data-nav="genesis"><strong>GENESIS</strong><span>Knowledge and proposal-only intelligence</span></button>
    <button class="menu-item" data-nav="activity"><strong>Activity</strong><span>Actions, events and evidence</span></button>
-   <button class="menu-item" data-nav="account"><strong>My BeatOne</strong><span>Identity, authority, requests and settings</span></button>
+   <button class="menu-item" data-nav="account"><strong>My Zalagren</strong><span>Identity, authority, requests and settings</span></button>
    <button class="menu-item" data-nav="management"><strong>Team Workspace</strong><span>Management and provider operations</span></button>
   </div>
  </div>
@@ -143,15 +162,15 @@ html,body{background:var(--canvas)!important;color:var(--white)!important}body,*
 
 <main class="shell">
 <header class="topbar">
- <button class="top-action" id="openMenu" type="button" aria-label="Open BeatOne menu"><span class="menu-lines"><span></span><span></span><span></span></span></button>
- <div class="brand-lockup"><img class="brand-logo" src="${BEATONE_LOGO}" alt="BeatOne"></div>
- <button class="account-control" id="account" type="button"><i class="account-dot"></i><span>My BeatOne</span></button>
+ <button class="top-action" id="openMenu" type="button" aria-label="Open Zalagren menu"><span class="menu-lines"><span></span><span></span><span></span></span></button>
+ <div class="brand-lockup"><img class="brand-logo" src="${ZALAGREN_LOGO}" alt="Zalagren"></div>
+ <button class="account-control" id="account" type="button"><i class="account-dot"></i><span>My Zalagren</span></button>
 </header>
 
 <section class="page" id="auth">
  <div class="eyebrow">Intelligent Living Infrastructure</div>
  <h1 class="title">One identity. Connected possibilities.</h1>
- <p class="lede">BeatOne coordinates people, places, needs, capabilities, authority and resources without pretending to be the regulated provider underneath them.</p>
+ <p class="lede">Zalagren coordinates people, places, needs, capabilities, authority and resources without pretending to be the regulated provider underneath them.</p>
  <div class="auth-wrap">
   <form class="auth-card" id="authForm">
    <div id="formTitle" class="auth-title">Create your identity</div>
@@ -167,7 +186,7 @@ html,body{background:var(--canvas)!important;color:var(--white)!important}body,*
 
 <section class="page hidden" id="home">
  <div class="home-intro">
-  <div><div class="eyebrow">Participant Home</div><h1 id="welcome" class="title">Welcome.</h1><p class="lede">Your BeatOne starts from identity, then becomes useful through real context and explicit authority.</p></div>
+  <div><div class="eyebrow">Participant Home</div><h1 id="welcome" class="title">Welcome.</h1><p class="lede">Your Zalagren starts from identity, then becomes useful through real context and explicit authority.</p></div>
   <div class="context-chip"><i></i><span id="contextText">No active community context</span></div>
  </div>
 
@@ -180,11 +199,11 @@ html,body{background:var(--canvas)!important;color:var(--white)!important}body,*
   </div></div>
  </section>
 
- <section class="section beatone-search">
-  <div class="section-head"><div><h2 class="section-title">Ask BeatOne</h2><p class="section-copy">Describe what you need. BeatOne routes the request to the relevant ecosystem surface; authorization still governs consequential actions.</p></div></div>
+ <section class="section zalagren-search">
+  <div class="section-head"><div><h2 class="section-title">Ask Zalagren</h2><p class="section-copy">Describe what you need. Zalagren routes the request to the relevant ecosystem surface; authorization still governs consequential actions.</p></div></div>
   <div class="context-card" style="padding:16px">
-   <input id="beatoneIntent" aria-label="Ask BeatOne" placeholder="Ask BeatOne or describe what you need…" autocomplete="off">
-   <div id="beatoneIntentHint" class="status">Examples: access, community, ride, food, payment, marketplace, health, GENESIS.</div>
+   <input id="zalagrenIntent" aria-label="Ask Zalagren" placeholder="Ask Zalagren or describe what you need…" autocomplete="off">
+   <div id="zalagrenIntentHint" class="status">Examples: access, community, ride, food, payment, marketplace, health, GENESIS.</div>
   </div>
  </section>
 
@@ -199,13 +218,13 @@ html,body{background:var(--canvas)!important;color:var(--white)!important}body,*
  </section>
 
  <section class="section">
-  <div class="section-head"><div><h2 class="section-title">BeatOne operating system</h2><p class="section-copy">The ecosystem is one connected control plane. Every state is implementation truth, not regulatory certification.</p></div></div>
+  <div class="section-head"><div><h2 class="section-title">Zalagren operating system</h2><p class="section-copy">The ecosystem is one connected control plane. Every state is implementation truth, not regulatory certification.</p></div></div>
   <div class="control-grid">
    <button class="control-card" data-detail="identityDetail"><div class="control-kicker">01 · Foundation</div><div class="control-title">Identity → Participant</div><div class="control-copy">Account, credential, session and legal-identity boundaries remain separate.</div><div class="truth truth-supported"><i class="truth-dot"></i>SUPPORTED · LIVE FOUNDATION</div></button>
    <button class="control-card" data-detail="communityDetail"><div class="control-kicker">02 · Participation</div><div class="control-title">Community → Place → Relationship</div><div class="control-copy">Participation becomes contextual before capabilities or authority are exposed.</div><div class="truth truth-pending"><i class="truth-dot"></i>DATA-DEPENDENT</div></button>
    <button class="control-card" data-detail="managementDetail"><div class="control-kicker">03 · Governance</div><div class="control-title">Capability → Authorization</div><div class="control-copy">Community authority must be explicit and evidenced; login never grants it.</div><div class="truth truth-pending"><i class="truth-dot"></i>AUTHORITY-GATED</div></button>
    <button class="control-card" data-detail="marketplaceDetail"><div class="control-kicker">04 · Commerce</div><div class="control-title">Offer → Compliance → Fulfillment</div><div class="control-copy">Marketplace and accommodation share structured commercial boundaries.</div><div class="truth truth-supported"><i class="truth-dot"></i>SUPPORTED · RECONCILIATION ACTIVE</div></button>
-   <button class="control-card" data-detail="serviceDetail"><div class="control-kicker">05 · Services</div><div class="control-title">Food · Ride · Pay · Health</div><div class="control-copy">Provider execution remains outside BeatOne unless a real integration exists.</div><div class="truth truth-pending"><i class="truth-dot"></i>PROVIDER-DEPENDENT</div></button>
+   <button class="control-card" data-detail="serviceDetail"><div class="control-kicker">05 · Services</div><div class="control-title">Food · Ride · Pay · Health</div><div class="control-copy">Provider execution remains outside Zalagren unless a real integration exists.</div><div class="truth truth-pending"><i class="truth-dot"></i>PROVIDER-DEPENDENT</div></button>
    <button class="control-card" data-detail="genesisDetail"><div class="control-kicker">06 · Intelligence</div><div class="control-title">Knowledge → GENESIS Proposal</div><div class="control-copy">GENESIS can explain and propose; authorization and execution remain human/provider boundaries.</div><div class="truth truth-proposed"><i class="truth-dot"></i>PROPOSAL-ONLY</div></button>
   </div>
   <div class="context-card" style="margin-top:12px;padding:16px">
@@ -233,7 +252,7 @@ html,body{background:var(--canvas)!important;color:var(--white)!important}body,*
  </section>
 
  <section class="section">
-  <div class="section-head"><div><h2 class="section-title">BeatOne · 8 pillars</h2><p class="section-copy">One contextual authorization layer across identity, spaces, economy, services, mobility, commerce and knowledge.</p></div></div>
+  <div class="section-head"><div><h2 class="section-title">Zalagren · 8 pillars</h2><p class="section-copy">One contextual authorization layer across identity, spaces, economy, services, mobility, commerce and knowledge.</p></div></div>
   <div class="surface-grid">
    <button class="surface" data-detail="identityDetail"><div class="surface-mark">01 · IDENTITY</div><div class="surface-title">Identity</div><div class="surface-copy">Participant identity, credentials, verification boundaries and account security.</div><div class="surface-state">SUPPORTED · FOUNDATION</div></button>
    <button class="surface" data-detail="worldDetail"><div class="surface-mark">02 · ACCESS</div><div class="surface-title">Access</div><div class="surface-copy">Contextual permissions for places, units, gates and secure digital surfaces.</div><div class="surface-state">SUPPORTED · AUTHORITY-GATED</div></button>
@@ -250,18 +269,18 @@ html,body{background:var(--canvas)!important;color:var(--white)!important}body,*
   <div class="section-head"><div><h2 class="section-title">Ecosystem domains</h2><p class="section-copy">One participant foundation, many governed capabilities. Availability depends on context, authorization, provider and jurisdiction.</p></div></div>
   <div class="surface-grid">
    <button class="surface" data-detail="worldDetail"><div class="surface-mark">ACCESS</div><div class="surface-title">Access & invitations</div><div class="surface-copy">Contextual access built from participant, place, relationship, capability and authorization.</div><div class="surface-state">SUPPORTED · AUTHORITY-GATED</div></button>
-   <button class="surface" data-detail="marketplaceDetail"><img class="service-logo" src="${BEAT_SERVICE_LOGOS.BeatMarket}" alt="BeatMarket logo"><div class="surface-mark">COMMERCE</div><div class="surface-title">BeatMarket & BnB</div><div class="surface-copy">Offers and accommodation remain reviewable, evidence-driven and provider-bound.</div><div class="surface-state">SUPPORTED · COMPLIANCE-DEPENDENT</div></button>
-   <button class="surface" data-detail="serviceDetail"><img class="service-logo" src="${BEAT_SERVICE_LOGOS.BeatPay}" alt="BeatPay logo"><div class="surface-mark">PAYMENTS</div><div class="surface-title">BeatPay</div><div class="surface-copy">Payment intent and reconciliation can coordinate regulated external rails without becoming a wallet.</div><div class="surface-state">SUPPORTED · PROVIDER-DEPENDENT</div></button>
-   <button class="surface" data-detail="serviceDetail"><img class="service-logo" src="${BEAT_SERVICE_LOGOS.BeatRide}" alt="BeatRide logo"><div class="surface-mark">MOBILITY</div><div class="surface-title">BeatRide</div><div class="surface-copy">Mobility requests remain separate from provider execution, licensing and insurance evidence.</div><div class="surface-state">SUPPORTED · PROVIDER-DEPENDENT</div></button>
-   <button class="surface" data-detail="serviceDetail"><img class="service-logo" src="${BEAT_SERVICE_LOGOS.BeatFood}" alt="BeatFood logo"><div class="surface-mark">FOOD</div><div class="surface-title">BeatFood</div><div class="surface-copy">Merchant, menu, order and fulfillment boundaries use the common BeatOne foundation.</div><div class="surface-state">SUPPORTED · PROVIDER-DEPENDENT</div></button>
-   <button class="surface" data-detail="serviceDetail"><img class="service-logo" src="${BEAT_SERVICE_LOGOS.BeatHealth}" alt="BeatHealth logo"><div class="surface-mark">HEALTH</div><div class="surface-title">BeatHealth</div><div class="surface-copy">Health coordination remains isolated from generic commerce with protected sensitive-data boundaries.</div><div class="surface-state">PROPOSED · PROTECTED DOMAIN</div></button>
+   <button class="surface" data-detail="marketplaceDetail"><img class="service-logo" src="${ZALAGREN_SERVICE_LOGOS.BeatMarket}" alt="BeatMarket logo"><div class="surface-mark">COMMERCE</div><div class="surface-title">BeatMarket & BnB</div><div class="surface-copy">Offers and accommodation remain reviewable, evidence-driven and provider-bound.</div><div class="surface-state">SUPPORTED · COMPLIANCE-DEPENDENT</div></button>
+   <button class="surface" data-detail="serviceDetail"><img class="service-logo" src="${ZALAGREN_SERVICE_LOGOS.BeatPay}" alt="BeatPay logo"><div class="surface-mark">PAYMENTS</div><div class="surface-title">BeatPay</div><div class="surface-copy">Payment intent and reconciliation can coordinate regulated external rails without becoming a wallet.</div><div class="surface-state">SUPPORTED · PROVIDER-DEPENDENT</div></button>
+   <button class="surface" data-detail="serviceDetail"><img class="service-logo" src="${ZALAGREN_SERVICE_LOGOS.BeatRide}" alt="BeatRide logo"><div class="surface-mark">MOBILITY</div><div class="surface-title">BeatRide</div><div class="surface-copy">Mobility requests remain separate from provider execution, licensing and insurance evidence.</div><div class="surface-state">SUPPORTED · PROVIDER-DEPENDENT</div></button>
+   <button class="surface" data-detail="serviceDetail"><img class="service-logo" src="${ZALAGREN_SERVICE_LOGOS.BeatFood}" alt="BeatFood logo"><div class="surface-mark">FOOD</div><div class="surface-title">BeatFood</div><div class="surface-copy">Merchant, menu, order and fulfillment boundaries use the common Zalagren foundation.</div><div class="surface-state">SUPPORTED · PROVIDER-DEPENDENT</div></button>
+   <button class="surface" data-detail="serviceDetail"><img class="service-logo" src="${ZALAGREN_SERVICE_LOGOS.BeatHealth}" alt="BeatHealth logo"><div class="surface-mark">HEALTH</div><div class="surface-title">BeatHealth</div><div class="surface-copy">Health coordination remains isolated from generic commerce with protected sensitive-data boundaries.</div><div class="surface-state">PROPOSED · PROTECTED DOMAIN</div></button>
    <button class="surface" data-detail="genesisDetail"><div class="surface-mark">INTELLIGENCE</div><div class="surface-title">GENESIS</div><div class="surface-copy">Knowledge, explanation and proposals never become authority or silent execution.</div><div class="surface-state">PROPOSED · NON-AUTHORITATIVE</div></button>
-   <button class="surface" data-detail="serviceDetail"><div class="service-logo-stack"><img class="service-logo" src="${BEAT_SERVICE_LOGOS.BeatGenzi}" alt="BeatGenzi logo"><img class="service-logo" src="${BEAT_SERVICE_LOGOS.BeatGuardian}" alt="BeatGuardian logo"><img class="service-logo" src="${BEAT_SERVICE_LOGOS.BeatUtilities}" alt="BeatUtilities logo"></div><div class="surface-mark">COMMUNITY</div><div class="surface-title">BeatGenzi · BeatGuardian · BeatUtilities</div><div class="surface-copy">Future service capabilities inherit the same participant, context, authorization and evidence model.</div><div class="surface-state">PROPOSED · CONTEXT-DEPENDENT</div></button>
+   <button class="surface" data-detail="serviceDetail"><div class="service-logo-stack"><img class="service-logo" src="${ZALAGREN_SERVICE_LOGOS.BeatGenzi}" alt="BeatGenzi logo"><img class="service-logo" src="${ZALAGREN_SERVICE_LOGOS.BeatGuardian}" alt="BeatGuardian logo"><img class="service-logo" src="${ZALAGREN_SERVICE_LOGOS.BeatUtilities}" alt="BeatUtilities logo"></div><div class="surface-mark">COMMUNITY</div><div class="surface-title">BeatGenzi · BeatGuardian · BeatUtilities</div><div class="surface-copy">Future service capabilities inherit the same participant, context, authorization and evidence model.</div><div class="surface-state">PROPOSED · CONTEXT-DEPENDENT</div></button>
   </div>
  </section>
 
  <section class="section">
-  <div class="section-head"><div><h2 class="section-title">Participant</h2><p class="section-copy">Your persistent BeatOne foundation.</p></div><button class="link-button" id="accountInline">My BeatOne</button></div>
+  <div class="section-head"><div><h2 class="section-title">Participant</h2><p class="section-copy">Your persistent Zalagren foundation.</p></div><button class="link-button" id="accountInline">My Zalagren</button></div>
   <div class="context-card participant-card"><div><div class="identity" id="identityName">Participant</div><div class="identity-meta" id="identityMeta"></div></div><span class="pill">AUTHENTICATED</span></div>
  </section>
 
@@ -269,7 +288,7 @@ html,body{background:var(--canvas)!important;color:var(--white)!important}body,*
   <div class="detail-head"><div><h3 class="detail-title">Marketplace</h3><div class="detail-sub">Structured commerce: offer → trust → compliance → fulfillment → transaction</div></div></div>
   <div class="verification-box">
    <div class="verification-title">Publication is not verification</div>
-   <div class="verification-copy">Every listing carries separate verification, compliance and tax states. BeatOne does not claim a seller, permit, eTIMS status or regulated provider connection without evidence.</div>
+   <div class="verification-copy">Every listing carries separate verification, compliance and tax states. Zalagren does not claim a seller, permit, eTIMS status or regulated provider connection without evidence.</div>
   </div>
   <form id="marketplaceForm" class="auth-card" style="margin-top:12px;box-shadow:none">
    <div class="form-grid">
@@ -287,8 +306,8 @@ html,body{background:var(--canvas)!important;color:var(--white)!important}body,*
  </section>
 
  <section id="identityDetail" class="detail-card">
-  <div class="detail-head"><div><h3 class="detail-title">My BeatOne</h3><div class="detail-sub">Account → identity → participant → verification → authority</div></div></div>
-  <div class="account-hero"><div class="account-avatar" id="accountAvatar">B</div><div><div class="identity" id="accountDisplayName">Participant</div><div class="account-id" id="accountDisplayMeta">BeatOne Account</div></div></div>
+  <div class="detail-head"><div><h3 class="detail-title">My Zalagren</h3><div class="detail-sub">Account → identity → participant → verification → authority</div></div></div>
+  <div class="account-hero"><div class="account-avatar" id="accountAvatar">B</div><div><div class="identity" id="accountDisplayName">Participant</div><div class="account-id" id="accountDisplayMeta">Zalagren Account</div></div></div>
   <div id="identityBody"></div>
   <div class="section-head" style="margin-top:18px"><div><h4 class="section-title" style="font-size:18px!important">Verification Center</h4><p class="section-copy">Each proof has its own lifecycle. Pending is not verified.</p></div></div>
   <div class="verification-grid" id="verificationGrid">
@@ -300,7 +319,7 @@ html,body{background:var(--canvas)!important;color:var(--white)!important}body,*
   <div class="status" style="margin-top:12px"><strong>Lifecycle:</strong> account created → contact pending → contact verified → identity submitted → identity pending review → identity verified → contextual authority.</div>
  </section>
  <section id="communityDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">Community</h3><div class="detail-sub">Participation and context</div></div></div><div id="communityBody"></div></section>
- <section id="serviceDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">Services</h3><div class="detail-sub">BeatOne-managed services · community-coordinated integrations</div></div></div><div id="serviceBody"></div></section>
+ <section id="serviceDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">Services</h3><div class="detail-sub">Zalagren-managed services · community-coordinated integrations</div></div></div><div id="serviceBody"></div></section>
  <section id="genesisDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">GENESIS</h3><div class="detail-sub">Intelligence proposes; authorized participants decide</div></div></div><div id="genesisBody"></div></section>
  <section id="worldDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">World</h3><div class="detail-sub">Community → phase → place → context</div></div></div><div class="row"><div class="row-title">No world context connected yet.</div><div class="row-meta"><span class="pill">SUPPORTED · EMPTY</span> The platform preserves a truthful empty state.</div></div></section>
  <section id="activityDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">Activity</h3><div class="detail-sub">Action → event → evidence</div></div></div><div class="row"><div class="row-title">No participant activity yet.</div><div class="row-meta"><span class="pill">SUPPORTED · EMPTY</span> Nothing is fabricated before a real authorized action occurs.</div></div></section>
@@ -318,9 +337,9 @@ html,body{background:var(--canvas)!important;color:var(--white)!important}body,*
    <div id="managementStatus" class="status hidden"></div>
    <div class="surface-grid">
     <div class="surface"><div class="surface-mark">NODE</div><div class="surface-title">Onboarding & proposals</div><div class="surface-copy">Review participant proposals and community onboarding requests.</div><div id="managementRequests" class="rows"></div></div>
-    <div class="surface"><div class="surface-mark">SUBSCRIPTION</div><div class="surface-title">BeatOne subscription</div><div class="surface-copy">Approve or reject the community subscription request. Billing remains a separate provider boundary.</div><div id="managementSubscriptions" class="rows"></div></div>
+    <div class="surface"><div class="surface-mark">SUBSCRIPTION</div><div class="surface-title">Zalagren subscription</div><div class="surface-copy">Approve or reject the community subscription request. Billing remains a separate provider boundary.</div><div id="managementSubscriptions" class="rows"></div></div>
     <div class="surface"><div class="surface-mark">PARTICIPATION</div><div class="surface-title">Participation requests</div><div class="surface-copy">Approve a participant only with an explicit role, enabled capability and optional place.</div><div id="managementParticipations" class="rows"></div></div>
-    <div class="surface"><div class="surface-mark">SERVICES</div><div class="surface-title">Service integrations</div><div class="surface-copy">Configure how BeatOne services integrate with this community node. The community does not own or disable the service.</div><div id="managementServices" class="rows"></div></div>
+    <div class="surface"><div class="surface-mark">SERVICES</div><div class="surface-title">Service integrations</div><div class="surface-copy">Configure how Zalagren services integrate with this community node. The community does not own or disable the service.</div><div id="managementServices" class="rows"></div></div>
     <div class="surface"><div class="surface-mark">CAPABILITIES</div><div class="surface-title">Capability coordination</div><div class="surface-copy">Coordinate contextual capabilities for this node. Authorization remains explicit and does not transfer service ownership to the community.</div><div id="managementCapabilities" class="rows"></div></div>
     <div class="surface"><div class="surface-mark">PLACES</div><div class="surface-title">Define places</div><div class="surface-copy">Create the node's real places without inventing geometry verification.</div>
       <div class="form-grid">
@@ -389,7 +408,7 @@ $("createListing").onclick=()=>{document.querySelectorAll(".detail-card").forEac
 $("marketplaceForm").onsubmit=async(event)=>{event.preventDefault();const status=$("marketplaceFormStatus");status.classList.remove("hidden");status.textContent="Submitting…";const price=$("listingPrice").value.trim();try{const d=await apiPost("/api/marketplace/listing",{title:$("listingTitle").value.trim(),description:$("listingDescription").value.trim(),category:$("listingCategory").value.trim(),listingKind:$("listingKind").value,fulfillmentMode:$("listingFulfillment").value,priceMinor:price?Number(price):undefined,currency:"KES"});status.textContent="Submitted for marketplace review. Verification, compliance and tax status remain separate and are not claimed.";showOperation("Marketplace listing submitted for review · "+(d.listing?.id||"created"));event.target.reset();}catch(e){status.textContent=e.message;}};
 $("requestRide").onclick=async()=>{const pickup=prompt("Pickup");if(!pickup)return;const destination=prompt("Destination");if(!destination)return;try{await apiPost("/api/beatride/request",{pickup,destination});showOperation("BeatRide request created. No transport provider has been invented.");}catch(e){showOperation(e.message);}};
 $("createFood").onclick=async()=>{const name=prompt("Food merchant name");if(!name)return;try{const d=await apiPost("/api/beatfood/merchant",{name});showOperation("BeatFood merchant created. Merchant ID: "+(d.merchant?.id||"created"));}catch(e){showOperation(e.message);}};
-$("communityJoin").onclick=async()=>{const name=prompt("Community name (for a new node proposal)","TSAVO");if(!name)return;const proposal=prompt("What should BeatOne enable for this community?");if(!proposal)return;try{const d=await apiPost("/api/community/onboarding",{communityName:name,nodeName:name==="TSAVO"?"TSAVO first node":name+" node",proposal});showOperation("Community onboarding proposal submitted.");}catch(e){showOperation(e.message);}};
+$("communityJoin").onclick=async()=>{const name=prompt("Community name (for a new node proposal)","TSAVO");if(!name)return;const proposal=prompt("What should Zalagren enable for this community?");if(!proposal)return;try{const d=await apiPost("/api/community/onboarding",{communityName:name,nodeName:name==="TSAVO"?"TSAVO first node":name+" node",proposal});showOperation("Community onboarding proposal submitted.");}catch(e){showOperation(e.message);}};
 async function loadManagementDirectory(){
  try{
   const r=await fetch("/api/community/management");const d=await r.json().catch(()=>({}));
@@ -448,17 +467,17 @@ async function loadViews(){
   if(responses.some(r=>!r.ok))throw new Error("HOME_DATA_UNAVAILABLE");
   $("communityBody").innerHTML=communities.items?.length?communities.items.map(()=>"<div class='row'><div class='row-title'></div><div class='row-meta'></div></div>").join(""):"<div class='row'><div class='row-title'>No communities connected yet.</div><div class='row-meta'>No participation has been invented.</div></div>";
   communities.items?.forEach((x,i)=>{const row=$("communityBody").children[i];row.querySelector(".row-title").textContent=x.name||"";row.querySelector(".row-meta").textContent=(x.type||"")+" · "+(x.location||"")+" · "+(x.verification||"");});
-  $("serviceBody").innerHTML=services.items?.length?services.items.map(()=>"<div class='row'><div class='row-title'></div><div class='row-meta'></div></div>").join(""):"<div class='row'><div class='row-title'>No services are registered yet.</div><div class='row-meta'>BeatOne will not pretend a provider is connected.</div></div>";
+  $("serviceBody").innerHTML=services.items?.length?services.items.map(()=>"<div class='row'><div class='row-title'></div><div class='row-meta'></div></div>").join(""):"<div class='row'><div class='row-title'>No services are registered yet.</div><div class='row-meta'>Zalagren will not pretend a provider is connected.</div></div>";
   services.items?.forEach((x,i)=>{const row=$("serviceBody").children[i];row.querySelector(".row-title").textContent=x.name||"";row.querySelector(".row-meta").textContent=(x.domain||"")+" · "+(x.status||"")+" · Capabilities: "+((x.capabilities||[]).map(c=>c.name).join(", ")||"none");});
   const f=foundation.foundation||{};
   $("genesisBody").innerHTML="<div class='row'><div class='row-title'>Proposal-only intelligence</div><div class='row-meta'>GENESIS cannot authorize or execute actions.</div></div><div class='row'><div class='row-title'>Live foundation</div><div class='row-meta'></div></div>";
   $("genesisBody").lastElementChild.querySelector(".row-meta").textContent="Participants: "+(f.participants??"not exposed")+" · Actions: "+(f.actions??"not exposed")+" · Events: "+(f.events??"not exposed")+" · Evidence: "+(f.evidences??"not exposed");
- }catch{const states={communityBody:"Community context could not be loaded. The interface is preserving the participant shell without inventing community data.",serviceBody:"BeatOne owns and manages the service layer. Communities coordinate local integration, configuration and context through their management dashboard; they do not own, disable or block BeatOne services. Real provider-backed execution appears only when a genuine connection and authorized context exist.",genesisBody:"GENESIS context could not be loaded. Proposals remain separate from authority and execution."};Object.entries(states).forEach(([id,msg])=>$(id).innerHTML="<div class='row'><div class='row-title'>"+msg+"</div><div class='row-meta'>BeatOne-managed · community-coordinated · no fabricated provider data</div></div>");}
+ }catch{const states={communityBody:"Community context could not be loaded. The interface is preserving the participant shell without inventing community data.",serviceBody:"Zalagren owns and manages the service layer. Communities coordinate local integration, configuration and context through their management dashboard; they do not own, disable or block Zalagren services. Real provider-backed execution appears only when a genuine connection and authorized context exist.",genesisBody:"GENESIS context could not be loaded. Proposals remain separate from authority and execution."};Object.entries(states).forEach(([id,msg])=>$(id).innerHTML="<div class='row'><div class='row-title'>"+msg+"</div><div class='row-meta'>Zalagren-managed · community-coordinated · no fabricated provider data</div></div>");}
 }
 document.querySelectorAll("[data-detail]").forEach(el=>el.addEventListener("click",()=>openDetail(el.dataset.detail)));
 document.querySelectorAll("[data-nav]").forEach(el=>el.addEventListener("click",()=>navigate(el.dataset.nav)));
-const beatoneIntent=$("beatoneIntent"),beatoneIntentHint=$("beatoneIntentHint");
-if(beatoneIntent){beatoneIntent.oninput=()=>{const q=beatoneIntent.value.trim().toLowerCase();if(!q){beatoneIntentHint.textContent="Examples: access, community, ride, food, payment, marketplace, health, GENESIS.";return;}const routes=[["access","worldDetail","Access"],["community","communityDetail","Communities"],["ride","serviceDetail","BeatRide"],["mobility","serviceDetail","BeatRide"],["food","serviceDetail","BeatFood"],["payment","serviceDetail","BeatPay"],["pay","serviceDetail","BeatPay"],["market","marketplaceDetail","BeatMarket"],["bnb","marketplaceDetail","BeatMarket & BnB"],["health","serviceDetail","BeatHealth"],["genesis","genesisDetail","GENESIS"],["education","genesisDetail","Knowledge"],["environment","genesisDetail","Knowledge"]];const hit=routes.find(([k])=>q.includes(k));beatoneIntentHint.textContent=hit?"Open "+hit[2]+" to continue. Consequential actions remain authorization-gated.":"No direct surface matched yet. BeatOne will not invent a provider, authority or action.";if(hit)beatoneIntentHint.onclick=()=>openDetail(hit[1]);beatoneIntentHint.style.cursor=hit?"pointer":"default";};}
+const zalagrenIntent=$("zalagrenIntent"),zalagrenIntentHint=$("zalagrenIntentHint");
+if(zalagrenIntent){zalagrenIntent.oninput=()=>{const q=zalagrenIntent.value.trim().toLowerCase();if(!q){zalagrenIntentHint.textContent="Examples: access, community, ride, food, payment, marketplace, health, GENESIS.";return;}const routes=[["access","worldDetail","Access"],["community","communityDetail","Communities"],["ride","serviceDetail","BeatRide"],["mobility","serviceDetail","BeatRide"],["food","serviceDetail","BeatFood"],["payment","serviceDetail","BeatPay"],["pay","serviceDetail","BeatPay"],["market","marketplaceDetail","BeatMarket"],["bnb","marketplaceDetail","BeatMarket & BnB"],["health","serviceDetail","BeatHealth"],["genesis","genesisDetail","GENESIS"],["education","genesisDetail","Knowledge"],["environment","genesisDetail","Knowledge"]];const hit=routes.find(([k])=>q.includes(k));zalagrenIntentHint.textContent=hit?"Open "+hit[2]+" to continue. Consequential actions remain authorization-gated.":"No direct surface matched yet. Zalagren will not invent a provider, authority or action.";if(hit)zalagrenIntentHint.onclick=()=>openDetail(hit[1]);zalagrenIntentHint.style.cursor=hit?"pointer":"default";};}
 $("openMenu").onclick=openMenu;$("closeMenu").onclick=closeMenu;$("account").onclick=()=>navigate("account");$("accountInline").onclick=()=>navigate("account");
 $("mode").onclick=()=>{signup=!signup;setError("");mode();};
 $("authForm").onsubmit=async event=>{
@@ -472,7 +491,7 @@ $("authForm").onsubmit=async event=>{
   if(!r.ok){setError(d.error||"Authentication failed.");return;}
   // Let the browser commit the HttpOnly canonical cookie before the first authenticated read.
   // A full same-origin reload is intentional: it exercises the exact persisted session boundary.
-  if(!d.canonical){setError("Authentication succeeded but no canonical BeatOne session was issued.");return;}
+  if(!d.canonical){setError("Authentication succeeded but no canonical Zalagren session was issued.");return;}
   location.reload();
  } catch (error) {
   setError(error instanceof Error ? error.message : "Authentication failed. Please try again.");

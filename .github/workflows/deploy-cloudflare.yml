@@ -43,17 +43,21 @@ jobs:
           done
           cat /tmp/health.json || true
           exit 1
-      - name: Verify production shell
+      - name: Verify production shell and transparent emblem
         run: |
           body=$(curl -L -sS https://zalagren.kyabutwabis-f.workers.dev/)
           printf "%s" "$body" | grep -q "Zalagren"
           printf "%s" "$body" | grep -q "Participant Home"
           printf "%s" "$body" | grep -q "GENESIS"
-          printf "%s" "$body" | grep -q "/1.png"
-          logo_headers=$(curl -L -sS -D - -o /tmp/zalagren-logo.png https://zalagren.kyabutwabis-f.workers.dev/1.png)
-          printf "%s" "$logo_headers" | grep -qi "content-type: image/png"
-          test "$(wc -c < /tmp/zalagren-logo.png)" -gt 1000
-          test "$(sha256sum /tmp/zalagren-logo.png | cut -d' ' -f1)" = "b458ef87d81ffea17d6dbafacbc8975e781911a8e4f349b6dd043081813d5669"
+          printf "%s" "$body" | grep -q "/zalagren-emblem.svg"
+          if printf "%s" "$body" | grep -q "/1.png"; then
+            echo "Legacy logo asset reference detected in production shell"
+            exit 1
+          fi
+          logo_headers=$(curl -L -sS -D - -o /tmp/zalagren-logo.svg https://zalagren.kyabutwabis-f.workers.dev/zalagren-emblem.svg)
+          printf "%s" "$logo_headers" | grep -qi "content-type: image/svg+xml"
+          grep -q 'fill="none"' /tmp/zalagren-logo.svg
+          grep -q 'fill="black"' /tmp/zalagren-logo.svg
           if printf "%s" "$body" | grep -q "BeatOne"; then
             echo "Obsolete BeatOne branding detected in production shell"
             exit 1

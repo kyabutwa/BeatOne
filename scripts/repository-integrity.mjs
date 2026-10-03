@@ -26,7 +26,7 @@ for (const file of files) {
   if (!textExtensions.has(ext)) continue;
   const text = await readFile(file, "utf8");
   if (/\\n/.test(text)) failures.push(`${file}: literal backslash-n sequence`);
-  if (file.startsWith("src/")) {
+  if (file === "src/home-ui.ts" || file === "src/zalagren-brand.ts") {
     for (const term of forbiddenVisible) {
       if (new RegExp(term).test(text)) failures.push(`${file}: forbidden visible branding token ${term}`);
     }

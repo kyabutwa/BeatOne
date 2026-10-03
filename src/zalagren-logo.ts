@@ -1,1 +1,0 @@
-// Canonical owner-provided Zalagren logo. This is the real repository asset, not a CSS recreation.\nimport logoData from "../1.png";\n\nexport const ZALAGREN_LOGO_BYTES = logoData;\n

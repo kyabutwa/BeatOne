@@ -1215,7 +1215,7 @@ export default {
         try {
           const upstream = await providerRequest(request, env, "/sign-out");
           const setCookies = providerCookies(upstream);
-          for (const cookie of setCookies) outHeaders.append("set-cookie", cookie.replace(/;\\s*Domain=[^;]+/gi,"").replace(/;\\s*Path=\\/[^;]*/i,"; Path=/"));
+          for (const cookie of setCookies) outHeaders.append("set-cookie", cookie.replace(/;\s*Domain=[^;]+/gi,"").replace(/;\s*Path=\/[^;]*/i,"; Path=/"));
         } catch {}
         outHeaders.append("set-cookie", "__Host-zalagren_session=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax");
         outHeaders.append("set-cookie", "__Host-beatone_session=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax");

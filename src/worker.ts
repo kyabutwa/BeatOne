@@ -190,8 +190,13 @@ async function syncCanonicalAuth(
 
 async function authMutation(request: Request, env: Env, endpoint: string): Promise<Response> {
   try {
-    const body = await request.json();
-    const upstream = await providerRequest(request, env, endpoint, body);
+    const body = await request.json() as {email?:string;password?:string;name?:string;phone?:string};
+    let signupPhone: string | null = null;
+    if (endpoint === "/sign-up/email" && body.phone?.trim()) {
+      try { signupPhone = normalizePhoneE164(body.phone.trim()); }
+      catch { return json({ service: "Zalagren", error: "PHONE_NUMBER_INVALID" }, 400); }
+    }
+    const upstream = await providerRequest(request, env, endpoint, { email: body.email, password: body.password, ...(body.name ? { name: body.name } : {}) });
     const payload = await readJson(upstream);
 
     if (!upstream.ok) {
@@ -206,6 +211,21 @@ async function authMutation(request: Request, env: Env, endpoint: string): Promi
     // Legal identity verification and sensitive-action step-up remain separate assurance layers.
 
     const canonical = user ? await syncCanonicalAuth(env, user, session) : null;
+    if (canonical && signupPhone) {
+      const sql = requireDatabase(env);
+      const phoneHash = await sha256Hex(signupPhone);
+      await sql`
+        INSERT INTO public.identity_contacts(
+          id, identity_id, kind, value_normalized, value_hash, status, verified_at, is_primary, updated_at
+        ) VALUES(
+          "identity-contact-phone-" || replace(gen_random_uuid()::text,'-',''), 
+          (SELECT identity_id FROM public.accounts WHERE id=${canonical.accountId} LIMIT 1),
+          'phone', ${signupPhone}, ${phoneHash}, 'pending', NULL, true, now()
+        )
+        ON CONFLICT (kind, value_hash) DO UPDATE SET
+          identity_id=EXCLUDED.identity_id, status='pending', is_primary=true, updated_at=now()
+      `;
+    }
     const emailVerificationRequested = false;
 
     const outHeaders = headers({
@@ -255,7 +275,26 @@ async function currentSession(request: Request, env: Env): Promise<{ user: any; 
     `;
     if (rows.length) {
       const row = rows[0];
-      return { user: { id: null, name: row.legal_name || null, email: row.email, emailVerified: true }, session: null, canonical: row };
+      let providerUserRecord: any = null;
+      try {
+        const userRows = await sql`
+          SELECT u.id, u.name, u.email, u."emailVerified"
+          FROM neon_auth."user" u
+          WHERE lower(u.email)=lower(${row.email})
+          LIMIT 1
+        `;
+        providerUserRecord = userRows[0] || null;
+      } catch {}
+      return {
+        user: {
+          id: providerUserRecord?.id || null,
+          name: providerUserRecord?.name || row.legal_name || null,
+          email: providerUserRecord?.email || row.email,
+          emailVerified: providerUserRecord ? Boolean(providerUserRecord.emailVerified) : true
+        },
+        session: null,
+        canonical: row
+      };
     }
   }
   return null;

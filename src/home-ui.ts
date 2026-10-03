@@ -43,7 +43,7 @@ button:focus-visible,input:focus-visible{outline:3px solid rgba(242,122,33,.34);
 }
 .top-action{width:42px;height:42px;border:0;border-radius:13px;background:transparent;color:var(--navy);display:grid;place-items:center}
 .menu-lines{width:18px;display:grid;gap:4px}.menu-lines span{height:2px;border-radius:2px;background:currentColor}
-.brand-lockup{display:flex;justify-content:center;align-items:center;height:44px;min-width:0}
+.brand-lockup{display:flex;justify-content:center;align-items:center;height:44px;min-width:0;border-radius:12px;background:#fff}
 .brand-logo{display:block;width:auto;height:34px;max-width:min(190px,46vw);object-fit:contain;object-position:center}
 .account-control{display:flex;align-items:center;gap:8px;min-height:42px;padding:0 11px;border:1px solid var(--line);border-radius:13px;background:var(--surface);color:var(--navy);font-size:13px;font-weight:700;white-space:nowrap}
 .account-dot{width:7px;height:7px;border-radius:50%;background:var(--orange)}

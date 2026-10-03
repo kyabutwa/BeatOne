@@ -54,7 +54,7 @@ jobs:
           grep -q "/zalagren-emblem.png" /tmp/zalagren-home.html
           logo_headers=$(curl -L -sS -D - -o /tmp/zalagren-logo.png https://zalagren.kyabutwabis-f.workers.dev/zalagren-emblem.png)
           printf "%s" "$logo_headers" | grep -qi "content-type: image/png"
-          /opt/imagemagick/bin/magick identify -format "%[channels]" /tmp/zalagren-logo.png | grep -q "a"
+          identify -format "%[channels]" /tmp/zalagren-logo.png | grep -q "a"
           if grep -q "BeatOne" /tmp/zalagren-home.html; then
             echo "Obsolete BeatOne branding detected in production shell"
             exit 1

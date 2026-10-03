@@ -50,6 +50,9 @@ jobs:
           printf "%s" "$body" | grep -q "Participant Home"
           printf "%s" "$body" | grep -q "GENESIS"
           printf "%s" "$body" | grep -q "/1.png"
+          logo_headers=$(curl -L -sS -D - -o /tmp/zalagren-logo.png https://zalagren.kyabutwabis-f.workers.dev/1.png)
+          printf "%s" "$logo_headers" | grep -qi "content-type: image/png"
+          test "$(wc -c < /tmp/zalagren-logo.png)" -gt 1000
           if printf "%s" "$body" | grep -q "BeatOne"; then
             echo "Obsolete BeatOne branding detected in production shell"
             exit 1

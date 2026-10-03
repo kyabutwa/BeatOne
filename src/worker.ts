@@ -1540,10 +1540,10 @@ async function communityUtilityLink(request: Request, env: Env): Promise<Respons
 async function constantynaContext(request: Request, env: Env) {
   const {participantId,sql}=await participantIdFromSession(request,env);
   const [subscription,communityCount,serviceCount,capabilityCount]=await Promise.all([
-    sql\`SELECT p.code FROM public.participant_subscriptions ps JOIN public.zalagren_plan_catalog p ON p.id=ps.plan_id WHERE ps.participant_id=\${participantId} AND ps.status='active' ORDER BY ps.updated_at DESC LIMIT 1\`,
-    sql\`SELECT count(*)::int AS count FROM public.community_participations WHERE participant_id=\${participantId} AND status IN ('active','approved')\`,
-    sql\`SELECT count(*)::int AS count FROM public.services WHERE status='available'\`,
-    sql\`SELECT count(*)::int AS count FROM public.capabilities\`
+    sql`SELECT p.code FROM public.participant_subscriptions ps JOIN public.zalagren_plan_catalog p ON p.id=ps.plan_id WHERE ps.participant_id=${participantId} AND ps.status='active' ORDER BY ps.updated_at DESC LIMIT 1\`,
+    sql`SELECT count(*)::int AS count FROM public.community_participations WHERE participant_id=${participantId} AND status IN ('active','approved')\`,
+    sql`SELECT count(*)::int AS count FROM public.services WHERE status='available'\`,
+    sql`SELECT count(*)::int AS count FROM public.capabilities\`
   ]);
   const plan=normalizeConstantynaPlan(subscription[0]?.code);
   return {participantId,sql,plan,activeCommunityCount:Number(communityCount[0]?.count||0),serviceCount:Number(serviceCount[0]?.count||0),capabilityCount:Number(capabilityCount[0]?.count||0)};
@@ -1596,18 +1596,18 @@ async function constantynaAnswer(request: Request, env: Env): Promise<Response> 
 
     if(intent==="DISCOVER"){
       const [communities,services]=await Promise.all([
-        ctx.sql\`SELECT c.id,c.name,c.type,c.location,c.verification FROM public.communities c ORDER BY c.created_at DESC LIMIT 20\`,
-        ctx.sql\`SELECT id,name,domain,status,launch_state FROM public.services WHERE status='available' ORDER BY name LIMIT 50\`
+        ctx.sql`SELECT c.id,c.name,c.type,c.location,c.verification FROM public.communities c ORDER BY c.created_at DESC LIMIT 20\`,
+        ctx.sql`SELECT id,name,domain,status,launch_state FROM public.services WHERE status='available' ORDER BY name LIMIT 50\`
       ]);
       data={communities,services};
     } else if(intent==="COMMUNITY"){
-      const communities=await ctx.sql\`SELECT c.id,c.name,c.type,c.location,c.verification FROM public.communities c ORDER BY c.created_at DESC LIMIT 30\`;
+      const communities=await ctx.sql`SELECT c.id,c.name,c.type,c.location,c.verification FROM public.communities c ORDER BY c.created_at DESC LIMIT 30\`;
       data={communities,reason:communities.length?"Communities exist in the current Zalagren directory. Membership still requires the community's participation and authorization rules.":"No community records are currently available in this deployment. That is a data-state explanation, not proof that no communities exist in the wider world.",next:communities.length?"Choose a community to inspect or start its governed participation flow.":"A community can be discovered, proposed for onboarding, or created through an authorized community workflow."};
     } else if(intent==="OPPORTUNITY"){
-      const opportunities=await ctx.sql\`SELECT id,name,domain,status,launch_state FROM public.services WHERE status='available' ORDER BY name LIMIT 20\`;
+      const opportunities=await ctx.sql`SELECT id,name,domain,status,launch_state FROM public.services WHERE status='available' ORDER BY name LIMIT 20\`;
       data={opportunities,missingCommunityContext:ctx.activeCommunityCount===0};
     } else if(intent==="COMPARE"){
-      const services=await ctx.sql\`SELECT id,name,domain,status,launch_state FROM public.services WHERE status='available' ORDER BY domain,name LIMIT 50\`;
+      const services=await ctx.sql`SELECT id,name,domain,status,launch_state FROM public.services WHERE status='available' ORDER BY domain,name LIMIT 50\`;
       data={services};
     } else if(intent==="RESEARCH"){
       data={research:await constantynaResearch(request,env,message,ctx.plan)};

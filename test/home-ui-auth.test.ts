@@ -27,3 +27,15 @@ test("Zalagren shell enforces the canonical visual contract", async () => {
   assert.doesNotMatch(html, /BeatOne/);
   assert.doesNotMatch(html, /EarthBeat/);
 });
+
+test("browser script contains no TypeScript-only syntax", async () => {
+  const response = renderHome(() => new Headers());
+  const html = await response.text();
+  const scripts = [...html.matchAll(/<script>([\\s\\S]*?)<\\/script>/g)].map(m => m[1]).join("\\n");
+
+  assert.doesNotMatch(scripts, /\\(p:any\\)|\\(f:any\\)|\\(b:any\\)/);
+  assert.doesNotMatch(scripts, /\\)\\s+as\\s+HTMLInputElement/);
+  assert.match(html, /id="inviteModal"/);
+  assert.match(html, /id="inviteSend"/);
+  assert.match(html, /fetch\\("\\/api\\/invite"/);
+});

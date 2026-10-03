@@ -191,6 +191,9 @@ body.navy-mode .verification-state-value{color:#dce8f5}
    <button class="menu-item" data-nav="activity"><strong>Activity</strong><span>Actions, events and evidence</span></button>
    <button class="menu-item" data-nav="account"><strong>My Zalagren</strong><span>Identity, authority, requests and settings</span></button>
    <button class="menu-item" data-nav="management"><strong>Team Workspace</strong><span>Management and provider operations</span></button>
+   <button class="menu-item" id="inviteCommunity" type="button"><strong>Invite my community</strong><span>Bring a real community into Zalagren coordination.</span></button>
+   <button class="menu-item" id="inviteBusiness" type="button"><strong>Invite my business</strong><span>Register and connect a business or service.</span></button>
+   <button class="menu-item" id="joinService" type="button"><strong>Join a service</strong><span>Offer your capability directly through Zalagren.</span></button>
    <button class="menu-item" id="themeToggle" type="button"><strong>Appearance</strong><span id="themeToggleLabel">Use navy mode</span></button>
   </div>
  </div>
@@ -393,6 +396,15 @@ body.navy-mode .verification-state-value{color:#dce8f5}
 </section>
 </main>
 
+<section class="section hidden" id="networkPanel">
+ <div class="section-head"><div><div class="eyebrow">ZALAGREN NETWORK</div><h2 class="section-title">Services available to every participant</h2><p class="section-copy">Use Zalagren services directly, or join as a real provider. Communities coordinate context without owning or disabling services.</p></div></div>
+ <div class="surface-grid" id="networkServices"></div>
+ <div class="surface-grid" style="margin-top:12px">
+  <button class="surface" id="networkInviteCommunity"><div class="surface-mark">PARTICIPATION</div><div class="surface-title">Invite my community</div><div class="surface-copy">Create a secure invitation for a community to join Zalagren.</div><div class="surface-state">READY · PERSISTED INVITATION</div></button>
+  <button class="surface" id="networkInviteBusiness"><div class="surface-mark">BUSINESS</div><div class="surface-title">Invite my business</div><div class="surface-copy">Register a business and connect its services, people and place context.</div><div class="surface-state">READY · REAL PERSISTENCE</div></button>
+ </div>
+</section>
+
 <nav class="bottom-nav hidden" id="bottomNav" aria-label="Primary navigation">
  <button class="active" data-nav="home">Home</button><button data-nav="community">Communities</button><button data-nav="services">Services</button><button data-nav="genesis">GENESIS</button><button data-nav="activity">Activity</button>
 </nav>
@@ -544,6 +556,22 @@ $("authForm").onsubmit=async event=>{
 $("signout").onclick=async()=>{await fetch("/api/auth/sign-out",{method:"POST"});location.reload();};
 async function check(){const r=await fetch("/api/me");if(r.ok)showHome(await r.json());}
 mode();check();
+</script>
+<script>
+(function(){
+ const panel=document.getElementById("networkPanel"),grid=document.getElementById("networkServices");
+ async function loadNetwork(){
+  if(!panel||!grid)return;
+  try{const r=await fetch("/api/services/catalog",{credentials:"same-origin"});if(!r.ok){panel.classList.add("hidden");return;}const d=await r.json();
+   grid.innerHTML=(d.items||[]).map(s=>'<button class="surface network-service" data-service-id="'+String(s.id).replace(/"/g,'&quot;')+'"><div class="surface-mark">'+String(s.domain).toUpperCase()+'</div><div class="surface-title">'+String(s.name)+'</div><div class="surface-copy">'+(s.first_party?"Zalagren-operated service.":"Zalagren-coordinated service with provider/regulatory boundaries.")+' '+(s.provider_joinable?"Anyone can join as a provider.":"Provider onboarding is restricted.")+'</div><div class="surface-state">'+(s.launch_state==="ready"?"READY":"SUPPORTED")+' · '+(s.first_party?"FIRST-PARTY":"COORDINATED")+'</div></button>').join("");
+   panel.classList.remove("hidden");grid.querySelectorAll(".network-service").forEach(b=>b.onclick=()=>joinService(b.dataset.serviceId));
+  }catch{panel.classList.add("hidden")}
+ }
+ async function joinService(serviceId){const name=prompt("How should your capability appear in Zalagren?");if(!name)return;const r=await fetch("/api/services/provider",{method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",body:JSON.stringify({serviceId,displayName:name,providerKind:"individual"})});const d=await r.json();alert(r.ok?"Provider registration saved. Verification state: PROPOSED.":(d.error||"Could not register service."));}
+ async function invite(type){const name=prompt(type==="community"?"Community name":"Business name");if(!name)return;const contact=prompt("Email or phone for the invitation");if(!contact)return;const r=await fetch("/api/invite",{method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",body:JSON.stringify({type,name,contact})});const d=await r.json();alert(r.ok?"Invitation ready. Share: "+d.sharePath:(d.error||"Invitation failed."));}
+ document.addEventListener("click",e=>{const t=e.target.closest("#inviteCommunity,#networkInviteCommunity,#inviteBusiness,#networkInviteBusiness,#joinService");if(!t)return;if(t.id==="joinService")return loadNetwork();if(t.id.toLowerCase().includes("community"))return invite("community");return invite("business");});
+ window.zalagrenLoadNetwork=loadNetwork;setTimeout(loadNetwork,1000);
+})();
 </script>
 </body>
 </html>`,{headers:headers({"content-type":"text/html; charset=utf-8"})});

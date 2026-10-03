@@ -1078,7 +1078,8 @@ async function participantProfile(request: Request, env: Env): Promise<Response>
     if(request.method!=="PUT") return json({service:"Zalagren",error:"METHOD_NOT_ALLOWED"},405);
     const body=await request.json().catch(()=>({})) as {displayName?:string;avatarData?:string|null;avatarMime?:string|null;removeAvatar?:boolean};
     const displayName=typeof body.displayName==="string"?body.displayName.trim().slice(0,120):undefined;
-    const removeAvatar=body.removeAvatar===true;\n    const avatarData=typeof body.avatarData==="string"?body.avatarData:null;
+    const removeAvatar=body.removeAvatar===true;
+    const avatarData=typeof body.avatarData==="string"?body.avatarData:null;
     const avatarMime=typeof body.avatarMime==="string"?body.avatarMime:null;
     if(avatarData && (!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(avatarData) || avatarData.length>550000)) return json({service:"Zalagren",error:"PROFILE_IMAGE_INVALID_OR_TOO_LARGE"},400);
     const id="participant-profile-"+crypto.randomUUID();

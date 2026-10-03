@@ -2,7 +2,7 @@
 
 Date: 2026-10-02
 Repository: kyabutwa/BeatOne
-Status: 🟡 SUPPORTED — BRAND/EXPERIENCE INTEGRATION IMPLEMENTED; OWNER LOGO BINARY PENDING
+Status: 🟡 SUPPORTED — BRAND/EXPERIENCE INTEGRATION IMPLEMENTED; OWNER-PROVIDED LOGO BINARY PRESENT
 
 ## 1. Brand boundary
 
@@ -51,9 +51,9 @@ The request hub performs local surface routing only. It does not silently author
 
 ## 6. Logo truth
 
-The repository currently does not contain the owner-provided BeatOne logo binary. Historical IMG_1383.jpeg and IMG_1384.jpeg references are not treated as present files without repository evidence.
+The repository currently does not contain the owner-provided BeatOne logo binary. Historical 1.png and 1.png (canonical asset; historical reference retired) references are not treated as present files without repository evidence.
 
-A self-contained BeatOne fallback mark is therefore used until the actual owner logo binary is supplied or restored. The fallback is not represented as the owner's original artwork.
+A self-contained BeatOne legacy fallback mark (no longer used) is therefore used until the actual owner logo binary is supplied or restored. The fallback is not represented as the owner's original artwork.
 
 ## 7. Runtime boundary
 

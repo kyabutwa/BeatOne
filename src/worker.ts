@@ -1258,8 +1258,9 @@ async function health(env: Env): Promise<Response> {
   }
 }
 
-async function foundation(env: Env): Promise<Response> {
+async function foundation(request: Request, env: Env): Promise<Response> {
   try {
+    await requireActive(request, env);
     const sql = requireDatabase(env);
     const [row] = await sql`
       SELECT
@@ -1542,7 +1543,7 @@ export default {
     if (request.method === "GET" && url.pathname === "/api/health/dashboard") return beatHealthDashboard(request, env);
     if (request.method === "GET" && url.pathname === "/api/health/search") return beatHealthSearch(request, env);
     if (request.method === "POST" && url.pathname === "/api/health/facility") return beatHealthCreateFacility(request, env);
-    if (request.method === "GET" && url.pathname === "/api/foundation") return foundation(env);
+    if (request.method === "GET" && url.pathname === "/api/foundation") return foundation(request, env);
     if (request.method === "GET" && url.pathname === "/api/home/communities") return homeCommunities(request, env);
     if (request.method === "GET" && url.pathname === "/api/home/services") return homeServices(request, env);
     if (request.method === "GET" && url.pathname === "/api/services/catalog") return publicServiceCatalog(request, env);

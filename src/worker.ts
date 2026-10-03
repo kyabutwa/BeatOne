@@ -11,6 +11,13 @@ interface Env {
   TWILIO_API_KEY?: string;
   TWILIO_API_SECRET?: string;
   TWILIO_VERIFY_SERVICE_SID?: string;
+  MPESA_CONSUMER_KEY?: string;
+  MPESA_CONSUMER_SECRET?: string;
+  MPESA_SHORTCODE?: string;
+  MPESA_PASSKEY?: string;
+  MPESA_CALLBACK_URL?: string;
+  MPESA_ENVIRONMENT?: string;
+  MPESA_TRANSACTION_TYPE?: string;
 }
 
 type DbSql = ReturnType<typeof neon>;
@@ -651,6 +658,77 @@ async function joinCommunity(request: Request, env: Env): Promise<Response> {
     await domainEvent(sql,participantId,"community.participation.requested","zalagren-worker");
     return json({service:"Zalagren",status:"participation_requested",participation:rows[0]},201);
   } catch(e){const m=e instanceof Error?e.message:"COMMUNITY_JOIN_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function zalagrenPlans(request: Request, env: Env): Promise<Response> {
+  try {
+    const {sql}=await participantIdFromSession(request,env);
+    const rows=await sql`SELECT id,code,name,description,currency,amount_minor,interval_unit,interval_count FROM public.zalagren_plan_catalog WHERE active=true ORDER BY amount_minor`;
+    return json({service:"Zalagren",plans:rows});
+  } catch(e){const m=e instanceof Error?e.message:"PLANS_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function subscribeZalagrenPlan(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const body=await request.json().catch(()=>({})) as {planId?:string};
+    if(!body.planId) return json({service:"Zalagren",error:"PLAN_REQUIRED"},400);
+    const plans=await sql`SELECT * FROM public.zalagren_plan_catalog WHERE id=${body.planId} AND active=true LIMIT 1`;
+    const plan=plans[0]; if(!plan) return json({service:"Zalagren",error:"PLAN_NOT_FOUND"},404);
+    const id="subscription-"+crypto.randomUUID();
+    const rows=await sql`INSERT INTO public.participant_subscriptions(id,participant_id,plan_id,status)
+      VALUES(${id},${participantId},${plan.id},CASE WHEN ${plan.amount_minor}=0 THEN 'active' ELSE 'pending' END)
+      ON CONFLICT(participant_id,plan_id) DO UPDATE SET status=CASE WHEN ${plan.amount_minor}=0 THEN 'active' ELSE 'pending' END,updated_at=now()
+      RETURNING *`;
+    await domainEvent(sql,participantId,"participant.subscription.selected","zalagren-worker");
+    return json({service:"Zalagren",status:plan.amount_minor===0?"active":"payment_required",subscription:rows[0],plan},201);
+  } catch(e){const m=e instanceof Error?e.message:"SUBSCRIPTION_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function mpesaStkPush(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const body=await request.json().catch(()=>({})) as {subscriptionId?:string;phone?:string;amountMinor?:number};
+    if(!body.subscriptionId||!body.phone) return json({service:"Zalagren",error:"PAYMENT_FIELDS_REQUIRED"},400);
+    const subRows=await sql`SELECT s.*,p.code,p.amount_minor,p.currency FROM public.participant_subscriptions s JOIN public.zalagren_plan_catalog p ON p.id=s.plan_id WHERE s.id=${body.subscriptionId} AND s.participant_id=${participantId} LIMIT 1`;
+    const sub=subRows[0]; if(!sub) return json({service:"Zalagren",error:"SUBSCRIPTION_NOT_FOUND"},404);
+    const amount=Math.max(1,Math.round((body.amountMinor??sub.amount_minor)/100));
+    if(!env.MPESA_CONSUMER_KEY||!env.MPESA_CONSUMER_SECRET||!env.MPESA_SHORTCODE||!env.MPESA_PASSKEY||!env.MPESA_CALLBACK_URL) return json({service:"Zalagren",status:"payment_provider_not_configured",message:"M-PESA Daraja credentials and live callback configuration are required before live collection can be enabled."},503);
+    const phone=String(body.phone).replace(/\\D/g,""); if(!/^2547\\d{8}$/.test(phone)) return json({service:"Zalagren",error:"INVALID_MPESA_PHONE"},400);
+    const idempotencyKey="mpesa-"+crypto.randomUUID();
+    const intentId="payment-"+crypto.randomUUID();
+    await sql`INSERT INTO public.zalagren_payment_intents(id,participant_id,subscription_id,amount_minor,currency,provider,phone_e164,status,idempotency_key) VALUES(${intentId},${participantId},${sub.id},${amount*100},'KES','mpesa',${phone},'created',${idempotencyKey})`;
+    const base=env.MPESA_ENVIRONMENT==="production"?"https://api.safaricom.co.ke":"https://sandbox.safaricom.co.ke";
+    const auth=await fetch(base+"/oauth/v1/generate?grant_type=client_credentials",{headers:{Authorization:"Basic "+btoa(env.MPESA_CONSUMER_KEY+":"+env.MPESA_CONSUMER_SECRET)}});
+    const authJson=await readJson(auth); if(!auth.ok||!authJson.access_token) throw new Error("MPESA_AUTH_FAILED");
+    const timestamp=new Date().toISOString().replace(/[-:TZ.]/g,"").slice(0,14);
+    const password=btoa(env.MPESA_SHORTCODE+env.MPESA_PASSKEY+timestamp);
+    const stk=await fetch(base+"/mpesa/stkpush/v1/processrequest",{method:"POST",headers:{Authorization:"Bearer "+authJson.access_token,"Content-Type":"application/json"},body:JSON.stringify({
+      BusinessShortCode:Number(env.MPESA_SHORTCODE),Password:password,Timestamp:timestamp,
+      TransactionType:env.MPESA_TRANSACTION_TYPE||"CustomerPayBillOnline",Amount:amount,PartyA:phone,PartyB:Number(env.MPESA_SHORTCODE),
+      PhoneNumber:phone,CallBackURL:env.MPESA_CALLBACK_URL,AccountReference:"Zalagren-"+sub.code,TransactionDesc:"Zalagren subscription"
+    })});
+    const result=await readJson(stk);
+    await sql`UPDATE public.zalagren_payment_intents SET status=${stk.ok?"submitted":"failed"},provider_request_id=${result.CheckoutRequestID||null},external_reference=${result.MerchantRequestID||null},updated_at=now() WHERE id=${intentId}`;
+    if(!stk.ok) return json({service:"Zalagren",error:"MPESA_STK_FAILED",details:result},502);
+    return json({service:"Zalagren",status:"payment_prompt_sent",paymentIntentId:intentId,checkoutRequestId:result.CheckoutRequestID});
+  } catch(e){const m=e instanceof Error?e.message:"MPESA_PAYMENT_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:500);}
+}
+
+async function mpesaCallback(request: Request, env: Env): Promise<Response> {
+  try {
+    const payload=await request.json().catch(()=>({})) as any;
+    const cb=payload?.Body?.stkCallback; const checkout=cb?.CheckoutRequestID;
+    if(checkout){
+      const sql=requireDatabase(env);
+      const resultCode=Number(cb?.ResultCode);
+      const items=cb?.CallbackMetadata?.Item||[];
+      const receipt=items.find((x:any)=>x.Name==="MpesaReceiptNumber")?.Value||null;
+      await sql`UPDATE public.zalagren_payment_intents SET status=${resultCode===0?"succeeded":"failed"},provider_receipt=${receipt},updated_at=now() WHERE provider_request_id=${checkout}`;
+      if(resultCode===0) await sql`UPDATE public.participant_subscriptions SET status='active',current_period_start=now(),current_period_end=now()+interval '1 month',updated_at=now() WHERE id=(SELECT subscription_id FROM public.zalagren_payment_intents WHERE provider_request_id=${checkout} LIMIT 1)`;
+    }
+    return json({ResultCode:0,ResultDesc:"Accepted"});
+  }catch(e){return json({ResultCode:0,ResultDesc:"Accepted"});}
 }
 
 async function communityPlans(request: Request, env: Env): Promise<Response> {
@@ -1311,6 +1389,10 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/beatride/profile") return createBeatRideProfile(request, env);
     if (request.method === "POST" && url.pathname === "/api/beatride/request") return requestBeatRide(request, env);
     if (request.method === "GET" && url.pathname === "/api/me") return me(request, env);
+    if (request.method === "GET" && url.pathname === "/api/plans") return zalagrenPlans(request, env);
+    if (request.method === "POST" && url.pathname === "/api/subscriptions") return subscribeZalagrenPlan(request, env);
+    if (request.method === "POST" && url.pathname === "/api/payments/mpesa/stk") return mpesaStkPush(request, env);
+    if (request.method === "POST" && url.pathname === "/api/payments/mpesa/callback") return mpesaCallback(request, env);
     if ((request.method === "GET" || request.method === "PUT") && url.pathname === "/api/profile") return participantProfile(request, env);
     if (request.method === "POST" && url.pathname === "/api/auth/sign-up/email") return authMutation(request, env, "/sign-up/email");
     if (request.method === "POST" && url.pathname === "/api/auth/sign-in/email") return authMutation(request, env, "/sign-in/email");

@@ -69,9 +69,7 @@ Legal identity is deferred to protected identity/verification flows. Backend leg
 
 ## Logo boundary
 
-The owner-provided Zalagren logo binary is present at `1.png` and is the canonical participant-facing logo. The Worker publishes it at `/1.png`, and the shell references that asset directly.
-
-No generated fallback is used for the primary Zalagren shell. The asset SHA-256 is pinned by the production smoke test.
+The canonical Zalagren participant-facing emblem is published at `/zalagren-emblem.svg`. It contains the emblem only, with a transparent background; the shell references that asset directly.
 
 ## Deployment boundary
 

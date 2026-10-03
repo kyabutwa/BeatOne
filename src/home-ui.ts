@@ -778,7 +778,7 @@ const constantynaMessages=$("constantynaMessages"),constantynaSend=$("constantyn
 const appendConstantyna=(role,text)=>{
  if(!constantynaMessages)return;
  const el=document.createElement("div");el.className="constantyna-message "+role;
- const safe=escHtml(text).replace(/\n/g,"<br>");
+ const safe=escHtml(text).split(String.fromCharCode(10)).join("<br>");
  el.innerHTML="<strong>"+(role==="assistant"?"CONSTANTYNA":"YOU")+"</strong><div>"+safe+"</div>";
  constantynaMessages.appendChild(el);constantynaMessages.scrollTop=constantynaMessages.scrollHeight;
 };

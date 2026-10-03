@@ -77,7 +77,7 @@ These are ecosystem capabilities, not disconnected products with separate identi
 
 ## Brand asset rule
 
-The current canonical primary logo asset is IMG_1383.jpeg. IMG_1384.jpeg remains a preserved project-owned reference asset.
+The current canonical primary logo asset is 1.png. 1.png (canonical asset; historical reference retired) remains a preserved project-owned reference asset.
 
 The interface must use the owner-provided artwork rather than redrawing the logo in HTML/CSS. Assets must be structurally assigned by role and must not be arbitrarily stretched, recolored or made into decorative noise.
 

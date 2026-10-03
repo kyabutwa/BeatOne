@@ -256,7 +256,7 @@ async function currentSession(request: Request, env: Env): Promise<{ user: any; 
   const cookieHeader = request.headers.get("cookie") || "";
   const tokenMatches = [
     cookieHeader.match(/(?:^|;\s*)__Host-zalagren_session=([^;]+)/),
-    cookieHeader.match(/(?:^|;\s*)__Host-zalagren_session=([^;]+)/)
+    cookieHeader.match(/(?:^|;\s*)__Host-beatone_session=([^;]+)/)
   ].filter(Boolean) as RegExpMatchArray[];
   const sql = requireDatabase(env);
   for (const tokenMatch of tokenMatches) {

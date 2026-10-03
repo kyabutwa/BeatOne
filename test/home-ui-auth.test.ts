@@ -20,10 +20,10 @@ test("Zalagren shell enforces the canonical visual contract", async () => {
   const html = await response.text();
 
   assert.match(html, /src="\/1\.png"/);
-  assert.match(html, /\.topbar,\.bottom-nav[\s\S]*background:#061A33!important/);
-  assert.match(html, /\.surface[\s\S]*background:#0B2A52!important/);
+  assert.match(html, /body\.navy-mode \.topbar,body\.navy-mode \.bottom-nav[\s\S]*background:#061a33!important/);
+  assert.match(html, /\.surface[\s\S]*background:#0b2a52!important/);
   assert.match(html, /\.surface \*[\s\S]*color:#fff!important/);
-  assert.match(html, /html,body\{background:#fff!important;color:#071A33!important\}/);
+  assert.match(html, /html,body\{background:var\(--canvas\)!important;color:var\(--text\)!important\}/);
   assert.doesNotMatch(html, /BeatOne/);
   assert.doesNotMatch(html, /EarthBeat/);
 });

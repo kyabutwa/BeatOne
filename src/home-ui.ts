@@ -107,7 +107,7 @@ input::placeholder{color:#7a8798}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.surface{transition:none}.surface:hover{transform:none}}
 /* Canonical Zalagren visual system.
    One source of truth: white/light mode by default, optional navy mode.
-   No generated primary logo: the shell uses /1.png. */
+   The shell uses the transparent canonical Zalagren emblem asset. */
 :root{
  --canvas:#fff;--surface:#fff;--surface-2:#f6f8fb;--navy:#071a33;--text:#071a33;
  --blue:#1554a6;--orange:#f27a21;--muted:#52657d;--line:#dfe5ec;--line-soft:#edf1f5;

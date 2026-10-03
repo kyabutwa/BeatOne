@@ -28,12 +28,16 @@ src/domains/
 - ride/
 - food/
 - market/
+- accommodation/
 - genzi/
 - guardian/
 - utilities/
 - notifications/
 - compliance/
 - support/
+- experience/
+- integrations/
+- edge/
 
 The current worker is intentionally still a single deployable Worker. These boundaries are the target internal modules; extraction should be incremental and must not break the production contract.
 
@@ -93,3 +97,20 @@ Service domains own their tables but must connect to the core chain through part
 ## Current architectural finding
 
 The Neon production database already contains the core Zalagren operating spine and substantial service-specific structures. The main remaining work is not inventing more tables; it is completing the user-facing workflows, authorization enforcement, provider integrations, reconciliation, observability, security and production gates around those structures.
+
+
+## Historical domains preserved in the project meaning
+
+The structure also accounts for the accumulated product direction that is not yet a separate runtime module:
+
+- Buildings & Units — represented through the canonical Place/resource model.
+- Payments & Economy — payment intents, regulated rails, settlement and reconciliation.
+- Education — knowledge and learning domain.
+- Environment — sustainability, resource and future sensor/edge inputs.
+- Accommodation/BnB — specialized commerce/reservation domain.
+- OneApp — participant-facing ecosystem shell.
+- Platform Website — public/discovery/organizational surface over the same core.
+- CONSTANTYNA — human/cultural orchestration boundary.
+- Physical/edge — local nodes, wearables, sensors, utility telemetry and resilient/offline execution.
+
+These are not optional ideas; they are part of the accumulated Zalagren product meaning. Runtime implementation is staged by the ten-month execution sequence.

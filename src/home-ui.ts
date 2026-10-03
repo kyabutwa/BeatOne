@@ -285,7 +285,7 @@ body.navy-mode .bottom-nav{background:rgba(6,26,51,.72)!important;border-color:r
 body.navy-mode .overlay{background:rgba(6,26,51,.82)!important}
 .account-id,.surface-state,.truth,.control-grid,.lifecycle{display:none!important}
 .verification-state-value{font-size:12px;line-height:18px}
-.settings-hero{padding:18px;border:1px solid var(--line);border-radius:20px;background:var(--surface-2);margin-bottom:12px}.settings-hero-title{font-size:22px;line-height:28px;font-weight:780;margin:5px 0}.settings-section{margin-top:12px;border:1px solid var(--line);border-radius:20px;background:var(--surface);overflow:hidden}.settings-section-title{padding:14px 16px;border-bottom:1px solid var(--line-soft);font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--orange)}.settings-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 16px;border-top:1px solid var(--line-soft)}.settings-row:first-of-type{border-top:0}.settings-row strong,.settings-toggle strong,.settings-select strong{display:block;font-size:14px}.settings-row span,.settings-toggle small,.settings-select small{display:block;color:var(--muted);font-size:12px;line-height:18px;margin-top:3px}.settings-action{min-width:84px;flex:0 0 auto}.settings-toggle,.settings-select{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 16px;border-top:1px solid var(--line-soft)}.settings-toggle input{width:48px;height:28px;min-height:0;accent-color:var(--orange)}.settings-select select{min-height:42px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text)}@media(max-width:700px){.settings-row{align-items:flex-start}.settings-action{margin-top:2px}.settings-select{align-items:flex-start;flex-direction:column}.settings-select select{width:100%}}
+.settings-hero{padding:18px;border:1px solid var(--line);border-radius:20px;background:var(--surface-2);margin-bottom:12px}.plan-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.plan-card{padding:16px;border:1px solid var(--line);border-radius:18px;background:var(--surface-2)}.plan-card.active{border-color:var(--orange);box-shadow:0 8px 24px rgba(242,122,33,.12)}.plan-name{font-size:17px;font-weight:800}.plan-price{font-size:24px;font-weight:820;margin-top:8px}.plan-price small{font-size:11px;font-weight:700;color:var(--muted)}.plan-copy{font-size:12px;line-height:18px;color:var(--muted);margin-top:5px;min-height:54px}.plan-features{margin:12px 0 0;padding:0;list-style:none}.plan-features li{font-size:11px;line-height:17px;padding:5px 0;border-top:1px solid var(--line-soft)}.plan-phone{margin-top:10px}.plan-phone input{min-height:40px}.plan-action{width:100%;margin-top:9px}@media(max-width:700px){.plan-grid{grid-template-columns:1fr}}.settings-hero-title{font-size:22px;line-height:28px;font-weight:780;margin:5px 0}.settings-section{margin-top:12px;border:1px solid var(--line);border-radius:20px;background:var(--surface);overflow:hidden}.settings-section-title{padding:14px 16px;border-bottom:1px solid var(--line-soft);font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--orange)}.settings-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 16px;border-top:1px solid var(--line-soft)}.settings-row:first-of-type{border-top:0}.settings-row strong,.settings-toggle strong,.settings-select strong{display:block;font-size:14px}.settings-row span,.settings-toggle small,.settings-select small{display:block;color:var(--muted);font-size:12px;line-height:18px;margin-top:3px}.settings-action{min-width:84px;flex:0 0 auto}.settings-toggle,.settings-select{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 16px;border-top:1px solid var(--line-soft)}.settings-toggle input{width:48px;height:28px;min-height:0;accent-color:var(--orange)}.settings-select select{min-height:42px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text)}@media(max-width:700px){.settings-row{align-items:flex-start}.settings-action{margin-top:2px}.settings-select{align-items:flex-start;flex-direction:column}.settings-select select{width:100%}}
 
 
 </style>
@@ -466,6 +466,15 @@ body.navy-mode .overlay{background:rgba(6,26,51,.82)!important}
   <div class="detail-head"><div><h3 class="detail-title">Settings</h3><div class="detail-sub">Your control center — identity, security, privacy, permissions, regulation and preferences.</div></div></div>
   <div class="settings-hero">
    <div><div class="eyebrow">Participant control</div><div class="settings-hero-title">You decide what Zalagren knows, uses and can do.</div><div class="row-meta">Controls are grouped by consequence. Regulated actions remain subject to the relevant provider, law and authorization.</div></div>
+  </div>
+  <div class="settings-section" id="zalagrenPlansSection">
+   <div class="settings-section-title">Zalagren plans</div>
+   <div style="padding:16px">
+    <div class="row-meta" style="margin:0 0 12px">Normal keeps the core participant foundation free. Plus and Premium add paid capabilities; they do not change your legal rights, community authority or provider obligations.</div>
+    <div id="zalagrenCurrentPlan" class="status">Loading your current plan…</div>
+    <div id="zalagrenPlans" class="plan-grid"></div>
+    <div id="zalagrenPlanStatus" class="status hidden"></div>
+   </div>
   </div>
   <div class="settings-section"><div class="settings-section-title">Identity & verification</div>
    <div class="settings-row"><div><strong>Verification Center</strong><span>Finish email, phone, document and legal identity verification.</span></div><button class="action primary settings-action" id="settingsVerification" type="button">Open</button></div>
@@ -791,5 +800,36 @@ mode();check();loadParticipantProfile();
  window.zalagrenLoadNetwork=loadNetwork;setTimeout(loadNetwork,1000);
 })();
 </script>
+
+async function loadZalagrenPlans(){
+ const grid=$("zalagrenPlans"),current=$("zalagrenCurrentPlan"); if(!grid)return;
+ try{
+  const [pr,sr]=await Promise.all([fetch("/api/plans",{credentials:"same-origin"}),fetch("/api/subscription",{credentials:"same-origin"})]);
+  const d=await pr.json(); const sd=await sr.json(); const active=sd.subscription;
+  current.textContent=active?("Current plan: "+active.plan_name+" · "+active.status):"Current plan: Zalagren Normal · no paid subscription selected";
+  grid.innerHTML=(d.plans||[]).map((p:any)=>{
+   const isActive=active&&active.plan_id===p.id&&active.status==="active";
+   const price=p.amount_minor===0?"Free":"KES "+Math.round(p.amount_minor/100).toLocaleString();
+   const features=(p.features||[]).slice(0,5).map((f:any)=>"<li>✓ "+escapeHtml(f.feature_name)+"</li>").join("");
+   const paid=p.amount_minor>0;
+   return '<div class="plan-card '+(isActive?"active":"")+'"><div class="eyebrow">'+escapeHtml(p.code==="free"?"NORMAL":p.code.toUpperCase())+'</div><div class="plan-name">'+escapeHtml(p.name)+'</div><div class="plan-price">'+price+(paid?'<small>/month</small>':"")+'</div><div class="plan-copy">'+escapeHtml(p.description)+'</div><ul class="plan-features">'+features+'</ul>'+(paid&&!isActive?'<div class="plan-phone"><input data-plan-phone="'+escapeHtml(p.id)+'" placeholder="M-PESA number e.g. 0712345678" inputmode="tel"></div>':"")+'<button class="action '+(isActive?"secondary":"primary")+' plan-action" data-plan-id="'+escapeHtml(p.id)+'" '+(isActive?"disabled":"")+'> '+(isActive?"Active":(paid?"Choose & pay":"Use Normal"))+' </button></div>';
+  }).join("");
+  grid.querySelectorAll(".plan-action").forEach((b:any)=>b.onclick=()=>selectZalagrenPlan(b.dataset.planId));
+ }catch{current.textContent="Unable to load plans right now.";}
+}
+async function selectZalagrenPlan(planId){
+ const status=$("zalagrenPlanStatus"); if(!status)return;
+ try{
+  const r=await fetch("/api/subscriptions",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({planId})});
+  const d=await r.json().catch(()=>({})); if(!r.ok)throw new Error(d.error||"PLAN_SELECTION_FAILED");
+  if(d.status==="active"){status.classList.remove("hidden");status.textContent="Zalagren Normal is active. Your core participant foundation remains available.";loadZalagrenPlans();return;}
+  const input=document.querySelector('[data-plan-phone="'+CSS.escape(planId)+'"]') as HTMLInputElement|null;
+  const phone=input?.value?.trim();
+  if(!phone)throw new Error("Enter your M-PESA number to continue.");
+  const pay=await fetch("/api/payments/mpesa/stk",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({subscriptionId:d.subscription.id,phone})});
+  const pd=await pay.json().catch(()=>({})); if(!pay.ok)throw new Error(pd.error==="payment_provider_not_configured"?"M-PESA is not configured for live payments yet. The plan is selected but not activated.":(pd.error||"MPESA_PAYMENT_FAILED"));
+  status.classList.remove("hidden");status.textContent="M-PESA payment prompt sent. Complete it on your phone; Zalagren will activate the plan only after confirmed payment.";loadZalagrenPlans();
+ }catch(e){status.classList.remove("hidden");status.textContent=e instanceof Error?e.message:"PLAN_ACTION_FAILED";}
+}
 </body>
 </html>`,{headers:headers({"content-type":"text/html; charset=utf-8"})});

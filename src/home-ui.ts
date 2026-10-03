@@ -97,67 +97,74 @@ input::placeholder{color:#7a8798}
 .control-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.control-card{padding:15px;border:1px solid var(--line);border-radius:17px;background:var(--surface);box-shadow:0 5px 18px rgba(7,26,51,.04)}.control-kicker{font-size:10px;line-height:15px;font-weight:800;letter-spacing:.09em;color:var(--orange);text-transform:uppercase}.control-title{font-size:15px;line-height:20px;font-weight:760;margin-top:6px}.control-copy{font-size:12px;line-height:18px;color:var(--muted);margin-top:4px}.truth{display:inline-flex;align-items:center;gap:5px;margin-top:10px;font-size:10px;font-weight:800;letter-spacing:.05em}.truth-dot{width:7px;height:7px;border-radius:50%;display:inline-block}.truth-verified .truth-dot{background:#1d7a4d}.truth-supported .truth-dot{background:#315f9a}.truth-proposed .truth-dot{background:#6b7280}.truth-failed .truth-dot{background:#a63a2b}.truth-pending .truth-dot{background:var(--orange)}.lifecycle{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.life-step{padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2)}.life-step strong{display:block;font-size:12px}.life-step span{display:block;font-size:11px;line-height:16px;color:var(--muted);margin-top:3px}@media(max-width:700px){.control-grid,.lifecycle{grid-template-columns:1fr}}@media(max-width:700px){.shell{padding-top:4px}.topbar{top:4px}.account-control span{display:none}.home-intro{display:block}.context-chip{margin-top:12px}.context-grid{grid-template-columns:1fr}.surface-grid{grid-template-columns:1fr}.surface{min-height:128px}.participant-card{grid-template-columns:1fr}.actions{flex-direction:column}.action{width:100%}.menu-grid{grid-template-columns:1fr}}
 @media(min-width:701px){.page{padding-top:18px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.surface{transition:none}.surface:hover{transform:none}}
-/* Temporary self-contained Zalagren mark: the owner-provided IMG_1383 artwork is not present in this repository yet. */
-/* Zalagren interface integration — iPhone-class spatial shell. */
+/* Canonical Zalagren visual system.
+   One source of truth: white/light mode by default, optional navy mode.
+   No generated primary logo: the shell uses /1.png. */
 :root{
- --canvas:#060B14;--surface:rgba(255,255,255,.08);--surface-2:rgba(255,255,255,.055);
- --navy:#F8FAFC;--blue:#1B365D;--orange:#F27A21;--muted:#94A3B8;--line:rgba(255,255,255,.14);--line-soft:rgba(255,255,255,.08);
- --danger:#f87171;--shadow:0 18px 55px rgba(0,0,0,.28);
+ --canvas:#fff;--surface:#fff;--surface-2:#f6f8fb;--navy:#071a33;--text:#071a33;
+ --blue:#1554a6;--orange:#f27a21;--muted:#52657d;--line:#dfe5ec;--line-soft:#edf1f5;
+ --green:#3aa86a;--danger:#a63a2b;--shadow:0 12px 34px rgba(7,26,51,.07)
 }
-html,body{background:var(--canvas);color:var(--navy)}
-.topbar,.bottom-nav,.context-card,.auth-card,.detail-card,.surface,.control-card,.menu-item,.context-item,.life-step,.verification-box,.status{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);box-shadow:0 18px 55px rgba(0,0,0,.20);backdrop-filter:blur(20px) saturate(145%);-webkit-backdrop-filter:blur(20px) saturate(145%)}
-.topbar,.bottom-nav{background:rgba(6,11,20,.78)}
-.overlay{background:rgba(6,11,20,.97)}
-.account-control,input,.mini-actions button,.secondary{background:rgba(255,255,255,.08);color:#F8FAFC;border-color:rgba(255,255,255,.14)}
-input::placeholder,.lede,.section-copy,.surface-copy,.control-copy,.row-meta,.detail-sub,.identity-meta,.verification-copy,.status{color:#94A3B8}
-.primary{background:#F8FAFC;color:#060B14}.surface:hover{border-color:rgba(255,255,255,.28)}\n.service-logo-stack{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;align-items:center;margin-bottom:8px}.service-logo-stack .service-logo{margin:0;width:100%;height:48px}.service-logo{display:block;width:74px;height:42px;object-fit:contain;object-position:left center;margin-bottom:8px;border-radius:10px}.surface .service-logo{max-width:100%;width:180px;height:54px;object-position:left center}
-.bottom-nav button.active{background:rgba(16,185,129,.16);color:#10B981}.pill{background:rgba(16,185,129,.14);color:#10B981}
-.context-chip{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.14);color:#F8FAFC}
-.truth-verified .truth-dot{background:#10B981}.truth-supported .truth-dot{background:#60A5FA}.truth-proposed .truth-dot{background:#A78BFA}.truth-failed .truth-dot{background:#F87171}
-/* Preserve readable dark-on-light controls where necessary. */
-
-/* Zalagren iPhone-class dark system surface: Apple HIG-inspired, not a copy of proprietary Apple UI. */
-:root{--canvas:#050B16;--surface:rgba(255,255,255,.075);--surface-2:rgba(255,255,255,.055);--navy:#F8FAFC;--blue:#1B365D;--orange:#10B981;--muted:#F8FAFC;--line:rgba(255,255,255,.14);--line-soft:rgba(255,255,255,.08);--danger:#FF6B6B;--green:#10B981;--white:#F8FAFC;--shadow:0 22px 70px rgba(0,0,0,.34)}
-html,body{background:var(--canvas)!important;color:var(--white)!important}body,*{color:#F8FAFC}.lede,.section-copy,.surface-copy,.control-copy,.row-meta,.detail-sub,.identity-meta,.verification-copy,.status,.context-label,.life-step span,.overlay-copy,.menu-item span{color:#F8FAFC!important;opacity:.78}.title,.overlay-title,.section-title,.detail-title,.auth-title,.surface-title,.control-title,.row-title,.verification-title,.identity{color:#F8FAFC!important}.eyebrow,.surface-mark,.surface-state,.control-kicker,.link-button{color:#10B981!important}.topbar,.bottom-nav,.context-card,.auth-card,.detail-card,.surface,.control-card,.menu-item,.context-item,.life-step,.verification-box,.status,.participant-card{background:rgba(255,255,255,.075)!important;border-color:rgba(255,255,255,.14)!important;box-shadow:var(--shadow)!important;backdrop-filter:blur(24px) saturate(150%);-webkit-backdrop-filter:blur(24px) saturate(150%)}.topbar,.bottom-nav{background:rgba(5,11,22,.82)!important}.overlay{background:rgba(5,11,22,.985)!important}.account-control,input,select,textarea,.mini-actions button,.secondary{background:rgba(255,255,255,.075)!important;color:#F8FAFC!important;border-color:rgba(255,255,255,.16)!important}input::placeholder,textarea::placeholder{color:#F8FAFC!important;opacity:.55}.primary{background:#10B981!important;color:#06110D!important;border:0!important}.action,.mini-actions button,.secondary,.top-action,.bottom-nav button{color:#F8FAFC!important}.bottom-nav button.active{background:rgba(16,185,129,.17)!important;color:#10B981!important}.account-dot,.context-chip i,.truth-dot,.verification-symbol{background:#10B981!important}.pill{background:rgba(16,185,129,.14)!important;color:#10B981!important;border:1px solid rgba(16,185,129,.22)}.title{font-size:clamp(34px,7vw,50px)!important;font-weight:780!important;letter-spacing:-.035em}.section-title{font-size:22px!important;font-weight:780!important}.detail-title{font-size:26px!important;font-weight:780!important}.surface-title{font-size:20px!important;font-weight:760!important}.account-hero{display:grid;grid-template-columns:auto 1fr;gap:15px;align-items:center;padding:18px;border-radius:22px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.22);margin-bottom:12px}.account-avatar{width:56px;height:56px;border-radius:18px;display:grid;place-items:center;background:rgba(16,185,129,.16);border:1px solid rgba(16,185,129,.35);font-size:22px;font-weight:800;color:#10B981!important}.account-id{font-size:12px;line-height:18px;opacity:.72;overflow-wrap:anywhere}.verification-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}.verification-state{padding:14px;border:1px solid rgba(255,255,255,.13);border-radius:17px;background:rgba(255,255,255,.045)}.verification-state-head{display:flex;align-items:center;gap:8px;font-weight:760}.verification-symbol{width:9px;height:9px;border-radius:50%;flex:0 0 auto}.verification-state.pending .verification-symbol{background:#F59E0B!important}.verification-state.verified .verification-symbol{background:#10B981!important}.verification-state.required .verification-symbol,.verification-state.not_started .verification-symbol{background:#94A3B8!important}.verification-state-label{font-size:13px;font-weight:760}.verification-state-value{font-size:11px;line-height:17px;margin-top:5px;opacity:.72}@media(max-width:700px){.verification-grid{grid-template-columns:1fr}.account-hero{grid-template-columns:auto 1fr}}
-
-/* Canonical Zalagren interface contract. */
-:root{
- --canvas:#ffffff;--surface:#0B2A52;--surface-2:#123A6B;--navy:#071A33;--text:#071A33;
- --blue:#1554A6;--orange:#F27A21;--muted:#DCE8F5;--line:rgba(255,255,255,.16);
- --green:#54C878;--danger:#FFB4A8;--shadow:0 14px 34px rgba(7,26,51,.16)
-}
-html,body{background:#fff!important;color:#071A33!important}
-body{color:#071A33!important}
-.topbar,.bottom-nav{
- background:#061A33!important;color:#fff!important;border-color:rgba(255,255,255,.16)!important;
- box-shadow:0 12px 30px rgba(7,26,51,.18)!important
-}
-.topbar *,.bottom-nav *,.top-action,.bottom-nav button,.account-control{color:#fff!important}
-.account-control{background:#0B2A52!important;border-color:rgba(255,255,255,.16)!important}
+html,body{background:var(--canvas)!important;color:var(--text)!important}
+body{min-height:100vh}
+.topbar{background:rgba(255,255,255,.96)!important;color:var(--text)!important;border-color:var(--line)!important}
+.topbar *,.top-action,.account-control{color:var(--text)!important}
+.account-control{background:#fff!important;border-color:var(--line)!important}
 .context-card,.auth-card,.detail-card,.surface,.control-card,.menu-item,.context-item,.life-step,.verification-box,.status,.participant-card,.account-hero{
- background:#0B2A52!important;color:#fff!important;border-color:rgba(255,255,255,.16)!important;box-shadow:0 14px 34px rgba(7,26,51,.16)!important
+ background:var(--surface)!important;color:var(--text)!important;border-color:var(--line)!important;box-shadow:var(--shadow)!important
 }
-.context-item,.life-step,.verification-box,.status,.control-card,.menu-item{background:#123A6B!important}
-.context-card *,.auth-card *,.detail-card *,.surface *,.control-card *,.menu-item *,.context-item *,.life-step *,.verification-box *,.status *,.participant-card *,.account-hero *{
- color:#fff!important
-}
-.context-card .muted,.auth-card .muted,.detail-card .muted,.surface .muted,.control-card .muted,.menu-item .muted,.context-item .muted,.life-step .muted,.verification-box .muted,.status .muted,.participant-card .muted{color:#fff!important}
-.surface:hover{background:#123A6B!important;border-color:rgba(255,255,255,.28)!important}
-.overlay{background:#061A33!important;color:#fff!important}
-.overlay *{color:#fff!important}
+.context-card *,.auth-card *,.detail-card *,.surface *,.control-card *,.menu-item *,.context-item *,.life-step *,.verification-box *,.status *,.participant-card *,.account-hero *{color:inherit}
+.context-item,.life-step,.verification-box,.status,.control-card,.menu-item{background:var(--surface-2)!important}
+.overlay{background:rgba(255,255,255,.985)!important;color:var(--text)!important}
+.overlay *{color:inherit}
 input,select,textarea,.mini-actions button,.secondary{
- background:#0B2A52!important;color:#fff!important;border-color:rgba(255,255,255,.18)!important
+ background:#fff!important;color:var(--text)!important;border-color:#cbd5e1!important
 }
-input::placeholder,textarea::placeholder{color:#DCE8F5!important}
-.primary{background:#1554A6!important;color:#fff!important}
-.secondary{background:#123A6B!important;color:#fff!important}
-.bottom-nav button.active{background:#1554A6!important;color:#fff!important}
-.pill,.context-chip{background:#123A6B!important;color:#fff!important;border-color:rgba(255,255,255,.18)!important}
-.context-chip i,.account-dot{background:#54C878!important}
-.eyebrow,.surface-mark,.surface-state,.control-kicker,.link-button{color:#F27A21!important}
-.truth-verified .truth-dot{background:#54C878!important}.truth-supported .truth-dot{background:#7FB3FF!important}.truth-proposed .truth-dot{background:#B9C9DD!important}.truth-failed .truth-dot{background:#FF8B7B!important}.truth-pending .truth-dot{background:#F27A21!important}
-.brand-logo{display:block;width:auto;height:36px;max-width:min(210px,48vw);object-fit:contain;object-position:center;background:transparent!important}
-.service-logo{background:#fff;border:1px solid rgba(255,255,255,.18);padding:4px}
+input::placeholder,textarea::placeholder{color:#7a8798!important}
+.primary{background:var(--navy)!important;color:#fff!important}
+.secondary{background:var(--surface-2)!important;color:var(--navy)!important}
+.bottom-nav{background:rgba(255,255,255,.97)!important;border-color:var(--line)!important}
+.bottom-nav button{color:var(--muted)!important}
+.bottom-nav button.active{background:#eef4fb!important;color:var(--navy)!important}
+.eyebrow,.surface-mark,.surface-state,.control-kicker,.link-button{color:var(--orange)!important}
+.context-chip,.pill{background:#f6f8fb!important;color:var(--navy)!important;border-color:var(--line)!important}
+.context-chip i,.account-dot{background:var(--orange)!important}
+.account-hero{display:grid;grid-template-columns:auto 1fr;gap:15px;align-items:center;padding:18px;margin-bottom:12px}
+.account-avatar{width:56px;height:56px;border-radius:18px;display:grid;place-items:center;background:#eef4fb;border:1px solid #cbd9e8;font-size:22px;font-weight:800;color:var(--navy)!important}
+.account-id{font-size:12px;line-height:18px;opacity:.72;overflow-wrap:anywhere}
+.verification-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.verification-state{padding:14px;border:1px solid var(--line);border-radius:17px;background:var(--surface-2)}
+.verification-state-head{display:flex;align-items:center;gap:8px;font-weight:760}
+.verification-symbol{width:9px;height:9px;border-radius:50%;flex:0 0 auto;background:var(--muted)}
+.verification-state.pending .verification-symbol{background:var(--orange)}
+.verification-state.verified .verification-symbol{background:var(--green)}
+.verification-state-label{font-size:13px;font-weight:760}
+.verification-state-value{font-size:11px;line-height:17px;margin-top:5px;color:var(--muted)}
+.service-logo-stack{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;align-items:center;margin-bottom:8px}
+.service-logo{display:block;width:74px;height:42px;object-fit:contain;object-position:left center;margin-bottom:8px;border-radius:10px}
+.surface .service-logo{max-width:100%;width:180px;height:54px;object-position:left center}
+.truth-verified .truth-dot{background:#1d7a4d}.truth-supported .truth-dot{background:#315f9a}.truth-proposed .truth-dot{background:#6b7280}.truth-failed .truth-dot{background:#a63a2b}
+body.navy-mode{
+ --canvas:#071a33;--surface:#0b2a52;--surface-2:#123a6b;--text:#fff;--navy:#fff;
+ --muted:#dce8f5;--line:rgba(255,255,255,.16);--line-soft:rgba(255,255,255,.09);
+ --shadow:0 14px 34px rgba(0,0,0,.22)
+}
+body.navy-mode .topbar,body.navy-mode .bottom-nav{background:#061a33!important;color:#fff!important;border-color:rgba(255,255,255,.16)!important}
+body.navy-mode .topbar *,.navy-mode .top-action,.navy-mode .account-control{color:#fff!important}
+body.navy-mode .account-control{background:#0b2a52!important;border-color:rgba(255,255,255,.16)!important}
+body.navy-mode .context-card,body.navy-mode .auth-card,body.navy-mode .detail-card,body.navy-mode .surface,body.navy-mode .control-card,body.navy-mode .menu-item,body.navy-mode .context-item,body.navy-mode .life-step,body.navy-mode .verification-box,body.navy-mode .status,body.navy-mode .participant-card,body.navy-mode .account-hero{background:var(--surface)!important;color:#fff!important}
+body.navy-mode .context-item,body.navy-mode .life-step,body.navy-mode .verification-box,body.navy-mode .status,body.navy-mode .control-card,body.navy-mode .menu-item{background:var(--surface-2)!important}
+body.navy-mode .overlay{background:#061a33!important;color:#fff!important}
+body.navy-mode input,body.navy-mode select,body.navy-mode textarea,body.navy-mode .mini-actions button,body.navy-mode .secondary{background:#0b2a52!important;color:#fff!important;border-color:rgba(255,255,255,.18)!important}
+body.navy-mode .primary{background:#fff!important;color:#071a33!important}
+body.navy-mode .secondary{background:#123a6b!important;color:#fff!important}
+body.navy-mode .bottom-nav button{color:#dce8f5!important}
+body.navy-mode .bottom-nav button.active{background:#1554a6!important;color:#fff!important}
+body.navy-mode .context-chip,body.navy-mode .pill{background:#123a6b!important;color:#fff!important;border-color:rgba(255,255,255,.18)!important}
+body.navy-mode .account-avatar{background:#123a6b;border-color:rgba(255,255,255,.18);color:#fff!important}
+body.navy-mode .verification-state{background:#123a6b;border-color:rgba(255,255,255,.14)}
+body.navy-mode .verification-state-value{color:#dce8f5}
+@media(max-width:700px){.verification-grid{grid-template-columns:1fr}.account-hero{grid-template-columns:auto 1fr}}
 </style>
 </head>
 <body>

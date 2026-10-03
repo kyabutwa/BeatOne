@@ -51,7 +51,7 @@ The request hub performs local surface routing only. It does not silently author
 
 ## 6. Logo truth
 
-Zalagren is the sole current participant-facing identity. The canonical Zalagren participant-facing emblem is published by the Worker at `/zalagren-emblem.svg`. Historical fallback marks are not part of the participant-facing shell.
+Zalagren is the sole current participant-facing identity. The canonical Zalagren participant-facing emblem is published by the Worker at `/zalagren-emblem.png`. Historical fallback marks are not part of the participant-facing shell.
 
 ## 7. Runtime boundary
 

@@ -1026,6 +1026,28 @@ async function createZalagrenInvitation(request: Request, env: Env): Promise<Res
     return json({service:"Zalagren",status:"invitation_created",invitation:rows[0],inviteToken:token,sharePath:"/invite/"+encodeURIComponent(token)},201);
   } catch(e){const m=e instanceof Error?e.message:"INVITATION_CREATE_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
 }
+
+async function viewZalagrenInvitation(request: Request, env: Env, token: string): Promise<Response> {
+  try {
+    const sql = requireDatabase(env);
+    const hash = await sha256Hex(token);
+    const rows = await sql`SELECT invitation_type,target_name,status,expires_at
+      FROM public.zalagren_invitations
+      WHERE token_hash=${hash} AND status='pending' AND expires_at>now()
+      LIMIT 1`;
+    if (!rows.length) return new Response("Zalagren invitation is invalid or expired.", { status: 404, headers: headers({"content-type":"text/plain; charset=utf-8"}) });
+    const inv = rows[0] as any;
+    const esc = (v: unknown) => String(v ?? "").replace(/[&<>"']/g, (ch) => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" } as Record<string,string>)[ch]);
+    const typeLabel = String(inv.invitation_type || "participant").replace(/^./, (m) => m.toUpperCase());
+    const name = esc(inv.target_name || "Zalagren participant");
+    const tokenSafe = encodeURIComponent(token);
+    const html = "<!doctype html><html><head><meta name='viewport' content='width=device-width,initial-scale=1'><title>Zalagren invitation</title><style>body{margin:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;background:#fff;color:#071a3d;display:grid;place-items:center;min-height:100vh}.card{width:min(92vw,430px);padding:32px;border:1px solid #dbe3ef;border-radius:28px;box-shadow:0 18px 60px #071a3d18}.mark{width:56px;height:56px;margin-bottom:24px}.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.65}.name{font-size:30px;margin:8px 0 12px}.meta{line-height:1.55;color:#42516a}.btn{width:100%;border:0;border-radius:16px;padding:15px;margin-top:24px;background:#071a3d;color:#fff;font-size:16px;font-weight:650}.status{margin-top:14px;min-height:24px;font-size:14px}</style></head><body><main class='card'><img class='mark' src='/zalagren-emblem.svg' alt='Zalagren'><div class='eyebrow'>Zalagren invitation</div><div class='name'>"+name+"</div><div class='meta'>You have been invited to connect with Zalagren as a "+esc(typeLabel.toLowerCase())+".</div><button class='btn' id='accept'>Accept invitation</button><div class='status' id='status'></div></main><script>const token="+JSON.stringify(tokenSafe)+";document.getElementById('accept').onclick=async()=>{const s=document.getElementById('status');s.textContent='Checking your Zalagren session…';try{const r=await fetch('/api/invite/accept',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token:decodeURIComponent(token)})});const d=await r.json();if(r.ok){s.textContent='Invitation accepted. Opening Zalagren…';location.href='/';}else if(r.status===401){s.textContent='Please sign in to Zalagren first, then return to this invitation.';setTimeout(()=>location.href='/?returnTo=/invite/'+token,700);}else{s.textContent=d.error||'Invitation could not be accepted.';}}catch(e){s.textContent='Connection failed. Please try again.';}};</script></body></html>";
+    return new Response(html, { status: 200, headers: headers({"content-type":"text/html; charset=utf-8"}) });
+  } catch (e) {
+    return new Response("Zalagren invitation could not be opened.", { status: 500, headers: headers({"content-type":"text/plain; charset=utf-8"}) });
+  }
+}
+
 async function acceptZalagrenInvitation(request: Request, env: Env): Promise<Response> {
   try { const {participantId,sql}=await participantIdFromSession(request,env); const b=await request.json() as {token?:string}; if(!b.token?.trim())return json({service:"Zalagren",error:"INVITATION_TOKEN_REQUIRED"},400);
     const hash=await sha256Hex(b.token.trim()); const rows=await sql`SELECT * FROM public.zalagren_invitations WHERE token_hash=${hash} AND status='pending' AND expires_at>now() LIMIT 1`; if(!rows.length)return json({service:"Zalagren",error:"INVITATION_INVALID_OR_EXPIRED"},404); const inv=rows[0];
@@ -1208,6 +1230,10 @@ export default {
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/") return renderHome(headers);
     if (request.method === "GET" && url.pathname === "/api/health") return health(env);
+    if (request.method === "GET" && url.pathname.startsWith("/invite/")) {
+      const token = decodeURIComponent(url.pathname.slice("/invite/".length));
+      if (token) return viewZalagrenInvitation(request, env, token);
+    }
     if (request.method === "GET" && url.pathname === "/api/health/dashboard") return beatHealthDashboard(request, env);
     if (request.method === "GET" && url.pathname === "/api/health/search") return beatHealthSearch(request, env);
     if (request.method === "POST" && url.pathname === "/api/health/facility") return beatHealthCreateFacility(request, env);

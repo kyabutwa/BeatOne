@@ -791,6 +791,34 @@ async function requestBeatRide(request: Request, env: Env): Promise<Response> {
     return json({service:"Zalagren",status:offers.length?"drivers_notified":"searching_for_driver",ride:rows[0],dispatch:{ownedBy:"Zalagren",providerDependency:false,offersCreated:offers.length}},201);
   } catch(e){const m=e instanceof Error?e.message:"BEATRIDE_REQUEST_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
 }
+async function participantProfile(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    if(request.method==="GET"){
+      const rows=await sql`SELECT display_name,avatar_data,avatar_mime,avatar_updated_at,updated_at FROM public.participant_profiles WHERE participant_id=${participantId} LIMIT 1`;
+      const row=rows[0]||null;
+      return json({service:"Zalagren",profile:row?{displayName:row.display_name||null,avatarData:row.avatar_data||null,avatarMime:row.avatar_mime||null,avatarUpdatedAt:row.avatar_updated_at||null,updatedAt:row.updated_at||null}:{displayName:null,avatarData:null,avatarMime:null,avatarUpdatedAt:null,updatedAt:null}});
+    }
+    if(request.method!=="PUT") return json({service:"Zalagren",error:"METHOD_NOT_ALLOWED"},405);
+    const body=await request.json().catch(()=>({})) as {displayName?:string;avatarData?:string;avatarMime?:string|null};
+    const displayName=typeof body.displayName==="string"?body.displayName.trim().slice(0,120):undefined;
+    const avatarData=typeof body.avatarData==="string"?body.avatarData:null;
+    const avatarMime=typeof body.avatarMime==="string"?body.avatarMime:null;
+    if(avatarData && (!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(avatarData) || avatarData.length>550000)) return json({service:"Zalagren",error:"PROFILE_IMAGE_INVALID_OR_TOO_LARGE"},400);
+    const id="participant-profile-"+crypto.randomUUID();
+    const rows=await sql`INSERT INTO public.participant_profiles(id,participant_id,display_name,avatar_data,avatar_mime,avatar_updated_at,updated_at)
+      VALUES(${id},${participantId},${displayName||null},${avatarData},${avatarMime},CASE WHEN ${avatarData} IS NULL THEN NULL ELSE now() END,now())
+      ON CONFLICT(participant_id) DO UPDATE SET
+        display_name=COALESCE(EXCLUDED.display_name,public.participant_profiles.display_name),
+        avatar_data=CASE WHEN ${avatarData} IS NULL THEN public.participant_profiles.avatar_data ELSE EXCLUDED.avatar_data END,
+        avatar_mime=CASE WHEN ${avatarData} IS NULL THEN public.participant_profiles.avatar_mime ELSE EXCLUDED.avatar_mime END,
+        avatar_updated_at=CASE WHEN ${avatarData} IS NULL THEN public.participant_profiles.avatar_updated_at ELSE now() END,
+        updated_at=now()
+      RETURNING display_name,avatar_data,avatar_mime,avatar_updated_at,updated_at`;
+    return json({service:"Zalagren",status:"profile_saved",profile:{displayName:rows[0]?.display_name||null,avatarData:rows[0]?.avatar_data||null,avatarMime:rows[0]?.avatar_mime||null,avatarUpdatedAt:rows[0]?.avatar_updated_at||null,updatedAt:rows[0]?.updated_at||null}});
+  } catch(e){const m=e instanceof Error?e.message:"PROFILE_UPDATE_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
 async function me(request: Request, env: Env): Promise<Response> {
   try {
     const active = await currentSession(request, env);
@@ -1283,6 +1311,7 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/beatride/profile") return createBeatRideProfile(request, env);
     if (request.method === "POST" && url.pathname === "/api/beatride/request") return requestBeatRide(request, env);
     if (request.method === "GET" && url.pathname === "/api/me") return me(request, env);
+    if ((request.method === "GET" || request.method === "PUT") && url.pathname === "/api/profile") return participantProfile(request, env);
     if (request.method === "POST" && url.pathname === "/api/auth/sign-up/email") return authMutation(request, env, "/sign-up/email");
     if (request.method === "POST" && url.pathname === "/api/auth/sign-in/email") return authMutation(request, env, "/sign-in/email");
     if (request.method === "POST" && url.pathname === "/api/auth/email/verification/send") return sendEmailVerification(request, env);

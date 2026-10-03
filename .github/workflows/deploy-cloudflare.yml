@@ -1,4 +1,4 @@
-name: Deploy BeatOne Worker
+name: Deploy Zalagren Worker
 
 on:
   push:
@@ -12,11 +12,12 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - run: npm install
+      - run: npm run integrity
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
@@ -45,16 +46,16 @@ jobs:
           exit 1
       - name: Verify production shell and transparent emblem
         run: |
-          body=$(curl -L -sS https://zalagren.kyabutwabis-f.workers.dev/)
-          printf "%s" "$body" | grep -q "Zalagren"
-          printf "%s" "$body" | grep -q "Participant Home"
-          printf "%s" "$body" | grep -q "GENESIS"
-          printf "%s" "$body" | grep -q "/zalagren-emblem.svg"
+          curl -L -sS https://zalagren.kyabutwabis-f.workers.dev/ -o /tmp/zalagren-home.html
+          grep -q "Zalagren" /tmp/zalagren-home.html
+          grep -q "Participant Home" /tmp/zalagren-home.html
+          grep -q "GENESIS" /tmp/zalagren-home.html
+          grep -q "/zalagren-emblem.svg" /tmp/zalagren-home.html
           logo_headers=$(curl -L -sS -D - -o /tmp/zalagren-logo.svg https://zalagren.kyabutwabis-f.workers.dev/zalagren-emblem.svg)
           printf "%s" "$logo_headers" | grep -qi "content-type: image/svg+xml"
           grep -q 'fill="none"' /tmp/zalagren-logo.svg
           grep -q 'fill="black"' /tmp/zalagren-logo.svg
-          if printf "%s" "$body" | grep -q "BeatOne"; then
+          if grep -q "BeatOne" /tmp/zalagren-home.html; then
             echo "Obsolete BeatOne branding detected in production shell"
             exit 1
           fi

@@ -18,6 +18,8 @@ jobs:
           node-version: 22
       - run: npm install
       - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
       - name: Set Worker database secret
         run: printf '%s' "$DATABASE_URL" | npx wrangler secret put DATABASE_URL
         env:

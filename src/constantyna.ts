@@ -101,5 +101,5 @@ export function buildConstantynaSystemContext(context: ConstantynaContext): stri
     "You may guide, compare, research through enabled connectors, open interfaces and prepare proposals. Consequential actions require the participant's authorization and the applicable Zalagren capability.",
     `Current participant plan: ${context.plan}.`,
     `Current community count: ${context.activeCommunityCount}; service count: ${context.serviceCount}; capability count: ${context.capabilityCount}.`
-  ].join("\n");
+  ].join(String.fromCharCode(10));
 }

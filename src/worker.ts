@@ -213,7 +213,7 @@ async function authMutation(request: Request, env: Env, endpoint: string): Promi
       "access-control-allow-origin": "*"
     });
 
-    // BeatOne owns the browser session boundary. Issue exactly one canonical cookie.
+    // Zalagren owns the browser session boundary. Issue exactly one canonical cookie.
     if (canonical?.sessionToken && canonical?.expiresAt) {
       const maxAge = Math.max(60, Math.floor((new Date(canonical.expiresAt).getTime() - Date.now()) / 1000));
       outHeaders.append("set-cookie", "__Host-zalagren_session=" + encodeURIComponent(canonical.sessionToken) + "; Path=/; Max-Age=" + maxAge + "; HttpOnly; Secure; SameSite=Lax");
@@ -830,7 +830,7 @@ async function communityServiceBinding(request: Request, env: Env): Promise<Resp
     const id="community-service-"+crypto.randomUUID();
     const rows=await sql`INSERT INTO public.community_service_bindings(id,community_id,service_id,status,settings,created_by_participant_id) VALUES(${id},${b.communityId},${b.serviceId},'active',${JSON.stringify(b.settings||{})}::jsonb,${participantId}) ON CONFLICT(community_id,service_id) DO UPDATE SET status='active',settings=EXCLUDED.settings,updated_at=now() RETURNING *`;
     await domainEvent(sql,participantId,"community.service.integration_configured","zalagren-community-management");
-    return json({service:"Zalagren",status:"service_integration_configured",binding:rows[0],ownership:"BeatOne",communityRole:"integration_coordination_only"},201);
+    return json({service:"Zalagren",status:"service_integration_configured",binding:rows[0],ownership:"Zalagren",communityRole:"integration_coordination_only"},201);
   } catch(e){const m=e instanceof Error?e.message:"SERVICE_BINDING_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:m==="COMMUNITY_REPRESENTATIVE_REQUIRED"?403:400);}
 }
 async function communityCapabilityBinding(request: Request, env: Env): Promise<Response> {
@@ -1160,7 +1160,11 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/auth/sign-out") {
       try {
         const outHeaders = headers({"content-type":"application/json; charset=utf-8"});
-        const tokenMatch = (request.headers.get("cookie") || "").match(/(?:^|;\s*)__Host-zalagren_session=([^;]+)/);
+        const cookieHeader = request.headers.get("cookie") || "";
+        const tokenMatches = [
+          cookieHeader.match(/(?:^|;\\s*)__Host-zalagren_session=([^;]+)/),
+          cookieHeader.match(/(?:^|;\\s*)__Host-beatone_session=([^;]+)/)
+        ].filter(Boolean) as RegExpMatchArray[];
         if (tokenMatches.length) {
           const sql = requireDatabase(env);
           for (const tokenMatch of tokenMatches) {
@@ -1171,9 +1175,10 @@ export default {
         try {
           const upstream = await providerRequest(request, env, "/sign-out");
           const setCookies = providerCookies(upstream);
-          for (const cookie of setCookies) outHeaders.append("set-cookie", cookie.replace(/;\s*Domain=[^;]+/gi,"").replace(/;\s*Path=\/[^;]*/i,"; Path=/"));
+          for (const cookie of setCookies) outHeaders.append("set-cookie", cookie.replace(/;\\s*Domain=[^;]+/gi,"").replace(/;\\s*Path=\\/[^;]*/i,"; Path=/"));
         } catch {}
         outHeaders.append("set-cookie", "__Host-zalagren_session=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax");
+        outHeaders.append("set-cookie", "__Host-beatone_session=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax");
         return new Response(JSON.stringify({service:"Zalagren",status:"signed_out",sessionRevoked:true}),{status:200,headers:outHeaders});
       } catch (error) {
         return json({error:error instanceof Error?error.message:"SIGN_OUT_FAILED"},500);

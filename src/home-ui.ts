@@ -421,6 +421,13 @@ body.navy-mode .overlay{background:rgba(6,26,51,.82)!important}
   <div class="context-card participant-card"><div><div class="identity" id="identityName">Participant</div><div class="identity-meta" id="identityMeta"></div></div><span class="pill">AUTHENTICATED</span></div>
  </section>
 
+ <section id="bnbDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">BeatBnB</h3><div class="detail-sub">Community unit → host/provider → guest → stay → authorized access → travel</div></div></div>
+  <div class="row"><div class="row-title">Community unit understanding</div><div class="row-meta">Phase, building, floor, unit, common area and reserved-space context can be connected to an eligible BeatBnB property.</div></div>
+  <div class="row"><div class="row-title">Stay intelligence</div><div class="row-meta">Availability, unit details, amenities, pricing observations, reputation, discounts, booking and cancellation are separate lifecycle states.</div></div>
+  <div class="row"><div class="row-title">Zalagren Access Protocol</div><div class="row-meta">A confirmed stay does not silently create permanent access. Guest access is time-bound and authorization-gated.</div></div>
+  <div class="row"><div class="row-title">Destinations & travel</div><div class="row-meta">Search and compare accommodation, flights, private-jet requests and international connections. Live availability is shown only when a real provider result exists.</div></div>
+ </section>
+
  <section id="marketplaceDetail" class="detail-card">
   <div class="detail-head"><div><h3 class="detail-title">Marketplace</h3><div class="detail-sub">Structured commerce: offer → trust → compliance → fulfillment → transaction</div></div></div>
   <div class="verification-box">

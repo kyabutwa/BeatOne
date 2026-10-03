@@ -1,1 +1,0 @@
-declare module "*.png" {\n  const data: ArrayBuffer;\n  export default data;\n}\n

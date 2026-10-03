@@ -765,8 +765,11 @@ async function mpesaCallback(request: Request, env: Env): Promise<Response> {
         const nextStatus=resultCode===0?"succeeded":"failed";
         await sql`UPDATE public.zalagren_payment_intents SET status=${nextStatus},provider_receipt=${receipt},updated_at=now() WHERE id=${intent.id} AND status<>'succeeded'`;
         if(resultCode===0){
-          const intervalExpr=intent.interval_unit==="year"?"interval '1 year'":"interval '1 month'";
-          await sql`UPDATE public.participant_subscriptions SET status='active',current_period_start=now(),current_period_end=now()+${intervalExpr},cancel_at_period_end=false,updated_at=now() WHERE id=${intent.subscription_id}`;
+          if(intent.interval_unit==="year"){
+            await sql`UPDATE public.participant_subscriptions SET status='active',current_period_start=now(),current_period_end=now()+interval '1 year',cancel_at_period_end=false,updated_at=now() WHERE id=${intent.subscription_id}`;
+          } else {
+            await sql`UPDATE public.participant_subscriptions SET status='active',current_period_start=now(),current_period_end=now()+interval '1 month',cancel_at_period_end=false,updated_at=now() WHERE id=${intent.subscription_id}`;
+          }
         }
       }
     }

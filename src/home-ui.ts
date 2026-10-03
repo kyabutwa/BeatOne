@@ -492,6 +492,8 @@ body.navy-mode .overlay{background:rgba(6,26,51,.82)!important}
   </div>
   <div class="settings-section"><div class="settings-section-title">Regulation & consent</div>
    <div class="settings-row"><div><strong>Regulatory profile</strong><span>Review the jurisdiction, legal basis and evidence requirements that may apply to your participation.</span></div><button class="action secondary" id="settingsRegulation" type="button">Review</button></div>
+   <div class="settings-row"><div><strong>Notifications</strong><span>View service, community, security and payment messages tied to your participant account.</span></div><button class="action secondary" id="settingsNotifications" type="button">Open</button></div>
+   <div class="settings-row"><div><strong>Support</strong><span>Open and track a support request without leaving Zalagren.</span></div><button class="action secondary" id="settingsSupport" type="button">Open</button></div>
    <div class="settings-row"><div><strong>Consents & authorizations</strong><span>Review permissions you granted to communities, providers and Zalagren services.</span></div><button class="action secondary" id="settingsAuthorizations" type="button">Review</button></div>
   </div>
   <div class="settings-section"><div class="settings-section-title">Data & corrections</div>
@@ -509,7 +511,7 @@ body.navy-mode .overlay{background:rgba(6,26,51,.82)!important}
  <section id="serviceDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">Services</h3><div class="detail-sub">Services available through Zalagren</div></div></div><div id="serviceBody"></div></section>
  <section id="genesisDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">GENESIS</h3><div class="detail-sub">Intelligence proposes; authorized participants decide</div></div></div><div id="genesisBody"></div></section>
  <section id="worldDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">World</h3><div class="detail-sub">Community → phase → place → context</div></div></div><div class="row"><div class="row-title">No world context connected yet.</div><div class="row-meta"><span class="pill">SUPPORTED · EMPTY</span> The platform preserves a truthful empty state.</div></div></section>
- <section id="activityDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">Activity</h3><div class="detail-sub">Action → event → evidence</div></div></div><div class="row"><div class="row-title">No participant activity yet.</div><div class="row-meta"><span class="pill">SUPPORTED · EMPTY</span> Nothing is fabricated before a real authorized action occurs.</div></div></section>
+ <section id="activityDetail" class="detail-card"><div class="detail-head"><div><h3 class="detail-title">Activity</h3><div class="detail-sub">Your real actions, events and evidence</div></div></div><div id="activityFeed"><div class="row"><div class="row-title">Loading participant activity…</div><div class="row-meta">Activity is read from your authenticated Zalagren account.</div></div></div></section>
 
 
  <section id="managementDetail" class="detail-card">
@@ -782,6 +784,13 @@ $("authForm").onsubmit=async event=>{
 };
 $("signout").onclick=async()=>{await fetch("/api/auth/sign-out",{method:"POST"});location.reload();};
 async function check(){const r=await fetch("/api/me");if(r.ok)showHome(await r.json());}
+async function loadActivity(){try{const r=await fetch("/api/activity",{credentials:"same-origin"});const d=await r.json();const el=$("activityFeed");if(!el)return;if(!r.ok)throw new Error(d.error||"ACTIVITY_FAILED");const items=d.items||[];el.innerHTML=items.length?items.map(x=>'<div class="row"><div class="row-title">'+String(x.title).replace(/</g,"&lt;")+'</div><div class="row-meta">'+String(x.summary||"Activity recorded")+' · '+new Date(x.occurred_at).toLocaleString()+'</div></div>').join(""):'<div class="row"><div class="row-title">No participant activity yet.</div><div class="row-meta"><span class="pill">SUPPORTED · EMPTY</span> Nothing is fabricated before a real authorized action occurs.</div></div>';}catch(e){const el=$("activityFeed");if(el)el.innerHTML='<div class="row"><div class="row-title">Activity unavailable</div><div class="row-meta">'+String(e.message)+'</div></div>';}}
+async function loadVerificationCenter(){try{const r=await fetch("/api/identity/verification/status",{credentials:"same-origin"});const d=await r.json();if(!r.ok)throw new Error(d.error||"VERIFICATION_STATUS_FAILED");const legal=d.legalIdentity?"Legal identity: "+(d.legalIdentity.status||"recorded"):"Legal identity: not started";const email=(d.contacts||[]).find(x=>x.kind==="email");const phone=(d.contacts||[]).find(x=>x.kind==="phone");showSettingsStatus(legal+" · Email: "+(email?.status||"not recorded")+" · Phone: "+(phone?.status||"not recorded")+" · Documents: "+(d.documents||[]).length+" · Verification records: "+(d.verifications||[]).length+". Submitted evidence is not treated as verified until a real verification method records evidence.");}catch(e){showSettingsStatus("Verification status unavailable: "+e.message);}}
+async function loadNotifications(){try{const r=await fetch("/api/notifications",{credentials:"same-origin"});const d=await r.json();if(!r.ok)throw new Error(d.error||"NOTIFICATIONS_FAILED");const unread=(d.items||[]).filter(x=>!x.read_at).length;showSettingsStatus(unread+" unread participant notification"+(unread===1?"":"s")+".");}catch(e){showSettingsStatus("Notifications unavailable: "+e.message);}}
+$("settingsVerification")?.addEventListener("click",loadVerificationCenter);
+$("settingsNotifications")?.addEventListener("click",loadNotifications);
+$("settingsSupport")?.addEventListener("click",()=>showSettingsStatus("Support is connected to the participant account. The request API is live; the full support form will be surfaced in the next UI pass."));
+loadActivity();
 mode();check();loadParticipantProfile();
 </script>
 <script>

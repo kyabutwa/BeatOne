@@ -1228,7 +1228,12 @@ export default {
     if (request.method === "GET" && url.pathname === "/api/home/foundation") return homeFoundation(request, env);
     if (request.method === "GET" && url.pathname === "/api/participation") return listParticipation(request, env);
     if (request.method === "GET" && url.pathname === "/api/community/management") return communityManagement(request, env);
-    if (request.method === "GET" && url.pathname === "/api/community/management/operations") return communityOperationsDashboard(request, env);\n    if (request.method === "POST" && url.pathname === "/api/community/management/provider") return communityProviderJoin(request, env);\n    if (request.method === "POST" && url.pathname === "/api/community/management/provider/invite") return communityProviderInvite(request, env);\n    if (request.method === "POST" && url.pathname === "/api/community/management/work-order") return communityWorkOrderCreate(request, env);\n    if (request.method === "POST" && url.pathname === "/api/community/management/utility") return communityUtilityLink(request, env);\n
+    if (request.method === "GET" && url.pathname === "/api/community/management/operations") return communityOperationsDashboard(request, env);
+    if (request.method === "POST" && url.pathname === "/api/community/management/provider") return communityProviderJoin(request, env);
+    if (request.method === "POST" && url.pathname === "/api/community/management/provider/invite") return communityProviderInvite(request, env);
+    if (request.method === "POST" && url.pathname === "/api/community/management/work-order") return communityWorkOrderCreate(request, env);
+    if (request.method === "POST" && url.pathname === "/api/community/management/utility") return communityUtilityLink(request, env);
+
     if (request.method === "POST" && url.pathname === "/api/community/representative/request") return requestRepresentative(request, env);
     if (request.method === "POST" && url.pathname === "/api/community/management/onboarding/decision") return communityOnboardingDecision(request, env);
     if (request.method === "POST" && url.pathname === "/api/community/management/subscription/decision") return communitySubscriptionDecision(request, env);

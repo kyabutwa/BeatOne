@@ -676,8 +676,20 @@ async function zalagrenPlans(request: Request, env: Env): Promise<Response> {
   try {
     const {sql}=await participantIdFromSession(request,env);
     const rows=await sql`SELECT id,code,name,description,currency,amount_minor,interval_unit,interval_count FROM public.zalagren_plan_catalog WHERE active=true ORDER BY amount_minor`;
-    return json({service:"Zalagren",plans:rows});
+    const features=await sql`SELECT plan_id,feature_code,feature_name,feature_description,included,limit_value FROM public.zalagren_plan_features WHERE included=true ORDER BY plan_id,feature_name`;
+    const byPlan=features.reduce((acc:any[],f:any)=>{const p=acc.find(x=>x.plan_id===f.plan_id);if(p)p.features.push(f);else acc.push({plan_id:f.plan_id,features:[f]});return acc;},[]);
+    return json({service:"Zalagren",plans:rows.map((p:any)=>({...p,features:byPlan.find(x=>x.plan_id===p.id)?.features||[]}))});
   } catch(e){const m=e instanceof Error?e.message:"PLANS_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function currentZalagrenSubscription(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const rows=await sql`SELECT ps.*,p.code plan_code,p.name plan_name,p.description plan_description,p.currency,p.amount_minor,p.interval_unit,p.interval_count
+      FROM public.participant_subscriptions ps JOIN public.zalagren_plan_catalog p ON p.id=ps.plan_id
+      WHERE ps.participant_id=${participantId} ORDER BY ps.updated_at DESC LIMIT 1`;
+    return json({service:"Zalagren",subscription:rows[0]||null});
+  } catch(e){const m=e instanceof Error?e.message:"SUBSCRIPTION_LOOKUP_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
 }
 
 async function subscribeZalagrenPlan(request: Request, env: Env): Promise<Response> {
@@ -1403,6 +1415,7 @@ export default {
     if (request.method === "GET" && /^\/policies\/(privacy|terms|consumer|payments|community)$/.test(url.pathname)) return zalagrenPolicy(request, env, url.pathname.split("/")[2]);
     if (request.method === "GET" && url.pathname === "/api/me") return me(request, env);
     if (request.method === "GET" && url.pathname === "/api/plans") return zalagrenPlans(request, env);
+    if (request.method === "GET" && url.pathname === "/api/subscription") return currentZalagrenSubscription(request, env);
     if (request.method === "POST" && url.pathname === "/api/subscriptions") return subscribeZalagrenPlan(request, env);
     if (request.method === "POST" && url.pathname === "/api/payments/mpesa/stk") return mpesaStkPush(request, env);
     if (request.method === "POST" && url.pathname === "/api/payments/mpesa/callback") return mpesaCallback(request, env);

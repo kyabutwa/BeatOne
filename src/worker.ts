@@ -2,6 +2,7 @@ import { neon } from "@neondatabase/serverless";
 import { prepareProviderAuthRequest } from "./auth-proxy.js";
 import { beginVerificationChallenge, recordVerificationAttempt, recordVerificationProviderResult } from "./beatone-verification.js";
 import { renderHome } from "./home-ui.js";
+import { ZALAGREN_LOGO_BYTES } from "./zalagren-logo.js";
 import { normalizeCountryCode, normalizeEmail, normalizePhoneE164, validateLegalIdentity, type LegalIdentityInput } from "./beatcore-legal-identity.js";
 interface Env {
   DATABASE_URL: string;
@@ -1159,6 +1160,7 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === "OPTIONS") return new Response(null,{status:204,headers:headers({"access-control-allow-origin":"*","access-control-allow-headers":"content-type, authorization","access-control-allow-methods":"GET,POST,OPTIONS"})});
     const url = new URL(request.url);
+    if (request.method === "GET" && url.pathname === "/1.png") return new Response(ZALAGREN_LOGO_BYTES, { headers: headers({ "content-type": "image/png", "cache-control": "public, max-age=31536000, immutable" }) });
     if (request.method === "GET" && url.pathname === "/") return renderHome(headers);
     if (request.method === "GET" && url.pathname === "/api/health") return health(env);
     if (request.method === "GET" && url.pathname === "/api/foundation") return foundation(env);

@@ -1400,7 +1400,7 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/beatfood/order") return createBeatFoodOrder(request, env);
     if (request.method === "POST" && url.pathname === "/api/beatride/profile") return createBeatRideProfile(request, env);
     if (request.method === "POST" && url.pathname === "/api/beatride/request") return requestBeatRide(request, env);
-    if (request.method === "GET" && /^\\/policies\\/(privacy|terms|consumer|payments|community)$/.test(url.pathname)) return zalagrenPolicy(request, env, url.pathname.split("/")[2]);
+    if (request.method === "GET" && /^\/policies\/(privacy|terms|consumer|payments|community)$/.test(url.pathname)) return zalagrenPolicy(request, env, url.pathname.split("/")[2]);
     if (request.method === "GET" && url.pathname === "/api/me") return me(request, env);
     if (request.method === "GET" && url.pathname === "/api/plans") return zalagrenPlans(request, env);
     if (request.method === "POST" && url.pathname === "/api/subscriptions") return subscribeZalagrenPlan(request, env);

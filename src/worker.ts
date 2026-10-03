@@ -620,7 +620,78 @@ async function domainEvent(sql: DbSql, participantId: string, type: string, sour
   const eventId = "event-" + crypto.randomUUID();
   await sql`INSERT INTO public.events(id,type,context_id,actor_id,source,occurred_at,state,version)
     VALUES(${eventId},${type},${contextId || null},${participantId},${source},now(),'COMPLETED',1)`;
+  await sql`INSERT INTO public.participant_activity(id,participant_id,event_id,activity_type,title,summary,status,context_type,context_id,metadata,occurred_at)
+    VALUES('activity-'||replace(gen_random_uuid()::text,'-',''),${participantId},${eventId},${type},${replace(type,'.',' ')},${type},'completed',CASE WHEN ${contextId||null} IS NULL THEN NULL ELSE 'context' END,${contextId||null},'{}'::jsonb,now())`;
   return eventId;
+}
+
+
+async function participantVerificationStatus(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,active,sql}=await participantIdFromSession(request,env);
+    const identityId=active.canonical.identity_id || active.canonical.identityId;
+    const [legal]=await sql`SELECT legal_name,given_names,middle_names,family_name,nationality,residence_country_code,status FROM public.legal_identity_profiles WHERE participant_id=${participantId} LIMIT 1`;
+    const contacts=await sql`SELECT kind,status,verified_at,is_primary FROM public.identity_contacts WHERE identity_id=${identityId} ORDER BY kind,is_primary DESC`;
+    const documents=await sql`SELECT id,document_type,issuing_country_code,status,verification_method,verified_at,document_number_last4,national_identifier_last4 FROM public.identity_documents WHERE identity_id=${identityId} ORDER BY created_at DESC`;
+    const verifications=await sql`SELECT target_type,method,status,created_at,completed_at,external_reference FROM public.identity_verification_records WHERE identity_id=${identityId} ORDER BY created_at DESC`;
+    return json({service:"Zalagren",legalIdentity:legal||null,contacts,documents,verifications});
+  } catch(e){const m=e instanceof Error?e.message:"VERIFICATION_STATUS_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function participantActivity(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const rows=await sql`SELECT id,activity_type,title,summary,status,context_type,context_id,metadata,occurred_at FROM public.participant_activity WHERE participant_id=${participantId} ORDER BY occurred_at DESC LIMIT 100`;
+    return json({service:"Zalagren",items:rows});
+  } catch(e){const m=e instanceof Error?e.message:"ACTIVITY_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function participantNotifications(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const rows=await sql`SELECT id,kind,title,body,severity,read_at,source_type,source_id,metadata,created_at FROM public.participant_notifications WHERE participant_id=${participantId} ORDER BY created_at DESC LIMIT 100`;
+    return json({service:"Zalagren",items:rows});
+  } catch(e){const m=e instanceof Error?e.message:"NOTIFICATIONS_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function markParticipantNotification(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const b=await request.json().catch(()=>({})) as {id?:string};
+    if(!b.id)return json({service:"Zalagren",error:"NOTIFICATION_ID_REQUIRED"},400);
+    await sql`UPDATE public.participant_notifications SET read_at=COALESCE(read_at,now()) WHERE id=${b.id} AND participant_id=${participantId}`;
+    return json({service:"Zalagren",status:"notification_marked_read"});
+  } catch(e){const m=e instanceof Error?e.message:"NOTIFICATION_UPDATE_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function participantCompliance(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const [legal]=await sql`SELECT nationality,residence_country_code,status FROM public.legal_identity_profiles WHERE participant_id=${participantId} LIMIT 1`;
+    const [row]=await sql`SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE status='verified')::int AS verified, COUNT(*) FILTER (WHERE status='failed')::int AS failed FROM public.participant_compliance_reviews WHERE participant_id=${participantId}`;
+    const reviews=await sql`SELECT jurisdiction,domain,requirement_code,status,notes,reviewed_at FROM public.participant_compliance_reviews WHERE participant_id=${participantId} ORDER BY domain,requirement_code`;
+    return json({service:"Zalagren",jurisdiction:legal?.residence_country_code||null,legalIdentityStatus:legal?.status||"not_started",summary:row||{total:0,verified:0,failed:0},reviews});
+  } catch(e){const m=e instanceof Error?e.message:"COMPLIANCE_STATUS_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function createSupportRequest(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const b=await request.json().catch(()=>({})) as {category?:string;subject?:string;description?:string;priority?:string};
+    if(!b.category?.trim()||!b.subject?.trim()||!b.description?.trim())return json({service:"Zalagren",error:"SUPPORT_FIELDS_REQUIRED"},400);
+    const id="support-"+crypto.randomUUID();
+    const [row]=await sql`INSERT INTO public.support_requests(id,participant_id,category,subject,description,status,priority) VALUES(${id},${participantId},${b.category.trim()},${b.subject.trim()},${b.description.trim()},'open',${["low","normal","high","urgent"].includes(b.priority||"")?b.priority:"normal"}) RETURNING *`;
+    await domainEvent(sql,participantId,"participant.support.requested","zalagren-worker");
+    return json({service:"Zalagren",status:"support_request_created",request:row},201);
+  } catch(e){const m=e instanceof Error?e.message:"SUPPORT_REQUEST_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
+}
+
+async function listSupportRequests(request: Request, env: Env): Promise<Response> {
+  try {
+    const {participantId,sql}=await participantIdFromSession(request,env);
+    const rows=await sql`SELECT id,category,subject,description,status,priority,created_at,updated_at FROM public.support_requests WHERE participant_id=${participantId} ORDER BY created_at DESC LIMIT 50`;
+    return json({service:"Zalagren",items:rows});
+  } catch(e){const m=e instanceof Error?e.message:"SUPPORT_LIST_FAILED";return json({service:"Zalagren",error:m},m==="UNAUTHORIZED"?401:400);}
 }
 
 async function participantIdFromSession(request: Request, env: Env): Promise<{active:any; participantId:string; sql:DbSql}> {
@@ -1404,6 +1475,13 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/guardian/incident") return guardianCreateIncident(request, env);
     if (request.method === "POST" && url.pathname === "/api/guardian/checkin") return guardianCreateCheckin(request, env);
     if (request.method === "GET" && url.pathname === "/api/home/foundation") return homeFoundation(request, env);
+    if (request.method === "GET" && url.pathname === "/api/identity/verification/status") return participantVerificationStatus(request, env);
+    if (request.method === "GET" && url.pathname === "/api/activity") return participantActivity(request, env);
+    if (request.method === "GET" && url.pathname === "/api/notifications") return participantNotifications(request, env);
+    if (request.method === "POST" && url.pathname === "/api/notifications/read") return markParticipantNotification(request, env);
+    if (request.method === "GET" && url.pathname === "/api/compliance") return participantCompliance(request, env);
+    if (request.method === "POST" && url.pathname === "/api/support") return createSupportRequest(request, env);
+    if (request.method === "GET" && url.pathname === "/api/support") return listSupportRequests(request, env);
     if (request.method === "GET" && url.pathname === "/api/participation") return listParticipation(request, env);
     if (request.method === "GET" && url.pathname === "/api/community/management") return communityManagement(request, env);
     if (request.method === "GET" && url.pathname === "/api/community/management/operations") return communityOperationsDashboard(request, env);

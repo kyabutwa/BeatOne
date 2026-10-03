@@ -69,7 +69,7 @@ Legal identity is deferred to protected identity/verification flows. Backend leg
 
 ## Logo boundary
 
-The current repository does not contain the owner-provided IMG_1383.jpeg binary. The UI therefore uses a self-contained temporary Zalagren mark rather than a broken image reference.
+The current repository does not contain the owner-provided 1.png binary. The UI therefore uses a self-contained temporary Zalagren mark rather than a broken image reference.
 
 This is NOT equivalent to verification of the owner-provided artwork. The canonical artwork must replace the temporary mark when the actual asset is restored.
 
@@ -91,4 +91,4 @@ Before calling the UI reconciliation complete:
 2. Cloudflare deployment.
 3. Production HTML/shell smoke verification.
 4. Visual verification of mobile and desktop surfaces.
-5. Restore the owner-provided IMG_1383.jpeg asset and verify all logo placements.
+5. Restore the owner-provided 1.png asset and verify all logo placements.

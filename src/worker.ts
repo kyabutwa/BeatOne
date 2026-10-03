@@ -974,9 +974,9 @@ async function me(request: Request, env: Env): Promise<Response> {
              EXISTS(SELECT 1 FROM public.legal_identity_profiles lp2 WHERE lp2.participant_id=p.id AND lp2.status='verified') AS legal_identity_verified,
              EXISTS(SELECT 1 FROM public.legal_identity_profiles lp3 WHERE lp3.participant_id=p.id AND lp3.status='pending') AS legal_identity_pending
       FROM public.identities i
-      LEFT JOIN public.legal_identity_profiles lip ON lip.participant_id=p.id
       JOIN public.participants p ON p.identity_id=i.id
       JOIN public.accounts a ON a.identity_id=i.id
+      LEFT JOIN public.legal_identity_profiles lip ON lip.participant_id=p.id
       WHERE p.id=${participantId}
       LIMIT 1
     `;

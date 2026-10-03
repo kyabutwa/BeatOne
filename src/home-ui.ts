@@ -737,7 +737,7 @@ document.getElementById("profileFile").onchange=async(e)=>{
   await saveParticipantProfile({avatarData:c.toDataURL("image/jpeg",.82),avatarMime:"image/jpeg"});
  }catch(err){showProfileStatus(err instanceof Error?err.message:"Could not save profile photo.");}
 };
-document.getElementById("profileRemoveButton").onclick=async()=>{try{await saveParticipantProfile({avatarData:null});}catch(e){showProfileStatus(e.message);}};
+document.getElementById("profileRemoveButton").onclick=async()=>{try{await saveParticipantProfile({removeAvatar:true});}catch(e){showProfileStatus(e.message);}};
 $("settingsVerification").onclick=()=>navigate("account");
 $("settingsLegalIdentity").onclick=()=>navigate("account");
 $("settingsProfile").onclick=()=>navigate("account");

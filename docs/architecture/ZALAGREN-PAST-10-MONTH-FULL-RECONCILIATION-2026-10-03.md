@@ -34,9 +34,11 @@ Payments and economy: payment intent, regulated rail execution, receipts, settle
 
 Services: BeatPay, BeatRide, BeatFood, BeatHealth, BeatMarket, BeatGenzi, BeatGuardian and BeatUtilities.
 
-Commerce: goods, services, assets, projects, opportunities, capabilities and accommodation/BnB.
+BeatMarket: professional identity, careers, opportunities, relationships, business presence, storefronts, publishing and location-aware discovery.
 
-Accommodation: host/provider, place, stay type, capacity, amenities, rules, availability, reservation, cancellation, payment and regulatory evidence.
+BeatBnB: accommodation, community units, hosts/providers, guests/residents, stays, authorized access, destinations and travel booking.
+
+BeatBnB accommodation: host/provider, community unit, place, stay type, capacity, amenities, rules, availability, reservation, cancellation, payment, access authorization and regulatory evidence.
 
 Mobility: first-party Zalagren-operated dispatch architecture: rider → request → driver presence → offer → acceptance → trip → completion → payment/reconciliation → evidence, while licensing, insurance and vehicle/driver compliance remain explicit external requirements.
 

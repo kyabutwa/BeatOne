@@ -86,7 +86,7 @@ button:focus-visible,input:focus-visible{outline:3px solid rgba(242,122,33,.34);
 .participant-card{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;padding:18px}
 .identity{font-size:16px;line-height:22px;font-weight:730}.identity-meta{font-size:13px;line-height:20px;color:var(--muted);margin-top:3px;overflow-wrap:anywhere}
 .pill{display:inline-flex;align-items:center;min-height:25px;padding:4px 9px;border-radius:999px;background:#fff1e8;color:var(--orange);font-size:11px;line-height:16px;font-weight:750}
-.detail-card{display:none;margin-top:12px;padding:18px}.detail-card.active{display:block}
+.profile-card{display:grid;grid-template-columns:auto 1fr;gap:15px;align-items:center;padding:16px;border:1px solid var(--line);border-radius:18px;background:var(--surface-2);margin-top:12px}.profile-avatar{width:78px;height:78px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:#e8eef5;color:var(--navy);font-size:28px;font-weight:800;border:2px solid var(--line)}.profile-avatar img{width:100%;height:100%;object-fit:cover}.profile-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.profile-file{display:none}@media(max-width:700px){.profile-card{grid-template-columns:1fr}.profile-avatar{width:88px;height:88px}}.detail-card{display:none;margin-top:12px;padding:18px}.detail-card.active{display:block}
 .detail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
 .detail-title{font-size:20px;line-height:26px;font-weight:760;margin:0}.detail-sub{font-size:13px;line-height:19px;color:var(--muted);margin-top:3px}
 .row{padding:13px 0;border-top:1px solid var(--line-soft)}.row:first-child{border-top:0}.row-title{font-size:14px;line-height:20px;font-weight:700}.row-meta{font-size:13px;line-height:19px;color:var(--muted);margin-top:3px}
@@ -444,6 +444,13 @@ body.navy-mode .overlay{background:rgba(6,26,51,.82)!important}
  <section id="identityDetail" class="detail-card">
   <div class="detail-head"><div><h3 class="detail-title">My Zalagren</h3><div class="detail-sub">Your identity and account</div></div></div>
   <div class="account-hero"><div class="account-avatar" id="accountAvatar">B</div><div><div class="identity" id="accountDisplayName">Participant</div></div></div>
+  <div class="profile-card">
+   <div class="profile-avatar" id="profileAvatar">P</div>
+   <div><div class="identity">Participant profile</div><div class="row-meta">One persistent profile across your Zalagren devices and services. Your profile photo is separate from legal-identity evidence.</div>
+    <div class="profile-actions"><button class="action primary" id="profileUploadButton" type="button">Upload profile photo</button><button class="action secondary" id="profileRemoveButton" type="button">Remove</button><input id="profileFile" class="profile-file" type="file" accept="image/jpeg,image/png,image/webp"></div>
+    <div id="profileStatus" class="status hidden"></div>
+   </div>
+  </div>
   <div id="identityBody"></div>
   <div class="section-head" style="margin-top:18px"><div><h4 class="section-title" style="font-size:18px!important">Verification Center</h4><p class="section-copy">Your verification details stay private and are shown only when relevant.</p></div></div>
   <div class="verification-grid" id="verificationGrid">
@@ -463,6 +470,7 @@ body.navy-mode .overlay{background:rgba(6,26,51,.82)!important}
   <div class="settings-section"><div class="settings-section-title">Identity & verification</div>
    <div class="settings-row"><div><strong>Verification Center</strong><span>Finish email, phone, document and legal identity verification.</span></div><button class="action primary settings-action" id="settingsVerification" type="button">Open</button></div>
    <div class="settings-row"><div><strong>Legal identity</strong><span>Review or correct your legal identity information and supporting document.</span></div><button class="action secondary settings-action" id="settingsLegalIdentity" type="button">Review</button></div>
+   <div class="settings-row"><div><strong>Participant profile</strong><span>Change your profile photo. The same profile follows your authenticated participant account across devices.</span></div><button class="action secondary settings-action" id="settingsProfile" type="button">Edit</button></div>
   </div>
   <div class="settings-section"><div class="settings-section-title">Security & access</div>
    <div class="settings-row"><div><strong>Account security</strong><span>Review sign-in, verification and recovery controls.</span></div><button class="action secondary settings-action" id="settingsSecurity" type="button">Review</button></div>
@@ -703,8 +711,36 @@ document.querySelectorAll("[data-nav]").forEach(el=>el.addEventListener("click",
 const zalagrenIntent=$("zalagrenIntent"),zalagrenIntentHint=$("zalagrenIntentHint");
 if(zalagrenIntent){zalagrenIntent.oninput=()=>{const q=zalagrenIntent.value.trim().toLowerCase();if(!q){zalagrenIntentHint.textContent="Examples: access, community, ride, food, payment, marketplace, health, GENESIS.";return;}const routes=[["access","worldDetail","Access"],["community","communityDetail","Communities"],["ride","serviceDetail","BeatRide"],["mobility","serviceDetail","BeatRide"],["food","serviceDetail","BeatFood"],["payment","serviceDetail","BeatPay"],["pay","serviceDetail","BeatPay"],["market","marketplaceDetail","BeatMarket"],["bnb","marketplaceDetail","BeatMarket & BnB"],["health","serviceDetail","BeatHealth"],["genesis","genesisDetail","GENESIS"],["education","genesisDetail","Knowledge"],["environment","genesisDetail","Knowledge"]];const hit=routes.find(([k])=>q.includes(k));zalagrenIntentHint.textContent=hit?"Open "+hit[2]+" to continue. Consequential actions remain authorization-gated.":"No direct surface matched yet. Zalagren will not invent a provider, authority or action.";if(hit)zalagrenIntentHint.onclick=()=>openDetail(hit[1]);zalagrenIntentHint.style.cursor=hit?"pointer":"default";};}
 
+async function loadParticipantProfile(){
+ try{
+  const r=await fetch("/api/profile",{credentials:"same-origin"}); if(!r.ok)return;
+  const d=await r.json(); const p=d.profile||{};
+  const avatar=document.getElementById("profileAvatar"); const top=document.getElementById("accountAvatar");
+  if(p.avatarData){if(avatar)avatar.innerHTML='<img alt="Participant profile photo" src="'+p.avatarData.replace(/"/g,"&quot;")+'">';if(top)top.innerHTML='<img alt="Participant profile photo" src="'+p.avatarData.replace(/"/g,"&quot;")+'">';}
+  else {const initial=(document.getElementById("accountDisplayName")?.textContent||"P").trim().charAt(0).toUpperCase()||"P";if(avatar)avatar.textContent=initial;if(top)top.textContent=initial;}
+ }catch{}
+}
+function showProfileStatus(message){const el=document.getElementById("profileStatus");if(el){el.textContent=message;el.classList.remove("hidden");}}
+async function saveParticipantProfile(payload){
+ const r=await fetch("/api/profile",{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(payload)});
+ const d=await r.json().catch(()=>({})); if(!r.ok)throw new Error(d.error||"PROFILE_UPDATE_FAILED"); await loadParticipantProfile(); showProfileStatus("Profile saved and synced to your Zalagren account.");
+}
+document.getElementById("profileUploadButton").onclick=()=>document.getElementById("profileFile").click();
+document.getElementById("profileFile").onchange=async(e)=>{
+ const file=e.target.files?.[0]; if(!file)return;
+ if(file.size>8*1024*1024){showProfileStatus("Choose a photo up to 8 MB.");return;}
+ try{
+  const data=await new Promise((resolve,reject)=>{const fr=new FileReader();fr.onload=()=>resolve(fr.result);fr.onerror=reject;fr.readAsDataURL(file);});
+  const img=await new Promise((resolve,reject)=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=reject;i.src=data;});
+  const max=512,scale=Math.min(1,max/Math.max(img.width,img.height)),w=Math.max(1,Math.round(img.width*scale)),h=Math.max(1,Math.round(img.height*scale));
+  const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);
+  await saveParticipantProfile({avatarData:c.toDataURL("image/jpeg",.82),avatarMime:"image/jpeg"});
+ }catch(err){showProfileStatus(err instanceof Error?err.message:"Could not save profile photo.");}
+};
+document.getElementById("profileRemoveButton").onclick=async()=>{try{await saveParticipantProfile({avatarData:null});}catch(e){showProfileStatus(e.message);}};
 $("settingsVerification").onclick=()=>navigate("account");
 $("settingsLegalIdentity").onclick=()=>navigate("account");
+$("settingsProfile").onclick=()=>navigate("account");
 $("settingsSecurity").onclick=()=>showSettingsStatus("Security review is anchored to your authenticated participant session. Additional recovery controls will appear when supported by the account provider.");
 $("settingsRegulation").onclick=()=>showSettingsStatus("Regulatory review is context-specific. Zalagren will show applicable evidence and authorization requirements when a regulated capability is requested.");
 $("settingsAuthorizations").onclick=()=>showSettingsStatus("Authorization review: participant authority is separate from authentication. Community and service permissions are evaluated in their active context.");
@@ -737,7 +773,7 @@ $("authForm").onsubmit=async event=>{
 };
 $("signout").onclick=async()=>{await fetch("/api/auth/sign-out",{method:"POST"});location.reload();};
 async function check(){const r=await fetch("/api/me");if(r.ok)showHome(await r.json());}
-mode();check();
+mode();check();loadParticipantProfile();
 </script>
 <script>
 (function(){

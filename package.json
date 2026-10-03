@@ -8,7 +8,8 @@
     "test": "node --import tsx --test test/**/*.test.ts",
     "build": "wrangler deploy --dry-run --outdir=dist",
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "integrity": "node scripts/repository-integrity.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0"

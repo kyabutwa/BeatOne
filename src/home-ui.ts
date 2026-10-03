@@ -45,6 +45,14 @@ button:focus-visible,input:focus-visible{outline:3px solid rgba(242,122,33,.34);
 .brand-logo{display:block;width:auto;height:34px;max-width:min(190px,46vw);object-fit:contain;object-position:center}
 .account-control{display:flex;align-items:center;gap:8px;min-height:42px;padding:0 11px;border:1px solid var(--line);border-radius:13px;background:var(--surface);color:var(--navy);font-size:13px;font-weight:700;white-space:nowrap}
 .account-dot{width:7px;height:7px;border-radius:50%;background:var(--orange)}
+/* Hero copy contrast: explicit across both appearance modes. */
+#auth .eyebrow,#auth .title,#auth .lede,
+#home .eyebrow,#home .title,#home .lede,
+.page#auth .eyebrow,.page#auth .title,.page#auth .lede{
+ color:var(--text)!important;
+ text-shadow:none!important;
+}
+#auth .eyebrow,#home .eyebrow{color:var(--orange)!important}
 .page{padding:14px 0}
 .eyebrow{font-size:11px;line-height:16px;font-weight:750;letter-spacing:.105em;text-transform:uppercase;color:var(--orange)}
 .title{font-size:clamp(29px,6vw,42px);line-height:1.08;letter-spacing:-.025em;font-weight:760;margin:7px 0 9px;max-width:720px}

@@ -69,7 +69,7 @@ Legal identity is deferred to protected identity/verification flows. Backend leg
 
 ## Logo boundary
 
-The canonical Zalagren participant-facing emblem is published at `/zalagren-emblem.svg`. It contains the emblem only, with a transparent background; the shell references that asset directly.
+The canonical Zalagren participant-facing emblem is published at `/zalagren-emblem.png`. It contains the emblem only, with a transparent background; the shell references that asset directly.
 
 ## Deployment boundary
 

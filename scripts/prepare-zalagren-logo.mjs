@@ -13,13 +13,28 @@ try {
   command = "convert";
 }
 
+const background = execFileSync(
+  command,
+  [input, "-format", "%[pixel:p{0,0}]", "info:"],
+  { encoding: "utf8" }
+).trim();
+
 execFileSync(command, [
   input,
   "-alpha", "on",
-  "-fuzz", "8%",
-  "-fill", "none",
-  "-draw", "color 0,0 floodfill",
+  "-fuzz", "12%",
+  "-transparent", background,
   output
 ], { stdio: "inherit" });
 
-console.log("Prepared transparent Zalagren logo:", output);
+const channels = execFileSync(
+  command,
+  [output, "-format", "%[channels]", "info:"],
+  { encoding: "utf8" }
+).trim();
+
+if (!channels.includes("a")) {
+  throw new Error("Zalagren logo background removal produced no alpha channel.");
+}
+
+console.log("Prepared transparent Zalagren logo:", output, "channels:", channels);
